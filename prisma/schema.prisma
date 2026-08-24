@@ -4,25 +4,26 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
-  id                   String         @id @default(cuid())
-  name                 String
-  email                String         @unique
-  passwordHash         String
-  role                 String         @default("COACH")
-  zipCode              String?
-  latitude             Float?
-  longitude            Float?
-  searchRadiusMiles    Int            @default(25)
-  pickupAlertsEnabled  Boolean        @default(true)
-  lookingForSport      String?
-  lookingForPositions  String?
-  minThrowingVelo      Float?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                     String         @id @default(cuid())
+  name                   String
+  email                  String         @unique
+  passwordHash           String
+  role                   String         @default("COACH")
+  zipCode                String?
+  latitude               Float?
+  longitude              Float?
+  searchRadiusMiles      Int            @default(25)
+  pickupAlertsEnabled    Boolean        @default(true)
+  lookingForSport        String?
+  lookingForPositions    String?
+  minThrowingVelo        Float?
+  onboardingCompletedAt  DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
   athletes             Athlete[]
   trainingPlans        TrainingPlan[]
   trainingVideos       TrainingVideo[]

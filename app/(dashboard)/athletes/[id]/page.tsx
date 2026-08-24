@@ -75,19 +75,21 @@ export default async function AthleteDetailPage({
     notFound();
   }
 
-  const athleteVideos = await getVideosForAthlete(user.id, athlete.id);
-  const profileStats = await getAthleteProfileComparisons(athlete.progressMetrics);
+  const athleteRecord = athlete;
 
-  const chartMetrics = athlete.progressMetrics.map((metric) => ({
+  const athleteVideos = await getVideosForAthlete(user.id, athleteRecord.id);
+  const profileStats = await getAthleteProfileComparisons(athleteRecord.progressMetrics);
+
+  const chartMetrics = athleteRecord.progressMetrics.map((metric) => ({
     id: metric.id,
     label: metric.label,
     value: metric.value,
     unit: metric.unit,
-    recordedAt: metric.recordedAt.toISOString(),
+    recordedAt: metric.recordedAt,
   }));
 
   function getLatestMetricValue(label: string) {
-    const matching = athlete.progressMetrics
+    const matching = athleteRecord.progressMetrics
       .filter((metric) => metric.label.toLowerCase() === label.toLowerCase())
       .sort(
         (a, b) =>
@@ -96,16 +98,16 @@ export default async function AthleteDetailPage({
     return matching[0]?.value ?? null;
   }
 
-  const goalsWithProgress = athlete.progressGoals.map((goal) => ({
+  const goalsWithProgress = athleteRecord.progressGoals.map((goal) => ({
     ...goal,
     currentValue: getLatestMetricValue(goal.label),
   }));
 
-  const displayMetrics = athlete.progressMetrics.slice(0, 20);
+  const displayMetrics = athleteRecord.progressMetrics.slice(0, 20);
 
   return (
     <DashboardShell
-      title={`${athlete.firstName} ${athlete.lastName}`}
+      title={`${athleteRecord.firstName} ${athleteRecord.lastName}`}
       description={
         athlete.rosterStatus === "PICKUP"
           ? "Pickup player profile · velo vs system average"

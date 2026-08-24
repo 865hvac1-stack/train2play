@@ -1,18 +1,27 @@
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { createPrismaClient } from "../lib/db";
 import { DEMO_VIDEO_URL } from "../lib/videos";
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-});
+const prisma = createPrismaClient();
 
-const prisma = new PrismaClient({ adapter });
+function shouldSeedDemoAccounts() {
+  if (process.env.SEED_DEMO === "true") return true;
+  if (process.env.SEED_DEMO === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}
 
 async function main() {
+  if (!shouldSeedDemoAccounts()) {
+    console.log(
+      "Skipping demo accounts. Set SEED_DEMO=true to load coach@example.com demo data.",
+    );
+    return;
+  }
+
   const passwordHash = await bcrypt.hash("password123", 12);
+  const onboardingCompletedAt = new Date();
 
   const coach = await prisma.user.upsert({
     where: { email: "coach@example.com" },
@@ -24,6 +33,7 @@ async function main() {
       pickupAlertsEnabled: true,
       lookingForSport: "Baseball",
       lookingForPositions: "RHP,SS,OF",
+      onboardingCompletedAt,
     },
     create: {
       name: "Demo Coach",
@@ -36,6 +46,7 @@ async function main() {
       pickupAlertsEnabled: true,
       lookingForSport: "Baseball",
       lookingForPositions: "RHP,SS,OF",
+      onboardingCompletedAt,
     },
   });
 
@@ -48,6 +59,7 @@ async function main() {
       searchRadiusMiles: 50,
       pickupAlertsEnabled: true,
       lookingForSport: "Baseball",
+      onboardingCompletedAt,
     },
     create: {
       name: "Westside Baseball",
@@ -59,6 +71,7 @@ async function main() {
       searchRadiusMiles: 50,
       pickupAlertsEnabled: true,
       lookingForSport: "Baseball",
+      onboardingCompletedAt,
     },
   });
 

@@ -1,12 +1,11 @@
 "use server";
 
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { annotationSchema, videoUrlSchema } from "@/lib/videos";
 import { prisma } from "@/lib/db";
+import { storeVideoFile } from "@/lib/storage";
 import { requireUser } from "@/lib/session";
 
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
@@ -95,11 +94,8 @@ export async function createVideoFromUploadAction(
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
   const filename = `${crypto.randomUUID()}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "videos");
-  await mkdir(uploadDir, { recursive: true });
-
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(uploadDir, filename), buffer);
+  const stored = await storeVideoFile(buffer, filename, file.type || "video/mp4");
 
   const video = await prisma.trainingVideo.create({
     data: {
@@ -108,7 +104,7 @@ export async function createVideoFromUploadAction(
       title,
       description: description || null,
       sourceType: "UPLOAD",
-      videoUrl: `/uploads/videos/${filename}`,
+      videoUrl: stored.videoUrl,
     },
   });
 

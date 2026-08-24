@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
@@ -50,8 +49,17 @@ export async function DashboardLayoutWrapper({
 }) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { onboardingCompletedAt: true },
+  });
+
+  if (!user?.onboardingCompletedAt) {
+    redirect("/onboarding");
   }
 
   return (

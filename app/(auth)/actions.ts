@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { signIn } from "@/auth";
+import { getPostAuthRedirect } from "@/app/onboarding/actions";
 import { createUser, signupSchema } from "@/lib/users";
 
 export type AuthActionState = {
@@ -44,7 +45,7 @@ export async function signupAction(
     return { error: "Account created, but sign-in failed. Try logging in." };
   }
 
-  redirect("/dashboard");
+  redirect(await getPostAuthRedirect(parsed.data.email));
 }
 
 export async function loginAction(
@@ -61,7 +62,8 @@ export async function loginAction(
     return { error: "Invalid email or password" };
   }
 
-  redirect("/dashboard");
+  const email = String(formData.get("email") ?? "").toLowerCase();
+  redirect(await getPostAuthRedirect(email));
 }
 
 export async function logoutAction() {

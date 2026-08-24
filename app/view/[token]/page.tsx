@@ -1,4 +1,5 @@
 import { Calendar, ClipboardList, TrendingUp } from "lucide-react";
+import { notFound } from "next/navigation";
 
 import { ProgressCharts } from "@/components/progress-charts";
 import { BrandLogoLarge } from "@/components/brand-logo";
@@ -52,7 +53,7 @@ export default async function ParentViewPage({
     label: m.label,
     value: m.value,
     unit: m.unit,
-    recordedAt: m.recordedAt.toISOString(),
+    recordedAt: m.recordedAt,
   }));
 
   return (

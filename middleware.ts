@@ -10,6 +10,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isOnboardingPage = pathname === "/onboarding";
   const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/athletes") ||
@@ -18,7 +19,8 @@ export default auth((req) => {
     pathname.startsWith("/calendar") ||
     pathname.startsWith("/reports") ||
     pathname.startsWith("/videos") ||
-    pathname.startsWith("/settings");
+    pathname.startsWith("/settings") ||
+    isOnboardingPage;
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -43,6 +45,7 @@ export const config = {
     "/reports/:path*",
     "/videos/:path*",
     "/settings/:path*",
+    "/onboarding",
     "/login",
     "/signup",
   ],
