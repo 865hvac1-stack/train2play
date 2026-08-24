@@ -1,3 +1,6 @@
+import Image from "next/image";
+import Link from "next/link";
+
 import { brand } from "@/lib/brand";
 
 type BrandLogoProps = {
@@ -6,10 +9,10 @@ type BrandLogoProps = {
   subtitle?: string;
 };
 
-const sizeClasses = {
-  sm: "h-8 w-8 text-xs",
-  md: "h-9 w-9 text-sm",
-  lg: "h-10 w-10 text-sm",
+const markSizes = {
+  sm: { width: 32, height: 32, className: "h-8 w-8" },
+  md: { width: 36, height: 36, className: "h-9 w-9" },
+  lg: { width: 40, height: 40, className: "h-10 w-10" },
 };
 
 export function BrandLogo({
@@ -17,13 +20,18 @@ export function BrandLogo({
   showText = true,
   subtitle,
 }: BrandLogoProps) {
+  const mark = markSizes[size];
+
   return (
     <div className="flex items-center gap-2">
-      <div
-        className={`flex shrink-0 items-center justify-center rounded-lg bg-emerald-600 font-bold text-white ${sizeClasses[size]}`}
-      >
-        {brand.monogram}
-      </div>
+      <Image
+        src={brand.logo.mark}
+        alt={`${brand.name} logo`}
+        width={mark.width}
+        height={mark.height}
+        className={`${mark.className} shrink-0 rounded-md object-cover`}
+        priority
+      />
       {showText ? (
         <div>
           <p className="text-sm font-semibold text-slate-900">{brand.shortName}</p>
@@ -38,14 +46,15 @@ export function BrandLogo({
 
 export function BrandLogoLarge() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white">
-        {brand.monogram}
-      </div>
-      <div>
-        <span className="text-lg font-semibold text-slate-900">{brand.name}</span>
-        <p className="text-xs text-slate-500">{brand.domain}</p>
-      </div>
-    </div>
+    <Link href="/" className="inline-flex items-center">
+      <Image
+        src={brand.logo.full}
+        alt={brand.name}
+        width={220}
+        height={220}
+        className="h-16 w-auto object-contain sm:h-20"
+        priority
+      />
+    </Link>
   );
 }

@@ -14,44 +14,47 @@ export default function OpenGraphImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
-          padding: 80,
-          background: "linear-gradient(135deg, #ecfdf5 0%, #ffffff 45%, #d1fae5 100%)",
+          background: brand.colors.black,
+          color: brand.colors.white,
         }}
       >
         <div
           style={{
+            fontSize: 120,
+            fontWeight: 800,
+            fontStyle: "italic",
+            letterSpacing: -4,
             display: "flex",
-            alignItems: "center",
-            gap: 20,
-            marginBottom: 28,
           }}
         >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 16,
-              background: "#059669",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 28,
-              fontWeight: 700,
-            }}
-          >
-            {brand.monogram}
-          </div>
-          <div style={{ fontSize: 42, fontWeight: 700, color: "#0f172a" }}>
-            {brand.name}
-          </div>
+          <span style={{ color: brand.colors.white }}>T</span>
+          <span style={{ color: brand.colors.orange }}>2</span>
+          <span style={{ color: brand.colors.white }}>P</span>
         </div>
-        <div style={{ fontSize: 54, fontWeight: 700, color: "#064e3b", lineHeight: 1.15 }}>
+        <div
+          style={{
+            marginTop: 24,
+            fontSize: 48,
+            fontWeight: 700,
+            letterSpacing: 6,
+            display: "flex",
+          }}
+        >
+          <span>TRAIN </span>
+          <span style={{ color: brand.colors.orange }}>2</span>
+          <span> PLAY</span>
+        </div>
+        <div
+          style={{
+            marginTop: 20,
+            fontSize: 28,
+            letterSpacing: 4,
+            color: "#cccccc",
+          }}
+        >
           {brand.tagline}
-        </div>
-        <div style={{ marginTop: 24, fontSize: 28, color: "#475569", maxWidth: 900 }}>
-          Rosters, film notes, velo profiles, and pickup matching for youth coaches.
         </div>
       </div>
     ),

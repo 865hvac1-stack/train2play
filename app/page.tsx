@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Crosshair, MapPin, Users, Video } from "lucide-react";
 
 import { BrandLogoLarge } from "@/components/brand-logo";
@@ -44,13 +45,13 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-slate-50 via-white to-emerald-50">
+    <div className="min-h-full bg-gradient-to-b from-slate-50 via-white to-orange-50">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <BrandLogoLarge />
         <div className="flex items-center gap-3">
           <Button variant="ghost" render={<Link href="/login">Sign in</Link>} />
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-[#FF6600] hover:bg-[#e55a00] text-white"
             render={<Link href="/signup">Get started</Link>}
           />
         </div>
@@ -58,20 +59,29 @@ export default async function HomePage() {
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-6 pb-16 pt-10 md:pt-16">
         <section className="mx-auto max-w-3xl space-y-6 text-center">
-          <p className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800">
+          <div className="flex justify-center">
+            <Image
+              src={brand.logo.full}
+              alt={brand.name}
+              width={320}
+              height={320}
+              className="h-40 w-auto object-contain sm:h-52"
+              priority
+            />
+          </div>
+          <p className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-800">
             {brand.heroBadge}
           </p>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
-            {brand.name}
-          </h1>
-          <p className="text-xl font-medium text-emerald-800 md:text-2xl">{brand.tagline}</p>
+          <p className="text-xl font-semibold tracking-wide text-[#FF6600] md:text-2xl">
+            {brand.tagline}
+          </p>
           <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-600">
             {brand.description}
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               size="lg"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-[#FF6600] hover:bg-[#e55a00] text-white"
               render={<Link href="/signup">Create free coach account</Link>}
             />
             <Button
@@ -91,24 +101,24 @@ export default async function HomePage() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-2xl border border-emerald-100 bg-white/80 p-6 shadow-sm"
+              className="rounded-2xl border border-orange-100 bg-white/80 p-6 shadow-sm"
             >
-              <feature.icon className="mb-4 h-8 w-8 text-emerald-600" />
+              <feature.icon className="mb-4 h-8 w-8 text-[#FF6600]" />
               <h2 className="text-lg font-semibold text-slate-900">{feature.title}</h2>
               <p className="mt-2 text-slate-600">{feature.body}</p>
             </div>
           ))}
         </section>
 
-        <section className="rounded-3xl bg-emerald-700 px-8 py-12 text-center text-white">
+        <section className="rounded-3xl bg-black px-8 py-12 text-center text-white">
           <h2 className="text-3xl font-bold">Ready for your next session?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-emerald-50">
+          <p className="mx-auto mt-3 max-w-xl text-slate-300">
             Sign up, set your zip, and start adding athletes, film, and pickup players in minutes.
           </p>
           <div className="mt-6">
             <Button
               size="lg"
-              className="bg-white text-emerald-800 hover:bg-emerald-50"
+              className="bg-[#FF6600] text-white hover:bg-[#e55a00]"
               render={<Link href="/signup">Get started free</Link>}
             />
           </div>
@@ -122,16 +132,16 @@ export default async function HomePage() {
             <p>{brand.domain}</p>
           </div>
           <div className="flex flex-wrap gap-4">
-            <Link href="/privacy" className="hover:text-emerald-700">
+            <Link href="/privacy" className="hover:text-[#FF6600]">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-emerald-700">
+            <Link href="/terms" className="hover:text-[#FF6600]">
               Terms
             </Link>
-            <a href={`mailto:${brand.supportEmail}`} className="hover:text-emerald-700">
+            <a href={`mailto:${brand.supportEmail}`} className="hover:text-[#FF6600]">
               {brand.supportEmail}
             </a>
-            <Link href="/login" className="hover:text-emerald-700">
+            <Link href="/login" className="hover:text-[#FF6600]">
               Sign in
             </Link>
           </div>

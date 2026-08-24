@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { brand } from "@/lib/brand";
+
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
@@ -13,14 +15,16 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#059669",
-          color: "white",
-          fontSize: 11,
-          fontWeight: 700,
-          borderRadius: 8,
+          background: brand.colors.black,
+          color: brand.colors.white,
+          fontSize: 10,
+          fontWeight: 800,
+          fontStyle: "italic",
         }}
       >
-        T2P
+        <span style={{ color: brand.colors.white }}>T</span>
+        <span style={{ color: brand.colors.orange }}>2</span>
+        <span style={{ color: brand.colors.white }}>P</span>
       </div>
     ),
     { ...size },

@@ -14,7 +14,9 @@ export const brand = {
   /** Portal label shown under the logo in the coach app */
   portalLabel: "Coach Portal",
   /** Marketing tagline on the home page */
-  tagline: "Train smarter. Play stronger.",
+  tagline: "Train. Track. Perform.",
+  /** Secondary tagline for descriptions */
+  subtagline: "Train smarter. Play stronger.",
   /** One-line description for meta tags and auth pages */
   description:
     "Train2Play helps coaches manage rosters, film, velo, and pickup players — from training to game day.",
@@ -22,6 +24,17 @@ export const brand = {
   heroBadge: "train2play.com",
   /** Support / contact */
   supportEmail: "support@train2play.com",
+  /** Brand colors from logo */
+  colors: {
+    orange: "#FF6600",
+    black: "#000000",
+    white: "#FFFFFF",
+  },
+  /** Paths to logo assets in /public */
+  logo: {
+    full: "/brand/logo.png",
+    mark: "/brand/logo-mark.png",
+  },
 } as const;
 
 export type Brand = typeof brand;

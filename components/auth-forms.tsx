@@ -71,7 +71,7 @@ export function LoginForm({
           ) : null}
           <Button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            className="w-full bg-[#FF6600] hover:bg-[#e55a00] text-white"
             disabled={pending}
           >
             {pending ? "Signing in..." : "Sign in"}
@@ -80,7 +80,7 @@ export function LoginForm({
         <p className="mt-4 text-center text-sm text-slate-600">
           <Link
             href="/forgot-password"
-            className="font-medium text-emerald-700 hover:underline"
+            className="font-medium text-[#FF6600] hover:underline"
           >
             Forgot password?
           </Link>
@@ -169,7 +169,7 @@ export function SignupForm() {
           ) : null}
           <Button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            className="w-full bg-[#FF6600] hover:bg-[#e55a00] text-white"
             disabled={pending}
           >
             {pending ? "Creating account..." : "Create account"}
