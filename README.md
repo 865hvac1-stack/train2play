@@ -1,6 +1,6 @@
-# Youth Athlete Training
+# Train2Play
 
-A SaaS platform for youth athlete training — helping coaches manage rosters, build training plans, and track workout completion.
+**train2play.com** — training platform for youth coaches: rosters, film review, velo profiles, and pickup player matching.
 
 > **Branding:** Product name and tagline live in [`lib/brand.ts`](lib/brand.ts). Update that one file to rebrand the entire app.
 

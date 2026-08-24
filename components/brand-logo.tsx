@@ -42,7 +42,10 @@ export function BrandLogoLarge() {
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white">
         {brand.monogram}
       </div>
-      <span className="text-lg font-semibold text-slate-900">{brand.name}</span>
+      <div>
+        <span className="text-lg font-semibold text-slate-900">{brand.name}</span>
+        <p className="text-xs text-slate-500">{brand.domain}</p>
+      </div>
     </div>
   );
 }
