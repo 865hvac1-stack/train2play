@@ -28,7 +28,7 @@ export default async function NewVideoPage({
   return (
     <DashboardShell
       title="Add video"
-      description="Upload from your device or link a direct MP4 for on-frame coaching notes."
+      description="Upload from your phone camera or gallery, or paste a direct MP4 link."
       action={
         <Button
           variant="outline"
@@ -43,29 +43,36 @@ export default async function NewVideoPage({
       }
     >
       {!uploadsEnabled ? (
-        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          File uploads are temporarily limited until cloud video storage is configured.
-          You can still add coaching clips with a direct MP4 URL.
-        </p>
+        <div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-medium">Phone uploads need cloud video storage first</p>
+          <p>
+            Railway cannot keep uploaded files without Cloudflare R2 (or S3). Until that is set in
+            Railway env vars, use a direct MP4 URL below — or ask your admin to add R2 (see{" "}
+            <code className="rounded bg-amber-100 px-1">docs/VIDEO-UPLOAD.md</code>).
+          </p>
+        </div>
       ) : null}
-      <div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
-        <Card>
+
+      <div className="mx-auto grid max-w-3xl gap-6 lg:grid-cols-2">
+        <Card className="order-1 border-brand/20 shadow-sm lg:order-none">
           <CardHeader>
-            <CardTitle>Upload file</CardTitle>
-            <CardDescription>Best for game film and phone recordings.</CardDescription>
+            <CardTitle>Upload from phone / device</CardTitle>
+            <CardDescription>
+              Record with your camera or pick a clip from Photos. Best for coaches on the field.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {uploadsEnabled ? (
               <UploadVideoForm athletes={athletes} defaultAthleteId={athleteId} />
             ) : (
               <p className="text-sm text-slate-600">
-                Upload is unavailable. Use the Link URL form or ask your admin to enable R2/S3.
+                Upload is unavailable until cloud storage is configured. Use Link URL for now.
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="order-2 lg:order-none">
           <CardHeader>
             <CardTitle>Link URL</CardTitle>
             <CardDescription>Direct MP4 or WebM link (not YouTube).</CardDescription>

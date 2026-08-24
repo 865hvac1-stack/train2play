@@ -76,8 +76,16 @@ export async function createVideoFromUploadAction(
     return { error: "Choose a video file to upload" };
   }
 
-  if (!file.type.startsWith("video/")) {
-    return { error: "File must be a video (mp4, webm, mov)" };
+  const nameLower = file.name.toLowerCase();
+  const looksLikeVideoExt = /\.(mp4|mov|webm|m4v|mpeg|mpg|avi)$/i.test(nameLower);
+  const hasVideoMime =
+    file.type.startsWith("video/") ||
+    file.type === "application/octet-stream" ||
+    file.type === "";
+
+  // iPhone often sends empty MIME or octet-stream for Camera Roll MOV/MP4
+  if (!file.type.startsWith("video/") && !(hasVideoMime && looksLikeVideoExt)) {
+    return { error: "File must be a video (mp4, mov, webm)" };
   }
 
   if (file.size > MAX_UPLOAD_BYTES) {
@@ -100,10 +108,20 @@ export async function createVideoFromUploadAction(
     }
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
+  const ext =
+    file.name.split(".").pop()?.toLowerCase() ||
+    (file.type === "video/quicktime" ? "mov" : "mp4");
   const filename = `${crypto.randomUUID()}.${ext}`;
+  const contentType =
+    file.type && file.type !== "application/octet-stream"
+      ? file.type
+      : ext === "mov"
+        ? "video/quicktime"
+        : ext === "webm"
+          ? "video/webm"
+          : "video/mp4";
   const buffer = Buffer.from(await file.arrayBuffer());
-  const stored = await storeVideoFile(buffer, filename, file.type || "video/mp4");
+  const stored = await storeVideoFile(buffer, filename, contentType);
 
   const video = await prisma.trainingVideo.create({
     data: {

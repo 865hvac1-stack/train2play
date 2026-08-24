@@ -24,7 +24,6 @@ export default async function VideosPage() {
       description="Upload film, pause at key moments, draw arrows and circles, and add written direction."
       action={
         <Button
-         
           nativeButton={false}
           render={
             <Link href="/videos/new">
@@ -45,7 +44,7 @@ export default async function VideosPage() {
               the frame and save direction at that timestamp.
             </p>
             <Button
-              className="mt-6 "
+              className="mt-6"
               nativeButton={false}
               render={<Link href="/videos/new">Add your first video</Link>}
             />

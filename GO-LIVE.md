@@ -35,6 +35,7 @@ The app is **code-ready to launch**. Complete the ops steps below, then smoke-te
 | `S3_REGION` | `auto` for R2 |
 
 Without R2/S3, **file uploads are blocked in production** (MP4 URL links still work).  
+Step-by-step phone upload setup: [docs/VIDEO-UPLOAD.md](./docs/VIDEO-UPLOAD.md)  
 Without Resend, password reset emails cannot send.
 
 ## Deploy (Railway)
