@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Plus, Video } from "lucide-react";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { requireCoachId } from "@/lib/session";
 import { getVideosForCoach } from "@/lib/videos-server";
@@ -18,22 +19,21 @@ export default async function VideosPage() {
   const videos = await getVideosForCoach(coachId);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Video coaching</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Upload film, pause at key moments, draw arrows and circles, and add written direction.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/videos/new">
-            <Plus className="size-4" />
-            Add video
-          </Link>
-        </Button>
-      </div>
-
+    <DashboardShell
+      title="Video coaching"
+      description="Upload film, pause at key moments, draw arrows and circles, and add written direction."
+      action={
+        <Button
+          className="bg-emerald-600 hover:bg-emerald-700"
+          render={
+            <Link href="/videos/new">
+              <Plus className="size-4" />
+              Add video
+            </Link>
+          }
+        />
+      }
+    >
       {videos.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -43,9 +43,10 @@ export default async function VideosPage() {
               Upload game film or paste a direct MP4 link. Open a clip to draw coaching notes on
               the frame and save direction at that timestamp.
             </p>
-            <Button asChild className="mt-6">
-              <Link href="/videos/new">Add your first video</Link>
-            </Button>
+            <Button
+              className="mt-6 bg-emerald-600 hover:bg-emerald-700"
+              render={<Link href="/videos/new">Add your first video</Link>}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -60,9 +61,11 @@ export default async function VideosPage() {
                       {video.sourceType === "UPLOAD" ? "Upload" : "URL"}
                     </Badge>
                   </div>
-                  {video.athlete
-                    ? `${video.athlete.firstName} ${video.athlete.lastName}`
-                    : "Team / general"}
+                  <CardDescription>
+                    {video.athlete
+                      ? `${video.athlete.firstName} ${video.athlete.lastName}`
+                      : "Team / general"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground line-clamp-2 text-sm">
@@ -81,6 +84,6 @@ export default async function VideosPage() {
           ))}
         </div>
       )}
-    </div>
+    </DashboardShell>
   );
 }

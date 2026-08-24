@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddVideoUrlForm, UploadVideoForm } from "@/components/video-forms";
@@ -16,27 +17,27 @@ export default async function NewVideoPage({
 
   const athletes = await prisma.athlete.findMany({
     where: { coachId },
-    orderBy: { name: "asc" },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     select: { id: true, firstName: true, lastName: true },
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon-sm" asChild>
-          <Link href="/videos">
-            <ArrowLeft className="size-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Add video</h1>
-          <p className="text-muted-foreground text-sm">
-            Upload from your device or link a direct MP4 for on-frame coaching notes.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+    <DashboardShell
+      title="Add video"
+      description="Upload from your device or link a direct MP4 for on-frame coaching notes."
+      action={
+        <Button
+          variant="outline"
+          render={
+            <Link href="/videos">
+              <ArrowLeft className="size-4" />
+              Back to videos
+            </Link>
+          }
+        />
+      }
+    >
+      <div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Upload file</CardTitle>
@@ -57,6 +58,6 @@ export default async function NewVideoPage({
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardShell>
   );
 }

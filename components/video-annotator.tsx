@@ -8,6 +8,7 @@ import {
   Pencil,
   Save,
   Trash2,
+  Video,
 } from "lucide-react";
 
 import {
@@ -22,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type Annotation = {
   id: string;
@@ -56,7 +58,12 @@ export function VideoAnnotator({
   const [note, setNote] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [isPaused, setIsPaused] = useState(true);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [videoStatus, setVideoStatus] = useState<"loading" | "ready" | "error">("loading");
   const router = useRouter();
+
+  const canDraw = isPaused && isDrawing && videoStatus === "ready";
 
   const syncCanvasSize = useCallback(() => {
     const video = videoRef.current;
@@ -76,6 +83,15 @@ export function VideoAnnotator({
     window.addEventListener("resize", syncCanvasSize);
     return () => window.removeEventListener("resize", syncCanvasSize);
   }, [syncCanvasSize]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      setVideoStatus("ready");
+    } else {
+      setVideoStatus("loading");
+    }
+  }, [videoUrl]);
 
   function redraw(canvas: HTMLCanvasElement, strokes: VideoStroke[]) {
     const ctx = canvas.getContext("2d");
@@ -160,6 +176,7 @@ export function VideoAnnotator({
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!canDraw) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     const point = getRelativePoint(event);
     const stroke: VideoStroke = {
@@ -206,12 +223,34 @@ export function VideoAnnotator({
     const canvas = canvasRef.current;
     if (!video) return;
     video.pause();
+    setIsPaused(true);
+    setIsDrawing(true);
     video.currentTime = ms / 1000;
     const annotation = initialAnnotations.find((item) => item.timestampMs === ms);
     if (annotation && canvas) {
-      redraw(canvas, parseStrokes(annotation.strokes));
-      setDraftStrokes(parseStrokes(annotation.strokes));
+      const strokes = parseStrokes(annotation.strokes);
+      redraw(canvas, strokes);
+      setDraftStrokes(strokes);
     }
+  }
+
+  function toggleDrawing() {
+    if (!isPaused) {
+      setMessage("Pause the video first, then draw on the frame.");
+      return;
+    }
+    setIsDrawing((current) => !current);
+    setMessage(null);
+  }
+
+  function handleVideoPlay() {
+    setIsPaused(false);
+    setIsDrawing(false);
+    clearDraft();
+  }
+
+  function handleVideoPause() {
+    setIsPaused(true);
   }
 
   function handleSave() {
@@ -259,17 +298,69 @@ export function VideoAnnotator({
           ref={videoRef}
           src={videoUrl}
           controls
+          preload="metadata"
           className="aspect-video w-full bg-black"
           playsInline
+          onPlay={handleVideoPlay}
+          onPause={handleVideoPause}
+          onLoadedData={() => setVideoStatus("ready")}
+          onCanPlay={() => setVideoStatus("ready")}
+          onError={() => setVideoStatus("error")}
         />
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
+          className={cn(
+            "absolute inset-0 h-full w-full touch-none",
+            canDraw ? "cursor-crosshair" : "pointer-events-none",
+          )}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
         />
+
+        {videoStatus === "loading" ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/70">
+            <div className="text-center text-white">
+              <Video className="mx-auto mb-2 size-8 animate-pulse opacity-80" />
+              <p className="text-sm">Loading video…</p>
+            </div>
+          </div>
+        ) : null}
+
+        {videoStatus === "error" ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center">
+            <div className="max-w-sm text-white">
+              <p className="font-medium">Video failed to load</p>
+              <p className="mt-2 text-sm text-white/80">
+                Try uploading the file directly instead of using a link.
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <Button
+          type="button"
+          size="sm"
+          variant={isDrawing ? "default" : "outline"}
+          className={isDrawing ? "bg-emerald-600 hover:bg-emerald-700" : undefined}
+          disabled={videoStatus !== "ready" || !isPaused}
+          onClick={toggleDrawing}
+        >
+          <Pencil className="h-4 w-4" />
+          {isDrawing ? "Drawing on frame" : "Draw on frame"}
+        </Button>
+        <span className="text-slate-600">
+          {videoStatus === "loading"
+            ? "Waiting for video to load…"
+            : !isPaused
+              ? "Playing — use the video controls. Pause when you want to annotate."
+              : isDrawing
+                ? "Paused — draw on the video, add direction below, then save."
+                : "Paused — click Draw on frame to start annotating."}
+        </span>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
@@ -281,6 +372,7 @@ export function VideoAnnotator({
                 type="button"
                 variant={tool === "pen" ? "default" : "outline"}
                 size="sm"
+                disabled={!canDraw}
                 onClick={() => setTool("pen")}
               >
                 <Pencil className="h-4 w-4" />
@@ -290,6 +382,7 @@ export function VideoAnnotator({
                 type="button"
                 variant={tool === "arrow" ? "default" : "outline"}
                 size="sm"
+                disabled={!canDraw}
                 onClick={() => setTool("arrow")}
               >
                 <ArrowUpRight className="h-4 w-4" />
@@ -299,12 +392,13 @@ export function VideoAnnotator({
                 type="button"
                 variant={tool === "circle" ? "default" : "outline"}
                 size="sm"
+                disabled={!canDraw}
                 onClick={() => setTool("circle")}
               >
                 <Circle className="h-4 w-4" />
                 Circle
               </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={clearDraft}>
+              <Button type="button" variant="ghost" size="sm" disabled={!canDraw} onClick={clearDraft}>
                 Clear drawing
               </Button>
             </div>
