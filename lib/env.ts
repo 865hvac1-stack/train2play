@@ -1,10 +1,14 @@
 const PRODUCTION_REQUIRED = ["DATABASE_URL", "AUTH_SECRET"] as const;
 
 export function getAppUrl() {
-  const url =
+  let url =
     process.env.AUTH_URL ??
     process.env.NEXT_PUBLIC_APP_URL ??
     "http://localhost:43123";
+
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
 
   return url.replace(/\/$/, "");
 }
