@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: train2play
+          POSTGRES_PASSWORD: train2play
+          POSTGRES_DB: train2play
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U train2play -d train2play"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://train2play:train2play@localhost:5432/train2play
+      AUTH_SECRET: ci-build-secret-minimum-32-characters
+      AUTH_URL: http://localhost:43123
+      NEXT_PUBLIC_APP_URL: http://localhost:43123
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint

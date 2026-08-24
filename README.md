@@ -2,6 +2,8 @@
 
 **train2play.com** — training platform for youth coaches: rosters, film review, velo profiles, and pickup player matching.
 
+> **Ready to deploy?** Follow the step-by-step checklist in **[GO-LIVE.md](./GO-LIVE.md)**.
+
 > **Branding:** Product name and tagline live in [`lib/brand.ts`](lib/brand.ts). Update that one file to rebrand the entire app.
 
 ## Quick start (local)

@@ -16,13 +16,18 @@ import {
 } from "@/components/ui/card";
 import { auth } from "@/auth";
 import { brand } from "@/lib/brand";
-import { requireUser } from "@/lib/session";
+import { showDemoCredentials } from "@/lib/env";
 import { prisma } from "@/lib/db";
 
 export default async function HomePage() {
   const session = await auth();
-  if (session?.user) {
-    redirect("/dashboard");
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboardingCompletedAt: true },
+    });
+
+    redirect(user?.onboardingCompletedAt ? "/dashboard" : "/onboarding");
   }
 
   return (
@@ -90,10 +95,12 @@ export default async function HomePage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-6 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
-              Demo login: <strong>coach@example.com</strong> /{" "}
-              <strong>password123</strong>
-            </p>
+            {showDemoCredentials() ? (
+              <p className="mt-6 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+                Demo login: <strong>coach@example.com</strong> /{" "}
+                <strong>password123</strong>
+              </p>
+            ) : null}
           </div>
         </section>
       </main>

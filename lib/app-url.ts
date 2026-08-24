@@ -1,9 +1,7 @@
+import { getAppUrl } from "@/lib/env";
+
 export function getAppBaseUrl() {
-  return (
-    process.env.AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:43123"
-  ).replace(/\/$/, "");
+  return getAppUrl();
 }
 
 export function getAthleteProfileUrl(athleteId: string) {

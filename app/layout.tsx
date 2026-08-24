@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { brand } from "@/lib/brand";
+import { getAppUrl } from "@/lib/env";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,8 +16,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: brand.name,
+  metadataBase: new URL(getAppUrl()),
+  title: {
+    default: brand.name,
+    template: `%s · ${brand.name}`,
+  },
   description: brand.description,
+  applicationName: brand.name,
+  openGraph: {
+    title: brand.name,
+    description: brand.description,
+    url: getAppUrl(),
+    siteName: brand.name,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: brand.name,
+    description: brand.description,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

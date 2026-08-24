@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+echo "Checking production environment..."
+node --import tsx scripts/validate-production-env.ts
+
 echo "Running database migrations..."
 npx prisma migrate deploy
 

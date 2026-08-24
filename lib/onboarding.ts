@@ -12,18 +12,3 @@ export const onboardingSchema = z.object({
 });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
-
-export const sportOptions = [
-  "Baseball",
-  "Softball",
-  "Basketball",
-  "Football",
-  "Soccer",
-  "Volleyball",
-  "Lacrosse",
-  "Hockey",
-  "Track & Field",
-  "Other",
-] as const;
-
-export const radiusOptions = [10, 25, 50, 100] as const;

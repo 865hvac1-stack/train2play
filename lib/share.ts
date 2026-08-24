@@ -1,17 +1,14 @@
 import { randomBytes } from "crypto";
 
 import { brand } from "@/lib/brand";
+import { getAppUrl } from "@/lib/env";
 
 export function generateShareToken() {
   return randomBytes(24).toString("hex");
 }
 
 export function getShareUrl(token: string) {
-  const base =
-    process.env.AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:43123";
-  return `${base.replace(/\/$/, "")}/view/${token}`;
+  return `${getAppUrl()}/view/${token}`;
 }
 
 export function buildShareInviteMailto(options: {
