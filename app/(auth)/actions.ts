@@ -1,6 +1,5 @@
 "use server";
 
-import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { signIn } from "@/auth";
@@ -35,17 +34,14 @@ export async function signupAction(
     };
   }
 
-  try {
-    await signIn("credentials", {
-      email: parsed.data.email,
-      password: parsed.data.password,
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Account created, but sign-in failed. Try logging in." };
-    }
-    throw error;
+  const result = await signIn("credentials", {
+    email: parsed.data.email,
+    password: parsed.data.password,
+    redirect: false,
+  });
+
+  if (result?.error) {
+    return { error: "Account created, but sign-in failed. Try logging in." };
   }
 
   redirect("/dashboard");
@@ -55,17 +51,14 @@ export async function loginAction(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  try {
-    await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Invalid email or password" };
-    }
-    throw error;
+  const result = await signIn("credentials", {
+    email: formData.get("email"),
+    password: formData.get("password"),
+    redirect: false,
+  });
+
+  if (result?.error) {
+    return { error: "Invalid email or password" };
   }
 
   redirect("/dashboard");
