@@ -2,6 +2,9 @@ const PRODUCTION_REQUIRED = ["DATABASE_URL", "AUTH_SECRET"] as const;
 
 export function getAppUrl() {
   let url =
+    (process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : null) ??
     process.env.AUTH_URL ??
     process.env.NEXT_PUBLIC_APP_URL ??
     "http://localhost:43123";

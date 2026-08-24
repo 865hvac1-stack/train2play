@@ -9,6 +9,19 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
 
+  // Railway may expose multiple domains — always send visitors to the canonical one.
+  const canonicalHost = process.env.RAILWAY_PUBLIC_DOMAIN;
+  if (
+    canonicalHost &&
+    req.nextUrl.hostname !== canonicalHost &&
+    !req.nextUrl.hostname.endsWith(".railway.internal")
+  ) {
+    const url = req.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = canonicalHost;
+    return NextResponse.redirect(url);
+  }
+
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isOnboardingPage = pathname === "/onboarding";
   const isProtected =
@@ -29,7 +42,7 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isAuthPage) {
-    return NextResponse.redirect(new URL("/onboarding", req.nextUrl.origin));
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }
 
   return NextResponse.next();
@@ -37,6 +50,7 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
+    "/",
     "/dashboard/:path*",
     "/athletes/:path*",
     "/pickup-players/:path*",
