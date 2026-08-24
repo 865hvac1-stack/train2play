@@ -7,28 +7,207 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  PLATFORM_ADMIN
+  ORG_ADMIN
+  COACH
+  STAFF
+  PARENT
+  ATHLETE
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  COACH
+  STAFF
+}
+
+enum MetricDirection {
+  HIGHER_IS_BETTER
+  LOWER_IS_BETTER
+}
+
+enum MetricSource {
+  SELF_REPORTED
+  COACH_ENTERED
+  TEST_EVENT
+  DEVICE
+  VERIFIED
+}
+
+model Organization {
+  id           String                   @id @default(cuid())
+  name         String
+  slug         String                   @unique
+  logoUrl      String?
+  primaryColor String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  memberships  OrganizationMembership[]
+  teams        Team[]
+  athleteMemberships AthleteMembership[]
+}
+
+model OrganizationMembership {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrgRole      @default(COACH)
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Team {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  sport          String
+  season         String?
+  createdAt      DateTime            @default(now())
+  athleteMemberships AthleteMembership[]
+
+  @@index([organizationId])
+}
+
+model AthleteProfile {
+  id              String              @id @default(cuid())
+  userId          String?             @unique
+  user            User?               @relation("AthleteProfileUser", fields: [userId], references: [id], onDelete: SetNull)
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime?
+  graduationYear  Int?
+  avatarUrl       String?
+  primarySport    String?
+  legacyAthleteId String?             @unique
+  legacyAthlete   Athlete?            @relation("LegacyAthleteProfile", fields: [legacyAthleteId], references: [id], onDelete: SetNull)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  sports          AthleteSport[]
+  memberships     AthleteMembership[]
+  guardianLinks   GuardianLink[]
+  metricEntries   MetricEntry[]
+
+  @@index([legacyAthleteId])
+}
+
+model AthleteSport {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  sport            String
+  position         String?
+  isPrimary        Boolean        @default(false)
+
+  @@unique([athleteProfileId, sport])
+}
+
+model AthleteMembership {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  organizationId   String
+  organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId           String?
+  team             Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  coachUserId      String?
+  coachUser        User?          @relation("AthleteMembershipCoach", fields: [coachUserId], references: [id], onDelete: SetNull)
+  startsAt         DateTime       @default(now())
+  endsAt           DateTime?
+
+  @@index([athleteProfileId])
+  @@index([organizationId])
+  @@index([coachUserId])
+}
+
+model GuardianLink {
+  id               String         @id @default(cuid())
+  guardianUserId   String
+  guardianUser     User           @relation("GuardianUser", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  relationship     String
+  consentGivenAt   DateTime?
+  canViewProgress  Boolean        @default(true)
+  canManageAccount Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+
+  @@unique([guardianUserId, athleteProfileId])
+  @@index([athleteProfileId])
+}
+
+model MetricDefinition {
+  id        String          @id @default(cuid())
+  sport     String
+  slug      String
+  name      String
+  category  String
+  unit      String
+  direction MetricDirection
+  inputType String          @default("number")
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  entries   MetricEntry[]
+
+  @@unique([sport, slug])
+  @@index([sport, isActive])
+}
+
+model MetricEntry {
+  id                 String           @id @default(cuid())
+  athleteProfileId   String
+  athleteProfile     AthleteProfile   @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  metricDefinitionId String
+  metricDefinition   MetricDefinition @relation(fields: [metricDefinitionId], references: [id], onDelete: Restrict)
+  value              Float
+  recordedAt         DateTime         @default(now())
+  source             MetricSource     @default(COACH_ENTERED)
+  verifiedAt         DateTime?
+  enteredByUserId    String?
+  enteredByUser      User?            @relation("MetricEntryEnteredBy", fields: [enteredByUserId], references: [id], onDelete: SetNull)
+  notes              String?
+  legacyMetricId     String?          @unique
+  legacyMetric       ProgressMetric?  @relation("LegacyMetricEntry", fields: [legacyMetricId], references: [id], onDelete: SetNull)
+  createdAt          DateTime         @default(now())
+
+  @@index([athleteProfileId])
+  @@index([metricDefinitionId])
+  @@index([athleteProfileId, recordedAt])
+}
+
 model User {
-  id                     String         @id @default(cuid())
-  name                   String
-  email                  String         @unique
-  passwordHash           String
-  role                   String         @default("COACH")
-  zipCode                String?
-  latitude               Float?
-  longitude              Float?
-  searchRadiusMiles      Int            @default(25)
-  pickupAlertsEnabled    Boolean        @default(true)
-  lookingForSport        String?
-  lookingForPositions    String?
-  minThrowingVelo        Float?
-  onboardingCompletedAt  DateTime?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-  athletes             Athlete[]
-  trainingPlans        TrainingPlan[]
-  trainingVideos       TrainingVideo[]
-  pickupInterests      PickupInterest[]
-  passwordResetTokens  PasswordResetToken[]
+  id                    String                   @id @default(cuid())
+  name                  String
+  email                 String                   @unique
+  passwordHash          String
+  role                  UserRole                 @default(COACH)
+  zipCode               String?
+  latitude              Float?
+  longitude             Float?
+  searchRadiusMiles     Int                      @default(25)
+  pickupAlertsEnabled   Boolean                  @default(true)
+  lookingForSport       String?
+  lookingForPositions   String?
+  minThrowingVelo       Float?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  athletes              Athlete[]
+  trainingPlans         TrainingPlan[]
+  trainingVideos        TrainingVideo[]
+  pickupInterests       PickupInterest[]
+  passwordResetTokens   PasswordResetToken[]
+  organizationMemberships OrganizationMembership[]
+  athleteProfile        AthleteProfile?          @relation("AthleteProfileUser")
+  coachedAthleteMemberships AthleteMembership[]  @relation("AthleteMembershipCoach")
+  guardianLinks         GuardianLink[]           @relation("GuardianUser")
+  metricEntriesEntered  MetricEntry[]            @relation("MetricEntryEnteredBy")
 }
 
 model PasswordResetToken {
@@ -45,45 +224,46 @@ model PasswordResetToken {
 }
 
 model Athlete {
-  id            String         @id @default(cuid())
-  coachId       String
-  coach         User           @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  firstName     String
-  lastName      String
-  dateOfBirth   DateTime?
-  sport         String
-  position      String?
-  notes         String?
-  rosterStatus  String         @default("ROSTER")
-  throws        String?
-  bats          String?
-  zipCode       String?
-  latitude      Float?
-  longitude     Float?
-  pickupType    String?
+  id                String            @id @default(cuid())
+  coachId           String
+  coach             User              @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime?
+  sport             String
+  position          String?
+  notes             String?
+  rosterStatus      String            @default("ROSTER")
+  throws            String?
+  bats              String?
+  zipCode           String?
+  latitude          Float?
+  longitude         Float?
+  pickupType        String?
   availabilityNotes String?
-  listedForPickup   Boolean      @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  trainingPlans TrainingPlan[]
-  progressMetrics ProgressMetric[]
-  progressGoals   ProgressGoal[]
-  shareLinks      ParentShareLink[]
-  trainingVideos  TrainingVideo[]
-  pickupInterests PickupInterest[]
+  listedForPickup   Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  trainingPlans     TrainingPlan[]
+  progressMetrics   ProgressMetric[]
+  progressGoals     ProgressGoal[]
+  shareLinks        ParentShareLink[]
+  trainingVideos    TrainingVideo[]
+  pickupInterests   PickupInterest[]
+  athleteProfile    AthleteProfile?   @relation("LegacyAthleteProfile")
 
   @@index([coachId])
   @@index([rosterStatus, listedForPickup])
 }
 
 model PickupInterest {
-  id                 String   @id @default(cuid())
-  interestedCoachId  String
-  interestedCoach    User     @relation(fields: [interestedCoachId], references: [id], onDelete: Cascade)
-  pickupAthleteId    String
-  pickupAthlete      Athlete  @relation(fields: [pickupAthleteId], references: [id], onDelete: Cascade)
-  message            String?
-  createdAt          DateTime @default(now())
+  id                String   @id @default(cuid())
+  interestedCoachId String
+  interestedCoach   User     @relation(fields: [interestedCoachId], references: [id], onDelete: Cascade)
+  pickupAthleteId   String
+  pickupAthlete     Athlete  @relation(fields: [pickupAthleteId], references: [id], onDelete: Cascade)
+  message           String?
+  createdAt         DateTime @default(now())
 
   @@unique([interestedCoachId, pickupAthleteId])
   @@index([pickupAthleteId])
@@ -151,15 +331,16 @@ model ParentShareLink {
 }
 
 model ProgressMetric {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   athleteId  String
-  athlete    Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  athlete    Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   label      String
   value      Float
   unit       String
-  recordedAt DateTime @default(now())
+  recordedAt DateTime     @default(now())
   notes      String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime     @default(now())
+  metricEntry MetricEntry? @relation("LegacyMetricEntry")
 
   @@index([athleteId])
   @@index([athleteId, label])

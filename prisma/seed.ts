@@ -3,6 +3,7 @@ import "dotenv/config";
 
 import { createPrismaClient } from "../lib/db";
 import { DEMO_VIDEO_URL } from "../lib/videos";
+import { runPhase1Foundation } from "../scripts/backfill-phase1";
 
 const prisma = createPrismaClient();
 
@@ -17,6 +18,7 @@ async function main() {
     console.log(
       "Skipping demo accounts. Set SEED_DEMO=true to load coach@example.com demo data.",
     );
+    await runPhase1Foundation();
     return;
   }
 
@@ -469,6 +471,8 @@ async function main() {
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
   console.log("Second coach (for nearby demo): coach2@example.com / password123");
+
+  await runPhase1Foundation();
 }
 
 main()

@@ -14,9 +14,9 @@ export const brand = {
   /** Portal label shown under the logo in the coach app */
   portalLabel: "Coach Portal",
   /** Marketing tagline on the home page */
-  tagline: "Train. Track. Perform.",
+  tagline: "Train Better. Play Better.",
   /** Secondary tagline for descriptions */
-  subtagline: "Train smarter. Play stronger.",
+  subtagline: "Training. Progress. Performance. One athlete profile.",
   /** One-line description for meta tags and auth pages */
   description:
     "Train2Play helps coaches manage rosters, film, velo, and pickup players — from training to game day.",

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { athleteSchema } from "@/lib/athletes";
+import { syncAthleteProfile } from "@/lib/athlete-profiles";
+import { requireAthleteAccess } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
@@ -34,7 +36,7 @@ export async function createAthleteAction(
     ? new Date(parsed.data.dateOfBirth)
     : null;
 
-  await prisma.athlete.create({
+  const athlete = await prisma.athlete.create({
     data: {
       coachId: user.id,
       firstName: parsed.data.firstName.trim(),
@@ -47,6 +49,8 @@ export async function createAthleteAction(
     },
   });
 
+  await syncAthleteProfile(athlete);
+
   revalidatePath("/dashboard");
   revalidatePath("/athletes");
   redirect("/athletes");
@@ -55,13 +59,7 @@ export async function createAthleteAction(
 export async function deleteAthleteAction(athleteId: string) {
   const user = await requireUser();
 
-  const athlete = await prisma.athlete.findFirst({
-    where: { id: athleteId, coachId: user.id },
-  });
-
-  if (!athlete) {
-    throw new Error("Athlete not found");
-  }
+  await requireAthleteAccess(prisma, user.id, athleteId, "edit");
 
   await prisma.athlete.delete({ where: { id: athleteId } });
 

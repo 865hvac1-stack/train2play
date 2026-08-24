@@ -1,6 +1,6 @@
 # Train2Play — Architecture Audit & Phase 1 Plan
 
-**Status:** Awaiting TJ approval before major structural changes  
+**Status:** Phase 1 foundation in progress (schema + backfill deployed)  
 **Date:** August 24, 2026  
 **Live deploy:** GitHub → Railway (PostgreSQL, Docker)  
 **Principle:** *The athlete is the center of the platform.*

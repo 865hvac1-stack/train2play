@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
+import { ensureOrganizationMembership } from "@/lib/organizations";
 
 export const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -26,11 +27,15 @@ export async function createUser(input: SignupInput) {
 
   const passwordHash = await bcrypt.hash(data.password, 12);
 
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name: data.name.trim(),
       email,
       passwordHash,
     },
   });
+
+  await ensureOrganizationMembership(user.id);
+
+  return user;
 }

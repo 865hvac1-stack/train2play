@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { progressMetricSchema } from "@/lib/progress";
+import { requireAthleteAccess } from "@/lib/authz";
+import { syncMetricEntryForProgressMetric } from "@/lib/metrics/sync";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
@@ -11,10 +13,9 @@ export type ProgressActionState = {
   success?: boolean;
 };
 
-async function getOwnedAthlete(athleteId: string, coachId: string) {
-  return prisma.athlete.findFirst({
-    where: { id: athleteId, coachId },
-  });
+async function getAuthorizedAthlete(athleteId: string, userId: string) {
+  await requireAthleteAccess(prisma, userId, athleteId, "edit");
+  return prisma.athlete.findUnique({ where: { id: athleteId } });
 }
 
 export async function createProgressMetricAction(
@@ -23,7 +24,7 @@ export async function createProgressMetricAction(
   formData: FormData,
 ): Promise<ProgressActionState> {
   const user = await requireUser();
-  const athlete = await getOwnedAthlete(athleteId, user.id);
+  const athlete = await getAuthorizedAthlete(athleteId, user.id);
 
   if (!athlete) {
     return { error: "Athlete not found" };
@@ -41,18 +42,32 @@ export async function createProgressMetricAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  await prisma.progressMetric.create({
+  const recordedAt = parsed.data.recordedAt
+    ? new Date(parsed.data.recordedAt)
+    : new Date();
+
+  const metric = await prisma.progressMetric.create({
     data: {
       athleteId,
       label: parsed.data.label.trim(),
       value: parsed.data.value,
       unit: parsed.data.unit.trim(),
-      recordedAt: parsed.data.recordedAt
-        ? new Date(parsed.data.recordedAt)
-        : new Date(),
+      recordedAt,
       notes: parsed.data.notes?.trim() || null,
     },
   });
+
+  await syncMetricEntryForProgressMetric(
+    metric.id,
+    athleteId,
+    user.id,
+    metric.label,
+    athlete.sport,
+    metric.unit,
+    metric.value,
+    metric.recordedAt,
+    metric.notes,
+  );
 
   revalidatePath(`/athletes/${athleteId}`);
   revalidatePath("/dashboard");
@@ -64,11 +79,12 @@ export async function deleteProgressMetricAction(
   metricId: string,
 ) {
   const user = await requireUser();
+  await requireAthleteAccess(prisma, user.id, athleteId, "edit");
 
   const metric = await prisma.progressMetric.findFirst({
     where: {
       id: metricId,
-      athlete: { id: athleteId, coachId: user.id },
+      athleteId,
     },
   });
 
