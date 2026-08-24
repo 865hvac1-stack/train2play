@@ -29,6 +29,8 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Training plans with scheduled workouts
 - Mark workouts complete and track plan progress
 - Log performance metrics on athlete profiles (times, weights, jumps)
+- Progress charts when multiple entries exist for the same metric
+- Share read-only family links with parents (no account needed)
 - Dashboard upcoming workouts for the week
 - Centralized brand configuration
 

@@ -6,7 +6,10 @@ import { generateShareToken } from "@/lib/share";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
-export async function createShareLinkAction(athleteId: string, label?: string) {
+export async function createShareLinkAction(
+  athleteId: string,
+  parentEmail?: string,
+) {
   const user = await requireUser();
 
   const athlete = await prisma.athlete.findFirst({
@@ -17,11 +20,14 @@ export async function createShareLinkAction(athleteId: string, label?: string) {
     throw new Error("Athlete not found");
   }
 
+  const normalizedEmail = parentEmail?.trim().toLowerCase() || null;
+
   const link = await prisma.parentShareLink.create({
     data: {
       athleteId,
       token: generateShareToken(),
-      label: label?.trim() || "Family view",
+      label: normalizedEmail ? `Sent to ${normalizedEmail}` : "Family view",
+      parentEmail: normalizedEmail,
     },
   });
 

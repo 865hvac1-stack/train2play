@@ -39,13 +39,14 @@ model Athlete {
 }
 
 model ParentShareLink {
-  id        String    @id @default(cuid())
-  athleteId String
-  athlete   Athlete   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  token     String    @unique
-  label     String?
-  createdAt DateTime  @default(now())
-  revokedAt DateTime?
+  id          String    @id @default(cuid())
+  athleteId   String
+  athlete     Athlete   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  label       String?
+  parentEmail String?
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
 
   @@index([athleteId])
   @@index([token])

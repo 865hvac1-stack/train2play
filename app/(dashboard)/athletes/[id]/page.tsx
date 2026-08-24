@@ -45,6 +45,7 @@ export default async function AthleteDetailPage({
   const athlete = await prisma.athlete.findFirst({
     where: { id, coachId: user.id },
     include: {
+      coach: { select: { name: true } },
       trainingPlans: {
         where: { status: "ACTIVE" },
         include: {
@@ -232,7 +233,12 @@ export default async function AthleteDetailPage({
             </CardContent>
           </Card>
 
-          <ParentSharePanel athleteId={athlete.id} links={athlete.shareLinks} />
+          <ParentSharePanel
+            athleteId={athlete.id}
+            athleteName={`${athlete.firstName} ${athlete.lastName}`}
+            coachName={athlete.coach.name}
+            links={athlete.shareLinks}
+          />
         </div>
       </div>
     </DashboardShell>

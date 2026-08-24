@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import { AthleteCard, EmptyAthletesState } from "@/components/athlete-card";
+import { AthleteRoster } from "@/components/athlete-roster";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/session";
@@ -14,6 +14,11 @@ export default async function AthletesPage() {
     where: { coachId: user.id },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
+
+  const serializedAthletes = athletes.map((athlete) => ({
+    ...athlete,
+    dateOfBirth: athlete.dateOfBirth?.toISOString() ?? null,
+  }));
 
   return (
     <DashboardShell
@@ -31,15 +36,7 @@ export default async function AthletesPage() {
         />
       }
     >
-      {athletes.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {athletes.map((athlete) => (
-            <AthleteCard key={athlete.id} athlete={athlete} />
-          ))}
-        </div>
-      ) : (
-        <EmptyAthletesState />
-      )}
+      <AthleteRoster athletes={serializedAthletes} />
     </DashboardShell>
   );
 }

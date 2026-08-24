@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, LayoutDashboard, Menu, Users } from "lucide-react";
+import { Calendar, ClipboardList, LayoutDashboard, Menu, Users } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/athletes", label: "Athletes", icon: Users },
   { href: "/training", label: "Training", icon: ClipboardList },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
