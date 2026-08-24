@@ -253,6 +253,46 @@ async function main() {
     }
   }
 
+  const existingVideos = await prisma.trainingVideo.count({
+    where: { coachId: coach.id },
+  });
+
+  if (existingVideos === 0) {
+    const ethan = await prisma.athlete.findFirst({
+      where: { coachId: coach.id, firstName: "Ethan" },
+    });
+
+    await prisma.trainingVideo.create({
+      data: {
+        coachId: coach.id,
+        athleteId: ethan?.id ?? null,
+        title: "Route break — coaching example",
+        description: "Sample clip for drawing arrows and adding written direction.",
+        sourceType: "URL",
+        videoUrl:
+          "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        annotations: {
+          create: {
+            timestampMs: 3000,
+            label: "Plant foot",
+            note: "Drive off the inside foot and stay low through the break.",
+            strokes: JSON.stringify([
+              {
+                tool: "arrow",
+                color: "#059669",
+                width: 4,
+                points: [
+                  { x: 0.35, y: 0.55 },
+                  { x: 0.55, y: 0.45 },
+                ],
+              },
+            ]),
+          },
+        },
+      },
+    });
+  }
+
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
 }

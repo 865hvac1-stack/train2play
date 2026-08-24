@@ -15,3 +15,8 @@ export async function requireUser() {
 
   return session.user;
 }
+
+export async function requireCoachId() {
+  const user = await requireUser();
+  return user.id;
+}

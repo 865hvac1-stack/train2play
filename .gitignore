@@ -38,6 +38,9 @@ yarn-error.log*
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# uploaded videos
+/public/uploads/
+
 # vercel
 .vercel
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, ClipboardList, Download, Printer, Target, Trash2, TrendingUp } from "lucide-react";
+import { Calendar, ClipboardList, Download, Printer, Target, Trash2, TrendingUp, Video } from "lucide-react";
 
 import { deleteAthleteAction } from "@/app/(dashboard)/athletes/actions";
 import { deleteProgressMetricAction } from "@/app/(dashboard)/athletes/progress-actions";
@@ -25,6 +25,7 @@ import {
 } from "@/lib/progress";
 import { isEmailConfigured } from "@/lib/settings";
 import { requireUser } from "@/lib/session";
+import { getVideosForAthlete } from "@/lib/videos-server";
 import { prisma } from "@/lib/db";
 
 function formatBirthDate(date: Date | null) {
@@ -70,6 +71,8 @@ export default async function AthleteDetailPage({
   if (!athlete) {
     notFound();
   }
+
+  const athleteVideos = await getVideosForAthlete(user.id, athlete.id);
 
   const chartMetrics = athlete.progressMetrics.map((metric) => ({
     id: metric.id,
@@ -198,6 +201,51 @@ export default async function AthleteDetailPage({
                     Create a plan
                   </Link>{" "}
                   and assign it to this athlete.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Video className="h-5 w-5" />
+                    Video coaching
+                  </CardTitle>
+                  <CardDescription>
+                    Film review with on-frame drawings and written direction.
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" render={<Link href={`/videos/new?athleteId=${athlete.id}`}>Add video</Link>} />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {athleteVideos.length > 0 ? (
+                athleteVideos.map((video) => (
+                  <Link
+                    key={video.id}
+                    href={`/videos/${video.id}`}
+                    className="block rounded-lg border border-slate-200 p-4 transition-colors hover:bg-slate-50"
+                  >
+                    <p className="font-medium text-slate-900">{video.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {video._count.annotations} coaching note
+                      {video._count.annotations === 1 ? "" : "s"}
+                    </p>
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-lg border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+                  No videos yet.{" "}
+                  <Link
+                    href={`/videos/new?athleteId=${athlete.id}`}
+                    className="font-medium text-emerald-700 hover:underline"
+                  >
+                    Upload film
+                  </Link>{" "}
+                  to draw coaching notes on key moments.
                 </div>
               )}
             </CardContent>

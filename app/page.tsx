@@ -76,10 +76,13 @@ export default async function HomePage() {
                 "Build and manage your athlete roster",
                 "Create training plans with scheduled workouts",
                 "Track workout completion and progress metrics",
+                "Set performance goals with visual progress tracking",
+                "Print reports or save as PDF from your browser",
                 "View workouts on a monthly calendar",
                 "Team reports with CSV export",
                 "Duplicate training plans across athletes",
                 "Share read-only family links with parents",
+                "Upload film and draw coaching notes on video",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-slate-700">
                   <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />

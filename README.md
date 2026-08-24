@@ -29,7 +29,9 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Training plans with scheduled workouts
 - Mark workouts complete and track plan progress
 - Log performance metrics on athlete profiles (times, weights, jumps)
+- Set performance goals with progress bars toward targets
 - Progress charts when multiple entries exist for the same metric
+- Print-friendly athlete and team reports (save as PDF from browser)
 - Monthly workout calendar across all training plans
 - Team reports with per-athlete completion rates and CSV export
 - Duplicate training plans to reuse programs across athletes
@@ -39,6 +41,15 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Optional automated parent emails via Resend (RESEND_API_KEY)
 - Dashboard upcoming workouts for the week
 - Centralized brand configuration
+- Video coaching library — upload or link MP4 clips
+- Draw arrows, circles, and pen marks on paused frames
+- Save written coaching direction at each timestamp
+
+## Video coaching
+
+Upload game film from your phone or paste a **direct MP4 link**. Pause at any moment, draw on the frame (pen, arrow, circle), and save written direction below the video. Saved notes appear in a sidebar — click to jump back to that timestamp.
+
+**Note:** YouTube and other embed links cannot be drawn on. Upload the file or use a direct video URL instead.
 
 ## Tech stack
 

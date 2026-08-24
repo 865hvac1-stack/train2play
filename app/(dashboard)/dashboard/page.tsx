@@ -40,6 +40,7 @@ export default async function DashboardPage() {
     upcomingWorkouts,
     metricCount,
     goalCount,
+    videoCount,
   ] = await Promise.all([
     prisma.athlete.count({ where: { coachId: user.id } }),
     prisma.trainingPlan.count({
@@ -93,6 +94,9 @@ export default async function DashboardPage() {
     prisma.progressGoal.count({
       where: { athlete: { coachId: user.id } },
     }),
+    prisma.trainingVideo.count({
+      where: { coachId: user.id },
+    }),
   ]);
 
   const onboardingSteps = [
@@ -119,6 +123,12 @@ export default async function DashboardPage() {
       label: "Set a performance goal",
       href: athleteCount > 0 ? `/athletes/${recentAthletes[0]?.id ?? ""}` : "/athletes/new",
       done: goalCount > 0,
+    },
+    {
+      id: "video",
+      label: "Add a coaching video",
+      href: "/videos/new",
+      done: videoCount > 0,
     },
   ];
 

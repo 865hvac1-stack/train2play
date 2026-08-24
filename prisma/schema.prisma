@@ -17,6 +17,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   athletes      Athlete[]
   trainingPlans TrainingPlan[]
+  trainingVideos TrainingVideo[]
 }
 
 model Athlete {
@@ -35,8 +36,41 @@ model Athlete {
   progressMetrics ProgressMetric[]
   progressGoals   ProgressGoal[]
   shareLinks      ParentShareLink[]
+  trainingVideos  TrainingVideo[]
 
   @@index([coachId])
+}
+
+model TrainingVideo {
+  id          String            @id @default(cuid())
+  coachId     String
+  coach       User              @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  athleteId   String?
+  athlete     Athlete?          @relation(fields: [athleteId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  sourceType  String            @default("URL")
+  videoUrl    String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  annotations VideoAnnotation[]
+
+  @@index([coachId])
+  @@index([athleteId])
+}
+
+model VideoAnnotation {
+  id          String        @id @default(cuid())
+  videoId     String
+  video       TrainingVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  timestampMs Int
+  label       String?
+  note        String?
+  strokes     String
+  createdAt   DateTime      @default(now())
+
+  @@index([videoId])
+  @@index([videoId, timestampMs])
 }
 
 model ProgressGoal {
