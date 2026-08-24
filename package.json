@@ -10,7 +10,7 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "prisma migrate dev && tsx prisma/seed.ts"
+    "db:setup": "prisma migrate dev && prisma generate && tsx prisma/seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

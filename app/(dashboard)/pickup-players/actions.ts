@@ -35,6 +35,10 @@ export async function createPickupPlayerAction(
 ): Promise<PickupPlayerActionState> {
   const user = await requireUser();
 
+  const throwingVelo = parseOptionalNumber(formData.get("throwingVelo"));
+  const batSpeed = parseOptionalNumber(formData.get("batSpeed"));
+  const exitVelo = parseOptionalNumber(formData.get("exitVelo"));
+
   const parsed = pickupPlayerSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
@@ -43,9 +47,6 @@ export async function createPickupPlayerAction(
     throws: formData.get("throws") || undefined,
     bats: formData.get("bats") || undefined,
     notes: formData.get("notes") || undefined,
-    throwingVelo: parseOptionalNumber(formData.get("throwingVelo")),
-    batSpeed: parseOptionalNumber(formData.get("batSpeed")),
-    exitVelo: parseOptionalNumber(formData.get("exitVelo")),
   });
 
   if (!parsed.success) {
@@ -53,24 +54,24 @@ export async function createPickupPlayerAction(
   }
 
   const metricEntries: { label: string; value: number; unit: string }[] = [];
-  if (parsed.data.throwingVelo) {
+  if (throwingVelo) {
     metricEntries.push({
       label: PROFILE_METRICS[0].label,
-      value: parsed.data.throwingVelo,
+      value: throwingVelo,
       unit: PROFILE_METRICS[0].unit,
     });
   }
-  if (parsed.data.batSpeed) {
+  if (batSpeed) {
     metricEntries.push({
       label: PROFILE_METRICS[1].label,
-      value: parsed.data.batSpeed,
+      value: batSpeed,
       unit: PROFILE_METRICS[1].unit,
     });
   }
-  if (parsed.data.exitVelo) {
+  if (exitVelo) {
     metricEntries.push({
       label: PROFILE_METRICS[2].label,
-      value: parsed.data.exitVelo,
+      value: exitVelo,
       unit: PROFILE_METRICS[2].unit,
     });
   }
