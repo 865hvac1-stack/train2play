@@ -32,22 +32,23 @@ export default async function VideoDetailPage({
           : video.description ?? "Pause, draw on the frame, and save coaching notes."
       }
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
           <Badge variant="secondary">{video.sourceType === "UPLOAD" ? "Upload" : "URL"}</Badge>
           <Button
             variant="outline"
+            size="sm"
             nativeButton={false}
             render={
               <Link href="/videos">
                 <ArrowLeft className="size-4" />
-                All videos
+                <span className="hidden sm:inline">All videos</span>
               </Link>
             }
           />
           <form action={deleteVideo}>
-            <Button type="submit" variant="outline" className="text-destructive">
+            <Button type="submit" variant="outline" size="sm" className="text-destructive">
               <Trash2 className="size-4" />
-              Delete
+              <span className="hidden sm:inline">Delete</span>
             </Button>
           </form>
         </div>

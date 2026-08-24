@@ -37,7 +37,7 @@ export async function DashboardShell({
         description={description}
         action={action}
       />
-      <main className="flex-1 p-4 md:p-6">{children}</main>
+      <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">{children}</main>
     </>
   );
 }
@@ -63,9 +63,11 @@ export async function DashboardLayoutWrapper({
   }
 
   return (
-    <div className="flex min-h-full bg-brand-light/30">
+    <div className="flex min-h-full min-w-0 overflow-x-hidden bg-brand-light/30">
       <AppSidebar />
-      <div className="flex min-h-full flex-1 flex-col">{children}</div>
+      <div className="flex min-h-full min-w-0 flex-1 flex-col overflow-x-hidden">
+        {children}
+      </div>
     </div>
   );
 }

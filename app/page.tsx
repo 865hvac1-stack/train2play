@@ -45,16 +45,16 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-full t2p-page-gradient">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+    <div className="min-h-full max-w-[100vw] overflow-x-hidden t2p-page-gradient">
+      <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
         <BrandLogoLarge />
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button variant="ghost" render={<Link href="/login">Sign in</Link>} />
           <Button render={<Link href="/signup">Get started</Link>} />
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-6 pb-16 pt-10 md:pt-16">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pb-16 pt-8 sm:gap-20 sm:px-6 md:pt-16">
         <section className="mx-auto max-w-3xl space-y-6 text-center">
           <div className="flex justify-center">
             <Image

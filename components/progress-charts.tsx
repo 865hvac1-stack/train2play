@@ -85,7 +85,7 @@ export function ProgressCharts({ metrics }: ProgressChartsProps) {
               {group.label}{" "}
               <span className="font-normal text-slate-500">({group.unit})</span>
             </h4>
-            <div className="h-48 w-full rounded-lg border border-slate-200 bg-white p-2">
+            <div className="h-48 w-full min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

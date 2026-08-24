@@ -290,7 +290,7 @@ export function VideoAnnotator({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full min-w-0 space-y-6 overflow-x-hidden">
       <div
         ref={containerRef}
         className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-xl bg-black shadow-lg"
@@ -300,7 +300,7 @@ export function VideoAnnotator({
           src={videoUrl}
           controls
           preload="metadata"
-          className="aspect-video w-full bg-black"
+          className="aspect-video h-auto w-full max-w-full bg-black"
           playsInline
           onPlay={handleVideoPlay}
           onPause={handleVideoPause}

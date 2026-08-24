@@ -92,18 +92,18 @@ export function WorkoutCalendar({ monthParam, workouts }: WorkoutCalendarProps) 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-2 grid grid-cols-7 gap-2">
+        <div className="mb-2 grid grid-cols-7 gap-0.5 sm:gap-2">
           {weekdayLabels.map((label) => (
             <div
               key={label}
-              className="text-center text-xs font-medium uppercase tracking-wide text-slate-500"
+              className="truncate text-center text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-xs"
             >
               {label}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-2">
           {days.map(({ date, inMonth }) => {
             const key = dateKey(date);
             const dayWorkouts = workoutsByDay[key] ?? [];
@@ -113,7 +113,7 @@ export function WorkoutCalendar({ monthParam, workouts }: WorkoutCalendarProps) 
               <div
                 key={key}
                 className={cn(
-                  "min-h-28 rounded-lg border p-2",
+                  "min-h-16 overflow-hidden rounded-md border p-1 sm:min-h-28 sm:rounded-lg sm:p-2",
                   inMonth ? "border-slate-200 bg-white" : "border-transparent bg-slate-50/80",
                   isToday && inMonth && "ring-2 ring-brand ring-offset-1",
                 )}

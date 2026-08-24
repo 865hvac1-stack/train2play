@@ -65,7 +65,7 @@ export function BrandLogoLarge() {
         alt={brand.name}
         width={220}
         height={220}
-        className="h-16 w-auto object-contain sm:h-20"
+        className="h-12 w-auto max-w-[70vw] object-contain sm:h-16 md:h-20"
         priority
       />
     </Link>

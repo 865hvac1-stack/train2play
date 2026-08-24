@@ -114,33 +114,39 @@ export default async function AthleteDetailPage({
           : "Player profile, training plans, and progress"
       }
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
           {athlete.rosterStatus === "PICKUP" ? (
             <PromotePickupButton athleteId={athlete.id} />
           ) : null}
           <Button
             variant="outline"
+            size="sm"
             render={
               <Link href={`/athletes/${athlete.id}/print`}>
                 <Printer className="h-4 w-4" />
-                Print
+                <span className="hidden sm:inline">Print</span>
               </Link>
             }
           />
           <Button
             variant="outline"
+            size="sm"
             render={
               <a href={`/api/export/athlete/${athlete.id}`}>
                 <Download className="h-4 w-4" />
-                Export CSV
+                <span className="hidden sm:inline">Export</span>
               </a>
             }
           />
-          <Button variant="outline" render={<Link href="/athletes">Back to roster</Link>} />
+          <Button
+            variant="outline"
+            size="sm"
+            render={<Link href="/athletes">Back</Link>}
+          />
         </div>
       }
     >
-      <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="mx-auto grid w-full max-w-5xl min-w-0 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6 lg:col-span-2">
           <PlayerProfileStats
             stats={profileStats}
