@@ -62,7 +62,7 @@ export function LoginForm({
             />
           </div>
           {resetSuccess ? (
-            <p className="text-sm text-emerald-700">
+            <p className="text-sm text-[#FF6600]">
               Password updated. Sign in with your new password.
             </p>
           ) : null}
@@ -87,7 +87,7 @@ export function LoginForm({
         </p>
         <p className="mt-2 text-center text-sm text-slate-600">
           New coach?{" "}
-          <Link href="/signup" className="font-medium text-emerald-700 hover:underline">
+          <Link href="/signup" className="font-medium text-[#FF6600] hover:underline">
             Create an account
           </Link>
         </p>
@@ -154,11 +154,11 @@ export function SignupForm() {
             />
             <span className="text-sm text-slate-700">
               I agree to the{" "}
-              <Link href="/terms" className="font-medium text-emerald-700 hover:underline">
+              <Link href="/terms" className="font-medium text-[#FF6600] hover:underline">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="font-medium text-emerald-700 hover:underline">
+              <Link href="/privacy" className="font-medium text-[#FF6600] hover:underline">
                 Privacy Policy
               </Link>
               .
@@ -177,7 +177,7 @@ export function SignupForm() {
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-emerald-700 hover:underline">
+          <Link href="/login" className="font-medium text-[#FF6600] hover:underline">
             Sign in
           </Link>
         </p>
