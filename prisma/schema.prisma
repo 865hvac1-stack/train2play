@@ -8,28 +8,66 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  role         String    @default("COACH")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  athletes     Athlete[]
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("COACH")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  athletes      Athlete[]
+  trainingPlans TrainingPlan[]
 }
 
 model Athlete {
+  id            String         @id @default(cuid())
+  coachId       String
+  coach         User           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime?
+  sport         String
+  position      String?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  trainingPlans TrainingPlan[]
+
+  @@index([coachId])
+}
+
+model TrainingPlan {
   id          String    @id @default(cuid())
   coachId     String
   coach       User      @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  firstName   String
-  lastName    String
-  dateOfBirth DateTime?
-  sport       String
-  position    String?
-  notes       String?
+  athleteId   String?
+  athlete     Athlete?  @relation(fields: [athleteId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  status      String    @default("ACTIVE")
+  startDate   DateTime?
+  endDate     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  workouts    Workout[]
 
   @@index([coachId])
+  @@index([athleteId])
+}
+
+model Workout {
+  id              String       @id @default(cuid())
+  trainingPlanId  String
+  trainingPlan    TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  scheduledDate   DateTime?
+  durationMinutes Int?
+  completed       Boolean      @default(false)
+  completedAt     DateTime?
+  sortOrder       Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([trainingPlanId])
 }

@@ -61,6 +61,117 @@ async function main() {
     });
   }
 
+  const existingPlans = await prisma.trainingPlan.count({
+    where: { coachId: coach.id },
+  });
+
+  if (existingPlans === 0) {
+    const maya = await prisma.athlete.findFirst({
+      where: { coachId: coach.id, firstName: "Maya" },
+    });
+    const ethan = await prisma.athlete.findFirst({
+      where: { coachId: coach.id, firstName: "Ethan" },
+    });
+
+    if (maya) {
+      await prisma.trainingPlan.create({
+        data: {
+          coachId: coach.id,
+          athleteId: maya.id,
+          title: "Pre-season basketball conditioning",
+          description:
+            "Build endurance and court agility before the season opener.",
+          status: "ACTIVE",
+          startDate: new Date("2026-08-01"),
+          endDate: new Date("2026-09-15"),
+          workouts: {
+            create: [
+              {
+                title: "Agility ladder and footwork",
+                description: "3 rounds: ladder drills, defensive slides, closeouts.",
+                scheduledDate: new Date("2026-08-25"),
+                durationMinutes: 45,
+                completed: true,
+                completedAt: new Date("2026-08-24"),
+                sortOrder: 0,
+              },
+              {
+                title: "Ball handling circuit",
+                description: "Two-ball dribbling, cone weave, finish at rim.",
+                scheduledDate: new Date("2026-08-27"),
+                durationMinutes: 50,
+                sortOrder: 1,
+              },
+              {
+                title: "Scrimmage conditioning",
+                description: "Half-court 3-on-3 with sprint penalties.",
+                scheduledDate: new Date("2026-08-29"),
+                durationMinutes: 60,
+                sortOrder: 2,
+              },
+            ],
+          },
+        },
+      });
+    }
+
+    if (ethan) {
+      await prisma.trainingPlan.create({
+        data: {
+          coachId: coach.id,
+          athleteId: ethan.id,
+          title: "WR route-running progression",
+          description: "Weekly route tree reps with acceleration focus.",
+          status: "ACTIVE",
+          startDate: new Date("2026-08-18"),
+          workouts: {
+            create: [
+              {
+                title: "Route tree reps",
+                description: "Slant, out, post, go — 10 reps each side.",
+                scheduledDate: new Date("2026-08-26"),
+                durationMinutes: 40,
+                sortOrder: 0,
+              },
+              {
+                title: "Release and burst drills",
+                description: "Press releases, stem work, burst off break point.",
+                scheduledDate: new Date("2026-08-28"),
+                durationMinutes: 35,
+                sortOrder: 1,
+              },
+            ],
+          },
+        },
+      });
+    }
+
+    await prisma.trainingPlan.create({
+      data: {
+        coachId: coach.id,
+        title: "General off-season template",
+        description: "Reusable plan for any athlete during off-season weeks.",
+        status: "ACTIVE",
+        workouts: {
+          create: [
+            {
+              title: "Dynamic warm-up and mobility",
+              description: "Band work, hip openers, light plyometrics.",
+              durationMinutes: 20,
+              sortOrder: 0,
+            },
+            {
+              title: "Strength and core",
+              description: "Bodyweight squats, lunges, planks, push-ups.",
+              durationMinutes: 30,
+              sortOrder: 1,
+            },
+          ],
+        },
+      },
+    });
+  }
+
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
 }

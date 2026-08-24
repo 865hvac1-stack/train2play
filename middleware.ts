@@ -7,7 +7,9 @@ export default auth((req) => {
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/athletes");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/athletes") ||
+    pathname.startsWith("/training");
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -23,5 +25,11 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/athletes/:path*", "/login", "/signup"],
+  matcher: [
+    "/dashboard/:path*",
+    "/athletes/:path*",
+    "/training/:path*",
+    "/login",
+    "/signup",
+  ],
 };

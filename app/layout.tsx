@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { brand } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Youth Athlete Training",
-  description: "Training platform for youth athletes and coaches",
+  title: brand.name,
+  description: brand.description,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
