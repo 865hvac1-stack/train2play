@@ -347,7 +347,7 @@ async function main() {
             strokes: JSON.stringify([
               {
                 tool: "arrow",
-                color: "#059669",
+                color: "#FF6600",
                 width: 4,
                 points: [
                   { x: 0.35, y: 0.55 },

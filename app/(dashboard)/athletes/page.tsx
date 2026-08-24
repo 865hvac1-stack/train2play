@@ -34,7 +34,7 @@ export default async function AthletesPage() {
             }
           />
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+           
             nativeButton={false}
             render={
               <Link href="/athletes/new">

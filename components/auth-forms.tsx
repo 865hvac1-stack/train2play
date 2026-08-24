@@ -62,32 +62,23 @@ export function LoginForm({
             />
           </div>
           {resetSuccess ? (
-            <p className="text-sm text-[#FF6600]">
-              Password updated. Sign in with your new password.
-            </p>
+            <p className="text-sm text-primary">Password updated. Sign in with your new password.</p>
           ) : null}
           {state.error ? (
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
-          <Button
-            type="submit"
-            className="w-full bg-[#FF6600] hover:bg-[#e55a00] text-white"
-            disabled={pending}
-          >
+          <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Signing in..." : "Sign in"}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
-          <Link
-            href="/forgot-password"
-            className="font-medium text-[#FF6600] hover:underline"
-          >
+          <Link href="/forgot-password" className="font-medium text-primary hover:underline">
             Forgot password?
           </Link>
         </p>
         <p className="mt-2 text-center text-sm text-slate-600">
           New coach?{" "}
-          <Link href="/signup" className="font-medium text-[#FF6600] hover:underline">
+          <Link href="/signup" className="font-medium text-primary hover:underline">
             Create an account
           </Link>
         </p>
@@ -154,11 +145,11 @@ export function SignupForm() {
             />
             <span className="text-sm text-slate-700">
               I agree to the{" "}
-              <Link href="/terms" className="font-medium text-[#FF6600] hover:underline">
+              <Link href="/terms" className="font-medium text-primary hover:underline">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="font-medium text-[#FF6600] hover:underline">
+              <Link href="/privacy" className="font-medium text-primary hover:underline">
                 Privacy Policy
               </Link>
               .
@@ -167,17 +158,13 @@ export function SignupForm() {
           {state.error ? (
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
-          <Button
-            type="submit"
-            className="w-full bg-[#FF6600] hover:bg-[#e55a00] text-white"
-            disabled={pending}
-          >
+          <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Creating account..." : "Create account"}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[#FF6600] hover:underline">
+          <Link href="/login" className="font-medium text-primary hover:underline">
             Sign in
           </Link>
         </p>

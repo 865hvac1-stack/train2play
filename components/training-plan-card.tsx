@@ -100,7 +100,7 @@ export function EmptyTrainingPlansState() {
       <CardContent>
         <Link
           href="/training/new"
-          className="inline-flex text-sm font-medium text-emerald-700 hover:underline"
+          className="inline-flex text-sm font-medium text-primary hover:underline"
         >
           Create your first plan →
         </Link>

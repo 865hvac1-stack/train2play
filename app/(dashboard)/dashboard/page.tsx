@@ -138,7 +138,7 @@ export default async function DashboardPage() {
       description="Here's an overview of your athletes and training plans."
       action={
         <Button
-          className="bg-emerald-600 hover:bg-emerald-700"
+         
           render={
             <Link href="/athletes/new">
               <Plus className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default async function DashboardPage() {
             </h2>
             <Link
               href="/training"
-              className="text-sm font-medium text-emerald-700 hover:underline"
+              className="text-sm font-medium text-primary hover:underline"
             >
               All plans
             </Link>
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
             </h2>
             <Link
               href="/training"
-              className="text-sm font-medium text-emerald-700 hover:underline"
+              className="text-sm font-medium text-primary hover:underline"
             >
               View all
             </Link>
@@ -269,7 +269,7 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                 
                   render={
                     <Link href="/training/new">
                       <Plus className="h-4 w-4" />
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
             </h2>
             <Link
               href="/athletes"
-              className="text-sm font-medium text-emerald-700 hover:underline"
+              className="text-sm font-medium text-primary hover:underline"
             >
               View all
             </Link>
@@ -312,7 +312,7 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                 
                   render={
                     <Link href="/athletes/new">
                       <Plus className="h-4 w-4" />

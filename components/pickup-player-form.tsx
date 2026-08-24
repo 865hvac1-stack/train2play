@@ -19,7 +19,7 @@ function SubmitButton() {
   return (
     <Button
       type="submit"
-      className="bg-emerald-600 hover:bg-emerald-700"
+     
       disabled={pending}
     >
       {pending ? "Adding…" : "Add pickup player"}

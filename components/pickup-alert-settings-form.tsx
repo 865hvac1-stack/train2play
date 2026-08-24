@@ -134,11 +134,11 @@ export function PickupAlertSettingsForm({ defaults }: PickupAlertSettingsFormPro
           </div>
 
           {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
-          {state.success ? <p className="text-sm text-emerald-700">{state.success}</p> : null}
+          {state.success ? <p className="text-sm text-primary">{state.success}</p> : null}
 
           <Button
             type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700"
+           
             disabled={pending}
           >
             {pending ? "Saving..." : "Save pickup alerts"}

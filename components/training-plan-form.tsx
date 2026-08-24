@@ -80,7 +80,7 @@ export function TrainingPlanForm({ athletes }: TrainingPlanFormProps) {
       <div className="flex justify-end">
         <Button
           type="submit"
-          className="bg-emerald-600 hover:bg-emerald-700"
+         
           disabled={pending}
         >
           {pending ? "Creating..." : "Create plan"}

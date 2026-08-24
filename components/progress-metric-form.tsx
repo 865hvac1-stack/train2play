@@ -85,12 +85,12 @@ export function ProgressMetricForm({ athleteId }: ProgressMetricFormProps) {
         <p className="text-sm text-destructive">{state.error}</p>
       ) : null}
       {state.success ? (
-        <p className="text-sm text-emerald-700">Metric logged successfully.</p>
+        <p className="text-sm text-primary">Metric logged successfully.</p>
       ) : null}
 
       <Button
         type="submit"
-        className="bg-emerald-600 hover:bg-emerald-700"
+       
         disabled={pending}
       >
         {pending ? "Saving..." : "Log metric"}

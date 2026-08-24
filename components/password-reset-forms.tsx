@@ -52,18 +52,18 @@ export function ForgotPasswordForm() {
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
           {state.success ? (
-            <p className="text-sm text-emerald-700">{state.success}</p>
+            <p className="text-sm text-primary">{state.success}</p>
           ) : null}
           <Button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            className="w-full "
             disabled={pending}
           >
             {pending ? "Sending..." : "Send reset link"}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
-          <Link href="/login" className="font-medium text-emerald-700 hover:underline">
+          <Link href="/login" className="font-medium text-primary hover:underline">
             Back to sign in
           </Link>
         </p>
@@ -114,7 +114,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           ) : null}
           <Button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            className="w-full "
             disabled={pending}
           >
             {pending ? "Updating..." : "Update password"}

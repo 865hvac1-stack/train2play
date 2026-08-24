@@ -57,7 +57,7 @@ export default async function ParentViewPage({
   }));
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-slate-50 to-emerald-50">
+    <div className="min-h-full t2p-page-gradient">
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <BrandLogoLarge />
@@ -177,7 +177,7 @@ export default async function ParentViewPage({
                       className="flex items-center justify-between text-sm"
                     >
                       <span className="text-slate-700">{metric.label}</span>
-                      <span className="font-medium text-emerald-700">
+                      <span className="font-medium text-primary">
                         {formatMetricValue(metric.value, metric.unit)} ·{" "}
                         {formatMetricDate(metric.recordedAt)}
                       </span>

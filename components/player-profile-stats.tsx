@@ -26,7 +26,7 @@ type PlayerProfileStatsProps = {
 };
 
 function DeltaIcon({ tone }: { tone: ReturnType<typeof comparisonTone> }) {
-  if (tone === "positive") return <TrendingUp className="size-4 text-emerald-600" />;
+  if (tone === "positive") return <TrendingUp className="size-4 text-primary" />;
   if (tone === "negative") return <TrendingDown className="size-4 text-amber-600" />;
   return <Minus className="size-4 text-slate-400" />;
 }
@@ -42,7 +42,7 @@ export function PlayerProfileStats({
   const hasAnyStat = stats.some((stat) => stat.value !== null);
 
   return (
-    <Card className="overflow-hidden border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white">
+    <Card className="overflow-hidden border-brand/20 bg-gradient-to-br from-brand-light/80 via-white to-white">
       <CardHeader className="pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -103,7 +103,7 @@ export function PlayerProfileStats({
                         <div
                           className={cn(
                             "mt-3 flex items-center gap-1.5 text-sm font-medium",
-                            tone === "positive" && "text-emerald-700",
+                            tone === "positive" && "text-primary",
                             tone === "negative" && "text-amber-700",
                             tone === "neutral" && "text-slate-600",
                           )}

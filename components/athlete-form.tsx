@@ -85,7 +85,7 @@ export function AthleteForm() {
       <div className="flex justify-end gap-3">
         <Button
           type="submit"
-          className="bg-emerald-600 hover:bg-emerald-700"
+         
           disabled={pending}
         >
           {pending ? "Saving..." : "Add athlete"}

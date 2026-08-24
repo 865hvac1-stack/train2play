@@ -22,7 +22,7 @@ export default async function PickupPlayersPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" nativeButton={false} render={<Link href="/pickup-players/nearby">Players near me</Link>} />
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+           
             nativeButton={false}
             render={
               <Link href="/pickup-players/new">
@@ -44,7 +44,7 @@ export default async function PickupPlayersPage() {
               compares against everyone logged in the system.
             </p>
             <Button
-              className="mt-6 bg-emerald-600 hover:bg-emerald-700"
+              className="mt-6 "
               nativeButton={false}
               render={<Link href="/pickup-players/new">Add pickup player</Link>}
             />
@@ -75,7 +75,7 @@ export default async function PickupPlayersPage() {
                     {throwing ? (
                       <p>
                         Throwing:{" "}
-                        <span className="font-medium text-emerald-700">
+                        <span className="font-medium text-primary">
                           {formatMetricValue(throwing.value, throwing.unit)}
                         </span>
                       </p>
@@ -83,7 +83,7 @@ export default async function PickupPlayersPage() {
                     {batSpeed ? (
                       <p>
                         Bat speed:{" "}
-                        <span className="font-medium text-emerald-700">
+                        <span className="font-medium text-primary">
                           {formatMetricValue(batSpeed.value, batSpeed.unit)}
                         </span>
                       </p>

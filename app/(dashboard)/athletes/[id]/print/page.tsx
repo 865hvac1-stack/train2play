@@ -57,7 +57,7 @@ export default async function AthletePrintPage({
         />
 
         <header className="mb-8">
-          <p className="text-sm font-medium uppercase tracking-wide text-emerald-700">
+          <p className="text-sm font-medium uppercase tracking-wide text-primary">
             {brand.name}
           </p>
           <h1 className="mt-2 text-3xl font-bold">

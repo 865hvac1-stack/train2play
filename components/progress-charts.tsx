@@ -116,9 +116,9 @@ export function ProgressCharts({ metrics }: ProgressChartsProps) {
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke="#059669"
+                    stroke="#FF6600"
                     strokeWidth={2}
-                    dot={{ fill: "#059669", r: 4 }}
+                    dot={{ fill: "#FF6600", r: 4 }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>

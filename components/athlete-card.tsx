@@ -73,7 +73,7 @@ export function EmptyAthletesState() {
       <CardContent>
         <Link
           href="/athletes/new"
-          className="inline-flex text-sm font-medium text-emerald-700 hover:underline"
+          className="inline-flex text-sm font-medium text-primary hover:underline"
         >
           Add your first athlete →
         </Link>

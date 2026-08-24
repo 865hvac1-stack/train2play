@@ -39,7 +39,7 @@ type VideoAnnotatorProps = {
   initialAnnotations: Annotation[];
 };
 
-const COLORS = ["#059669", "#dc2626", "#2563eb", "#eab308", "#ffffff"];
+const COLORS = ["#FF6600", "#dc2626", "#2563eb", "#eab308", "#ffffff"];
 
 export function VideoAnnotator({
   videoId,
@@ -347,7 +347,7 @@ export function VideoAnnotator({
           type="button"
           size="sm"
           variant={isDrawing ? "default" : "outline"}
-          className={isDrawing ? "bg-emerald-600 hover:bg-emerald-700" : undefined}
+          className={isDrawing ? "" : undefined}
           disabled={videoStatus !== "ready" || !isPaused}
           onClick={toggleDrawing}
         >
@@ -447,7 +447,7 @@ export function VideoAnnotator({
 
           <Button
             type="button"
-            className="bg-emerald-600 hover:bg-emerald-700"
+           
             disabled={pending}
             onClick={handleSave}
           >
@@ -478,7 +478,7 @@ export function VideoAnnotator({
                 >
                   <button
                     type="button"
-                    className="font-medium text-emerald-700 hover:underline"
+                    className="font-medium text-primary hover:underline"
                     onClick={() => seekTo(annotation.timestampMs)}
                   >
                     {formatTimestamp(annotation.timestampMs)}

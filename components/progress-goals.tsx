@@ -100,11 +100,11 @@ export function ProgressGoalForm({ athleteId }: { athleteId: string }) {
         <p className="text-sm text-destructive">{state.error}</p>
       ) : null}
       {state.success ? (
-        <p className="text-sm text-emerald-700">Goal added.</p>
+        <p className="text-sm text-primary">Goal added.</p>
       ) : null}
       <Button
         type="submit"
-        className="bg-emerald-600 hover:bg-emerald-700"
+       
         disabled={pending}
       >
         {pending ? "Saving..." : "Set goal"}
@@ -143,7 +143,7 @@ export function ProgressGoalsList({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-emerald-600" />
+                  <Target className="h-4 w-4 text-primary" />
                   <p className="font-medium text-slate-900">{goal.label}</p>
                 </div>
                 <p className="mt-1 text-sm text-slate-600">
@@ -160,7 +160,7 @@ export function ProgressGoalsList({
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
               <div
                 className={`h-full rounded-full transition-all ${
-                  evaluation.met ? "bg-emerald-600" : "bg-emerald-400"
+                  evaluation.met ? "bg-primary" : "bg-brand/60"
                 }`}
                 style={{ width: `${evaluation.progressPercent}%` }}
               />

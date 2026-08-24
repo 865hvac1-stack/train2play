@@ -52,7 +52,7 @@ export function ProfileSettingsForm({
               Contact{" "}
               <a
                 href={`mailto:${brand.supportEmail}`}
-                className="text-emerald-700 hover:underline"
+                className="text-primary hover:underline"
               >
                 {brand.supportEmail}
               </a>{" "}
@@ -63,11 +63,11 @@ export function ProfileSettingsForm({
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
           {state.success ? (
-            <p className="text-sm text-emerald-700">{state.success}</p>
+            <p className="text-sm text-primary">{state.success}</p>
           ) : null}
           <Button
             type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700"
+           
             disabled={pending}
           >
             {pending ? "Saving..." : "Save profile"}
@@ -126,7 +126,7 @@ export function PasswordSettingsForm() {
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
           {state.success ? (
-            <p className="text-sm text-emerald-700">{state.success}</p>
+            <p className="text-sm text-primary">{state.success}</p>
           ) : null}
           <Button type="submit" variant="outline" disabled={pending}>
             {pending ? "Updating..." : "Update password"}

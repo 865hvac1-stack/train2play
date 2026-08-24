@@ -230,7 +230,7 @@ export default async function AthleteDetailPage({
                   No plans assigned yet.{" "}
                   <Link
                     href="/training/new"
-                    className="font-medium text-emerald-700 hover:underline"
+                    className="font-medium text-primary hover:underline"
                   >
                     Create a plan
                   </Link>{" "}
@@ -275,7 +275,7 @@ export default async function AthleteDetailPage({
                   No videos yet.{" "}
                   <Link
                     href={`/videos/new?athleteId=${athlete.id}`}
-                    className="font-medium text-emerald-700 hover:underline"
+                    className="font-medium text-primary hover:underline"
                   >
                     Upload film
                   </Link>{" "}
@@ -330,7 +330,7 @@ export default async function AthleteDetailPage({
                   >
                     <div>
                       <p className="font-medium text-slate-900">{metric.label}</p>
-                      <p className="mt-1 text-lg font-semibold text-emerald-700">
+                      <p className="mt-1 text-lg font-semibold text-primary">
                         {formatMetricValue(metric.value, metric.unit)}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">

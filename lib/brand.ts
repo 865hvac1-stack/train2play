@@ -27,6 +27,9 @@ export const brand = {
   /** Brand colors from logo */
   colors: {
     orange: "#FF6600",
+    orangeHover: "#e55a00",
+    orangeLight: "#fff4eb",
+    orangeMuted: "#ffe8d6",
     black: "#000000",
     white: "#FFFFFF",
   },

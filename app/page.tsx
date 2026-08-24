@@ -45,15 +45,12 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-slate-50 via-white to-orange-50">
+    <div className="min-h-full t2p-page-gradient">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <BrandLogoLarge />
         <div className="flex items-center gap-3">
           <Button variant="ghost" render={<Link href="/login">Sign in</Link>} />
-          <Button
-            className="bg-[#FF6600] hover:bg-[#e55a00] text-white"
-            render={<Link href="/signup">Get started</Link>}
-          />
+          <Button render={<Link href="/signup">Get started</Link>} />
         </div>
       </header>
 
@@ -69,21 +66,17 @@ export default async function HomePage() {
               priority
             />
           </div>
-          <p className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-800">
+          <p className="inline-flex rounded-full bg-brand-light px-3 py-1 text-sm font-medium text-brand">
             {brand.heroBadge}
           </p>
-          <p className="text-xl font-semibold tracking-wide text-[#FF6600] md:text-2xl">
+          <p className="text-xl font-semibold tracking-wide text-brand md:text-2xl">
             {brand.tagline}
           </p>
           <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-600">
             {brand.description}
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button
-              size="lg"
-              className="bg-[#FF6600] hover:bg-[#e55a00] text-white"
-              render={<Link href="/signup">Create free coach account</Link>}
-            />
+            <Button size="lg" render={<Link href="/signup">Create free coach account</Link>} />
             <Button
               size="lg"
               variant="outline"
@@ -101,9 +94,9 @@ export default async function HomePage() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-2xl border border-orange-100 bg-white/80 p-6 shadow-sm"
+              className="rounded-2xl border border-brand/20 bg-white/80 p-6 shadow-sm"
             >
-              <feature.icon className="mb-4 h-8 w-8 text-[#FF6600]" />
+              <feature.icon className="mb-4 h-8 w-8 text-brand" />
               <h2 className="text-lg font-semibold text-slate-900">{feature.title}</h2>
               <p className="mt-2 text-slate-600">{feature.body}</p>
             </div>
@@ -116,11 +109,7 @@ export default async function HomePage() {
             Sign up, set your zip, and start adding athletes, film, and pickup players in minutes.
           </p>
           <div className="mt-6">
-            <Button
-              size="lg"
-              className="bg-[#FF6600] text-white hover:bg-[#e55a00]"
-              render={<Link href="/signup">Get started free</Link>}
-            />
+            <Button size="lg" render={<Link href="/signup">Get started free</Link>} />
           </div>
         </section>
       </main>
@@ -132,16 +121,16 @@ export default async function HomePage() {
             <p>{brand.domain}</p>
           </div>
           <div className="flex flex-wrap gap-4">
-            <Link href="/privacy" className="hover:text-[#FF6600]">
+            <Link href="/privacy" className="hover:text-brand">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-[#FF6600]">
+            <Link href="/terms" className="hover:text-brand">
               Terms
             </Link>
-            <a href={`mailto:${brand.supportEmail}`} className="hover:text-[#FF6600]">
+            <a href={`mailto:${brand.supportEmail}`} className="hover:text-brand">
               {brand.supportEmail}
             </a>
-            <Link href="/login" className="hover:text-[#FF6600]">
+            <Link href="/login" className="hover:text-brand">
               Sign in
             </Link>
           </div>

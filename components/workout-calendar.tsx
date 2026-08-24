@@ -115,14 +115,14 @@ export function WorkoutCalendar({ monthParam, workouts }: WorkoutCalendarProps) 
                 className={cn(
                   "min-h-28 rounded-lg border p-2",
                   inMonth ? "border-slate-200 bg-white" : "border-transparent bg-slate-50/80",
-                  isToday && inMonth && "ring-2 ring-emerald-500 ring-offset-1",
+                  isToday && inMonth && "ring-2 ring-brand ring-offset-1",
                 )}
               >
                 <div
                   className={cn(
                     "mb-1 text-xs font-medium",
                     inMonth ? "text-slate-700" : "text-slate-400",
-                    isToday && "text-emerald-700",
+                    isToday && "text-primary",
                   )}
                 >
                   {date.getDate()}
@@ -136,7 +136,7 @@ export function WorkoutCalendar({ monthParam, workouts }: WorkoutCalendarProps) 
                         "block truncate rounded px-1.5 py-0.5 text-[10px] leading-tight",
                         workout.completed
                           ? "bg-slate-100 text-slate-500 line-through"
-                          : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200",
+                          : "bg-brand-light text-primary hover:bg-brand-muted",
                       )}
                       title={workout.title}
                     >
@@ -156,7 +156,7 @@ export function WorkoutCalendar({ monthParam, workouts }: WorkoutCalendarProps) 
 
         <div className="mt-6 flex flex-wrap gap-3 text-xs text-slate-500">
           <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded bg-emerald-100" />
+            <span className="h-3 w-3 rounded bg-brand-light" />
             Upcoming workout
           </span>
           <span className="flex items-center gap-2">

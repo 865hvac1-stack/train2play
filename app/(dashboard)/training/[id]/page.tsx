@@ -132,7 +132,7 @@ export default async function TrainingPlanDetailPage({
                     >
                       <button
                         type="submit"
-                        className="mt-0.5 text-emerald-600 transition-colors hover:text-emerald-700"
+                        className="mt-0.5 text-primary transition-colors hover:text-primary/80"
                         aria-label={
                           workout.completed
                             ? "Mark incomplete"
@@ -228,7 +228,7 @@ export default async function TrainingPlanDetailPage({
                     variant={plan.status === status ? "default" : "outline"}
                     className={
                       plan.status === status
-                        ? "w-full bg-emerald-600 hover:bg-emerald-700"
+                        ? "w-full "
                         : "w-full"
                     }
                   >

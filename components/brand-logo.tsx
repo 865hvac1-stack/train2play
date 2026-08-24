@@ -2,11 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { brand } from "@/lib/brand";
+import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
   size?: "sm" | "md" | "lg";
   showText?: boolean;
   subtitle?: string;
+  variant?: "light" | "dark";
 };
 
 const markSizes = {
@@ -19,8 +21,10 @@ export function BrandLogo({
   size = "md",
   showText = true,
   subtitle,
+  variant = "light",
 }: BrandLogoProps) {
   const mark = markSizes[size];
+  const isDark = variant === "dark";
 
   return (
     <div className="flex items-center gap-2">
@@ -34,9 +38,18 @@ export function BrandLogo({
       />
       {showText ? (
         <div>
-          <p className="text-sm font-semibold text-slate-900">{brand.shortName}</p>
+          <p
+            className={cn(
+              "text-sm font-semibold",
+              isDark ? "text-white" : "text-slate-900",
+            )}
+          >
+            {brand.shortName}
+          </p>
           {subtitle ? (
-            <p className="text-xs text-slate-500">{subtitle}</p>
+            <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+              {subtitle}
+            </p>
           ) : null}
         </div>
       ) : null}

@@ -46,7 +46,7 @@ export function NearbyPickupFeed({
             Set your zip and search radius in Settings to see pickup players near you and
             receive email alerts.
           </p>
-          <Button className="mt-6 bg-emerald-600 hover:bg-emerald-700" nativeButton={false} render={<Link href="/settings">Go to settings</Link>} />
+          <Button className="mt-6 " nativeButton={false} render={<Link href="/settings">Go to settings</Link>} />
         </CardContent>
       </Card>
     );
@@ -95,17 +95,17 @@ export function NearbyPickupFeed({
             <div className="flex flex-wrap gap-3">
               {player.throwingVelo ? (
                 <span>
-                  Throwing: <strong className="text-emerald-700">{player.throwingVelo} mph</strong>
+                  Throwing: <strong className="text-primary">{player.throwingVelo} mph</strong>
                 </span>
               ) : null}
               {player.batSpeed ? (
                 <span>
-                  Bat: <strong className="text-emerald-700">{player.batSpeed} mph</strong>
+                  Bat: <strong className="text-primary">{player.batSpeed} mph</strong>
                 </span>
               ) : null}
               {player.exitVelo ? (
                 <span>
-                  Exit: <strong className="text-emerald-700">{player.exitVelo} mph</strong>
+                  Exit: <strong className="text-primary">{player.exitVelo} mph</strong>
                 </span>
               ) : null}
             </div>
@@ -114,7 +114,7 @@ export function NearbyPickupFeed({
             ) : null}
             <p className="text-muted-foreground text-xs">Listed by {player.coachName}</p>
             <div className="flex gap-2 pt-1">
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" nativeButton={false} render={<Link href={`/athletes/${player.id}`}>View profile</Link>} />
+              <Button size="sm" nativeButton={false} render={<Link href={`/athletes/${player.id}`}>View profile</Link>} />
               {player.alreadyInterested ? (
                 <Badge variant="secondary">Interest sent</Badge>
               ) : (

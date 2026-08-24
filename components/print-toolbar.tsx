@@ -31,7 +31,7 @@ export function PrintToolbar({ backHref, autoPrint }: PrintToolbarProps) {
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700"
+          className="rounded-lg bg-primary px-3 py-2 text-sm text-white hover:bg-brand-hover"
         >
           Print / Save PDF
         </button>

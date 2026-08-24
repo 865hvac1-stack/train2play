@@ -52,7 +52,7 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardContent>
             {emailEnabled ? (
-              <p className="text-sm text-emerald-700">
+              <p className="text-sm text-primary">
                 Email sending is enabled. Use &ldquo;Send email&rdquo; on an
                 athlete&apos;s family share link to deliver invites automatically.
               </p>
@@ -74,7 +74,7 @@ export default async function SettingsPage() {
                   to your environment. Get a free key at{" "}
                   <a
                     href="https://resend.com"
-                    className="font-medium text-emerald-700 hover:underline"
+                    className="font-medium text-primary hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

@@ -61,7 +61,7 @@ export function AppHeader({ user, title, description, action }: AppHeaderProps) 
               render={
                 <Button variant="ghost" className="h-9 gap-2 px-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-emerald-100 text-emerald-800">
+                    <AvatarFallback className="bg-brand-light text-primary">
                       {getInitials(user.name, user.email)}
                     </AvatarFallback>
                   </Avatar>

@@ -19,14 +19,14 @@ export default function ErrorPage({
         {error.message || "An unexpected error occurred. Try again or contact support."}
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <Button onClick={reset} className="bg-emerald-600 hover:bg-emerald-700">
+        <Button onClick={reset}>
           Try again
         </Button>
         <Button variant="outline" render={<Link href="/dashboard">Dashboard</Link>} />
       </div>
       <a
         href={`mailto:${brand.supportEmail}`}
-        className="mt-6 text-sm text-emerald-700 hover:underline"
+        className="mt-6 text-sm text-primary hover:underline"
       >
         {brand.supportEmail}
       </a>

@@ -26,7 +26,7 @@ export async function sendShareInviteEmail(input: ShareInviteEmailInput) {
       <p>Hi,</p>
       <p><strong>${input.coachName}</strong> shared a read-only view of <strong>${input.athleteName}</strong>'s training progress on ${brand.name}.</p>
       <p style="margin: 24px 0;">
-        <a href="${input.shareUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${input.shareUrl}" style="background: #FF6600; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           View training progress
         </a>
       </p>
@@ -98,7 +98,7 @@ export async function sendPickupPlayerAlertEmail(input: PickupAlertEmailInput) {
         ${veloLine}
       </ul>
       <p style="margin: 24px 0;">
-        <a href="${input.profileUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${input.profileUrl}" style="background: #FF6600; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           View player profile
         </a>
       </p>
@@ -148,7 +148,7 @@ export async function sendPickupInterestEmail(input: PickupInterestEmailInput) {
       <p><strong>${input.interestedCoachName}</strong> (${input.interestedCoachEmail}) is interested in your pickup player <strong>${input.playerName}</strong>.</p>
       ${input.message ? `<p style="background: #f8fafc; padding: 12px 16px; border-radius: 8px;">"${input.message}"</p>` : ""}
       <p style="margin: 24px 0;">
-        <a href="${input.profileUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${input.profileUrl}" style="background: #FF6600; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           View player profile
         </a>
       </p>
@@ -190,7 +190,7 @@ export async function sendPasswordResetEmail(input: PasswordResetEmailInput) {
       <p>Hi ${input.name},</p>
       <p>We received a request to reset your ${brand.name} password.</p>
       <p style="margin: 24px 0;">
-        <a href="${input.resetUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${input.resetUrl}" style="background: #FF6600; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           Reset password
         </a>
       </p>

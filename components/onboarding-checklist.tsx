@@ -28,7 +28,7 @@ export function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
   }
 
   return (
-    <Card className="border-emerald-200 bg-emerald-50/50">
+    <Card className="border-brand/30 bg-brand-light/50">
       <CardHeader>
         <CardTitle>Get started checklist</CardTitle>
         <CardDescription>
@@ -41,10 +41,10 @@ export function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
           <Link
             key={step.id}
             href={step.href}
-            className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-white px-4 py-3 transition-colors hover:bg-emerald-50"
+            className="flex items-center gap-3 rounded-lg border border-brand/20 bg-white px-4 py-3 transition-colors hover:bg-brand-light"
           >
             {step.done ? (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
             ) : (
               <Circle className="h-5 w-5 shrink-0 text-slate-300" />
             )}
@@ -59,9 +59,9 @@ export function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
             </span>
           </Link>
         ))}
-        <div className="h-2 overflow-hidden rounded-full bg-emerald-100">
+        <div className="h-2 overflow-hidden rounded-full bg-brand-light">
           <div
-            className="h-full rounded-full bg-emerald-600 transition-all"
+            className="h-full rounded-full bg-primary transition-all"
             style={{ width: `${(completed / steps.length) * 100}%` }}
           />
         </div>

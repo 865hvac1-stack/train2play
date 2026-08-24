@@ -9,13 +9,13 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-full bg-slate-50">
+    <div className="min-h-full t2p-page-gradient">
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/">
             <BrandLogoLarge />
           </Link>
-          <Link href="/signup" className="text-sm font-medium text-emerald-700 hover:underline">
+          <Link href="/signup" className="text-sm font-medium text-primary hover:underline">
             Sign up
           </Link>
         </div>
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
           <p>
             We store data on hosted infrastructure with industry-standard access controls. You may
             request account deletion by emailing{" "}
-            <a className="text-emerald-700 hover:underline" href={`mailto:${brand.supportEmail}`}>
+            <a className="text-primary hover:underline" href={`mailto:${brand.supportEmail}`}>
               {brand.supportEmail}
             </a>
             .
@@ -86,14 +86,14 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold text-slate-900">Contact</h2>
           <p>
             Questions about privacy:{" "}
-            <a className="text-emerald-700 hover:underline" href={`mailto:${brand.supportEmail}`}>
+            <a className="text-primary hover:underline" href={`mailto:${brand.supportEmail}`}>
               {brand.supportEmail}
             </a>
           </p>
         </section>
 
         <p className="pt-4 text-sm">
-          <Link href="/terms" className="text-emerald-700 hover:underline">
+          <Link href="/terms" className="text-primary hover:underline">
             Terms of Service
           </Link>
         </p>

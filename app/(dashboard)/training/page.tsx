@@ -28,7 +28,7 @@ export default async function TrainingPlansPage() {
       description="Build workout schedules and track athlete completion."
       action={
         <Button
-          className="bg-emerald-600 hover:bg-emerald-700"
+         
           render={
             <Link href="/training/new">
               <Plus className="h-4 w-4" />

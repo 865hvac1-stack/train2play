@@ -150,7 +150,7 @@ export default async function ReportsPage() {
                     <div>
                       <Link
                         href={`/athletes/${athlete.id}`}
-                        className="font-medium text-slate-900 hover:text-emerald-700"
+                        className="font-medium text-slate-900 hover:text-primary"
                       >
                         {athlete.firstName} {athlete.lastName}
                       </Link>

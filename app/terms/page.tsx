@@ -9,13 +9,13 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-full bg-slate-50">
+    <div className="min-h-full t2p-page-gradient">
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/">
             <BrandLogoLarge />
           </Link>
-          <Link href="/signup" className="text-sm font-medium text-emerald-700 hover:underline">
+          <Link href="/signup" className="text-sm font-medium text-primary hover:underline">
             Sign up
           </Link>
         </div>
@@ -78,7 +78,7 @@ export default function TermsPage() {
           <p>
             We may suspend accounts that violate these terms. You may stop using the service at any
             time and request deletion by contacting{" "}
-            <a className="text-emerald-700 hover:underline" href={`mailto:${brand.supportEmail}`}>
+            <a className="text-primary hover:underline" href={`mailto:${brand.supportEmail}`}>
               {brand.supportEmail}
             </a>
             .
@@ -88,14 +88,14 @@ export default function TermsPage() {
         <section className="space-y-2">
           <h2 className="text-xl font-semibold text-slate-900">Contact</h2>
           <p>
-            <a className="text-emerald-700 hover:underline" href={`mailto:${brand.supportEmail}`}>
+            <a className="text-primary hover:underline" href={`mailto:${brand.supportEmail}`}>
               {brand.supportEmail}
             </a>
           </p>
         </section>
 
         <p className="pt-4 text-sm">
-          <Link href="/privacy" className="text-emerald-700 hover:underline">
+          <Link href="/privacy" className="text-primary hover:underline">
             Privacy Policy
           </Link>
         </p>

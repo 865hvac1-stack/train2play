@@ -16,13 +16,13 @@ export default function GlobalError({
         <button
           type="button"
           onClick={reset}
-          className="mt-6 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+          className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
         >
           Try again
         </button>
         <a
           href={`mailto:${brand.supportEmail}`}
-          className="mt-4 text-sm text-emerald-700"
+          className="mt-4 text-sm text-primary"
         >
           {brand.supportEmail}
         </a>

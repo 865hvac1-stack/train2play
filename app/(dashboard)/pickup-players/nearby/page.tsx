@@ -29,7 +29,7 @@ export default async function NearbyPickupPlayersPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" nativeButton={false} render={<Link href="/pickup-players">My pickup list</Link>} />
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+           
             nativeButton={false}
             render={
               <Link href="/pickup-players/new">
