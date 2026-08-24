@@ -75,7 +75,8 @@ export default async function HomePage() {
                 "Create a secure coach account",
                 "Build and manage your athlete roster",
                 "Create training plans with scheduled workouts",
-                "Track workout completion and plan progress",
+                "Track workout completion and progress metrics",
+                "Share read-only family links with parents",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-slate-700">
                   <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />

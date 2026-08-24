@@ -33,8 +33,22 @@ model Athlete {
   updatedAt     DateTime       @updatedAt
   trainingPlans TrainingPlan[]
   progressMetrics ProgressMetric[]
+  shareLinks      ParentShareLink[]
 
   @@index([coachId])
+}
+
+model ParentShareLink {
+  id        String    @id @default(cuid())
+  athleteId String
+  athlete   Athlete   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  label     String?
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([athleteId])
+  @@index([token])
 }
 
 model ProgressMetric {

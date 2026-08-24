@@ -5,6 +5,8 @@ import { Calendar, ClipboardList, Trash2, TrendingUp } from "lucide-react";
 import { deleteAthleteAction } from "@/app/(dashboard)/athletes/actions";
 import { deleteProgressMetricAction } from "@/app/(dashboard)/athletes/progress-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ParentSharePanel } from "@/components/parent-share-panel";
+import { ProgressCharts } from "@/components/progress-charts";
 import { ProgressMetricForm } from "@/components/progress-metric-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,12 +56,23 @@ export default async function AthleteDetailPage({
         orderBy: [{ recordedAt: "desc" }, { createdAt: "desc" }],
         take: 20,
       },
+      shareLinks: {
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
   if (!athlete) {
     notFound();
   }
+
+  const chartMetrics = athlete.progressMetrics.map((metric) => ({
+    id: metric.id,
+    label: metric.label,
+    value: metric.value,
+    unit: metric.unit,
+    recordedAt: metric.recordedAt.toISOString(),
+  }));
 
   return (
     <DashboardShell
@@ -158,7 +171,9 @@ export default async function AthleteDetailPage({
                 Performance metrics logged over time.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-6">
+              <ProgressCharts metrics={chartMetrics} />
+
               {athlete.progressMetrics.length > 0 ? (
                 athlete.progressMetrics.map((metric) => (
                   <div
@@ -204,17 +219,21 @@ export default async function AthleteDetailPage({
           </form>
         </div>
 
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Log progress</CardTitle>
-            <CardDescription>
-              Record times, weights, jumps, and other measurable results.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProgressMetricForm athleteId={athlete.id} />
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Log progress</CardTitle>
+              <CardDescription>
+                Record times, weights, jumps, and other measurable results.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProgressMetricForm athleteId={athlete.id} />
+            </CardContent>
+          </Card>
+
+          <ParentSharePanel athleteId={athlete.id} links={athlete.shareLinks} />
+        </div>
       </div>
     </DashboardShell>
   );

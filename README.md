@@ -28,6 +28,8 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Athlete roster management (add, view, remove)
 - Training plans with scheduled workouts
 - Mark workouts complete and track plan progress
+- Log performance metrics on athlete profiles (times, weights, jumps)
+- Dashboard upcoming workouts for the week
 - Centralized brand configuration
 
 ## Tech stack
