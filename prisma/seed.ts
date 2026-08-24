@@ -304,6 +304,94 @@ async function main() {
     });
   }
 
+  const marcus = await prisma.athlete.findFirst({
+    where: { coachId: coach.id, firstName: "Marcus" },
+  });
+
+  if (!marcus) {
+    await prisma.athlete.create({
+      data: {
+        coachId: coach.id,
+        firstName: "Marcus",
+        lastName: "Delgado",
+        sport: "Baseball",
+        position: "RHP",
+        throws: "R",
+        bats: "R",
+        dateOfBirth: new Date("2010-05-12"),
+        notes: "Projectable frame. Working on off-speed consistency.",
+        rosterStatus: "ROSTER",
+        progressMetrics: {
+          create: [
+            {
+              label: "Throwing velo",
+              value: 78,
+              unit: "mph",
+              recordedAt: new Date("2026-08-20"),
+              notes: "Pocket radar — bullpen",
+            },
+            {
+              label: "Bat speed",
+              value: 68,
+              unit: "mph",
+              recordedAt: new Date("2026-08-20"),
+            },
+            {
+              label: "Exit velo",
+              value: 82,
+              unit: "mph",
+              recordedAt: new Date("2026-08-20"),
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const pickupPlayer = await prisma.athlete.findFirst({
+    where: { coachId: coach.id, rosterStatus: "PICKUP" },
+  });
+
+  if (!pickupPlayer) {
+    await prisma.athlete.create({
+      data: {
+        coachId: coach.id,
+        firstName: "Jordan",
+        lastName: "Price",
+        sport: "Baseball",
+        position: "SS / OF",
+        throws: "R",
+        bats: "L",
+        notes: "Saturday scrimmage guest — strong hands, needs reps.",
+        rosterStatus: "PICKUP",
+        progressMetrics: {
+          create: [
+            {
+              label: "Throwing velo",
+              value: 72,
+              unit: "mph",
+              recordedAt: new Date("2026-08-24"),
+              notes: "Logged at pickup signup",
+            },
+            {
+              label: "Bat speed",
+              value: 71,
+              unit: "mph",
+              recordedAt: new Date("2026-08-24"),
+              notes: "Logged at pickup signup",
+            },
+            {
+              label: "Exit velo",
+              value: 79,
+              unit: "mph",
+              recordedAt: new Date("2026-08-24"),
+            },
+          ],
+        },
+      },
+    });
+  }
+
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
 }

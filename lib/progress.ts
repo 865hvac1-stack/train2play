@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 export const METRIC_PRESETS = [
+  { label: "Throwing velo", unit: "mph" },
+  { label: "Bat speed", unit: "mph" },
+  { label: "Exit velo", unit: "mph" },
+  { label: "60-yard dash", unit: "sec" },
   { label: "40-yard dash", unit: "sec" },
   { label: "Vertical jump", unit: "in" },
   { label: "Broad jump", unit: "in" },

@@ -44,6 +44,9 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Video coaching library — upload or link MP4 clips
 - Draw arrows, circles, and pen marks on paused frames
 - Save written coaching direction at each timestamp
+- **Player profiles** with throwing velo, bat speed, exit velo vs system average
+- **Pickup players** — quick-add guest players for tryouts and scrimmages
+- Promote pickup players to full roster when ready
 
 ## Video coaching
 

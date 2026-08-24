@@ -43,6 +43,7 @@ export async function createAthleteAction(
       position: parsed.data.position?.trim() || null,
       dateOfBirth,
       notes: parsed.data.notes?.trim() || null,
+      rosterStatus: "ROSTER",
     },
   });
 

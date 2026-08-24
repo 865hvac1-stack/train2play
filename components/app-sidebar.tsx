@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Menu,
   Users,
+  UserPlus,
   Video,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/athletes", label: "Athletes", icon: Users },
+  { href: "/pickup-players", label: "Pickup players", icon: UserPlus },
   { href: "/training", label: "Training", icon: ClipboardList },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/videos", label: "Videos", icon: Video },

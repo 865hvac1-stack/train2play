@@ -6,6 +6,8 @@ import { deleteAthleteAction } from "@/app/(dashboard)/athletes/actions";
 import { deleteProgressMetricAction } from "@/app/(dashboard)/athletes/progress-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ParentSharePanel } from "@/components/parent-share-panel";
+import { PlayerProfileStats } from "@/components/player-profile-stats";
+import { PromotePickupButton } from "@/components/promote-pickup-button";
 import { ProgressCharts } from "@/components/progress-charts";
 import { ProgressGoalForm, ProgressGoalsList } from "@/components/progress-goals";
 import { ProgressMetricForm } from "@/components/progress-metric-form";
@@ -25,6 +27,7 @@ import {
 } from "@/lib/progress";
 import { isEmailConfigured } from "@/lib/settings";
 import { requireUser } from "@/lib/session";
+import { getAthleteProfileComparisons } from "@/lib/player-profile-server";
 import { getVideosForAthlete } from "@/lib/videos-server";
 import { prisma } from "@/lib/db";
 
@@ -73,6 +76,7 @@ export default async function AthleteDetailPage({
   }
 
   const athleteVideos = await getVideosForAthlete(user.id, athlete.id);
+  const profileStats = await getAthleteProfileComparisons(athlete.progressMetrics);
 
   const chartMetrics = athlete.progressMetrics.map((metric) => ({
     id: metric.id,
@@ -102,9 +106,16 @@ export default async function AthleteDetailPage({
   return (
     <DashboardShell
       title={`${athlete.firstName} ${athlete.lastName}`}
-      description="Athlete profile, training plans, and progress"
+      description={
+        athlete.rosterStatus === "PICKUP"
+          ? "Pickup player profile · velo vs system average"
+          : "Player profile, training plans, and progress"
+      }
       action={
         <div className="flex items-center gap-2">
+          {athlete.rosterStatus === "PICKUP" ? (
+            <PromotePickupButton athleteId={athlete.id} />
+          ) : null}
           <Button
             variant="outline"
             render={
@@ -128,6 +139,18 @@ export default async function AthleteDetailPage({
       }
     >
       <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="space-y-6 lg:col-span-2">
+          <PlayerProfileStats
+            stats={profileStats}
+            athleteName={`${athlete.firstName} ${athlete.lastName}`}
+            sport={athlete.sport}
+            throws={athlete.throws}
+            bats={athlete.bats}
+            isPickup={athlete.rosterStatus === "PICKUP"}
+          />
+        </div>
+
+        <div className="space-y-6 lg:col-span-2 lg:grid lg:grid-cols-[2fr_1fr] lg:gap-6">
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -135,6 +158,15 @@ export default async function AthleteDetailPage({
                 <Badge variant="secondary">{athlete.sport}</Badge>
                 {athlete.position ? (
                   <Badge variant="outline">{athlete.position}</Badge>
+                ) : null}
+                {athlete.rosterStatus === "PICKUP" ? (
+                  <Badge variant="outline">Pickup</Badge>
+                ) : null}
+                {athlete.throws ? (
+                  <Badge variant="outline">Throws {athlete.throws}</Badge>
+                ) : null}
+                {athlete.bats ? (
+                  <Badge variant="outline">Bats {athlete.bats}</Badge>
                 ) : null}
               </div>
               <CardTitle className="text-2xl">
@@ -353,6 +385,7 @@ export default async function AthleteDetailPage({
             emailEnabled={isEmailConfigured()}
             links={athlete.shareLinks}
           />
+        </div>
         </div>
       </div>
     </DashboardShell>
