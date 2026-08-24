@@ -44,11 +44,13 @@ export default async function NewVideoPage({
     >
       {!uploadsEnabled ? (
         <div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <p className="font-medium">Phone uploads need cloud video storage first</p>
+          <p className="font-medium">Phone uploads need one simple setup step</p>
           <p>
-            Railway cannot keep uploaded files without Cloudflare R2 (or S3). Until that is set in
-            Railway env vars, use a direct MP4 URL below — or ask your admin to add R2 (see{" "}
-            <code className="rounded bg-amber-100 px-1">docs/VIDEO-UPLOAD.md</code>).
+            Add a free <strong>Cloudinary</strong> account and paste{" "}
+            <code className="rounded bg-amber-100 px-1">CLOUDINARY_URL</code> into Railway
+            (about 2 minutes). Guide:{" "}
+            <code className="rounded bg-amber-100 px-1">docs/VIDEO-UPLOAD.md</code>. Until then,
+            you can still paste a direct MP4 URL below.
           </p>
         </div>
       ) : null}

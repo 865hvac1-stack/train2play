@@ -67,12 +67,20 @@ export function getProductionWarnings() {
   }
 
   if (
-    !process.env.S3_BUCKET ||
-    !process.env.AWS_ACCESS_KEY_ID ||
-    !process.env.AWS_SECRET_ACCESS_KEY
+    !process.env.CLOUDINARY_URL &&
+    !(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    ) &&
+    !(
+      process.env.S3_BUCKET &&
+      process.env.AWS_ACCESS_KEY_ID &&
+      process.env.AWS_SECRET_ACCESS_KEY
+    )
   ) {
     warnings.push(
-      "Video object storage is not configured — file uploads are blocked in production until S3/R2 is set.",
+      "Video storage is not configured — add CLOUDINARY_URL (easiest) so phone uploads work in production.",
     );
   }
 

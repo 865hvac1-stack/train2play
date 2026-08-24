@@ -1,57 +1,56 @@
-# Enable phone video uploads (Cloudflare R2)
+# Phone video uploads — super simple setup (Cloudinary)
 
-Train2Play can accept videos from iPhone/Android cameras and galleries.
-In production (Railway), files must go to **cloud object storage** — the server disk is wiped on every deploy.
+You only need **one** Railway variable.
 
-**Cloudflare R2** has a generous free tier and works with the app today.
+Cloudinary’s free plan is enough to start. Videos upload from iPhone/Android camera or gallery.
 
-## 1. Create an R2 bucket
+## 1. Create a free Cloudinary account
 
-1. Sign in at [dash.cloudflare.com](https://dash.cloudflare.com)
-2. Go to **R2 Object Storage** → **Create bucket**
-3. Name it something like `train2play-videos`
-4. Create the bucket
+1. Go to [https://cloudinary.com/users/register_free](https://cloudinary.com/users/register_free)
+2. Sign up (email is fine)
+3. After login, open your **Dashboard**
 
-## 2. Allow public reads (so coaches can play clips)
+## 2. Copy your Cloudinary URL
 
-Option A — **R2 custom domain** (recommended):
+On the dashboard you’ll see something like:
 
-1. Bucket → **Settings** → **Custom Domains**
-2. Connect a subdomain like `videos.train2play.com`
-3. Use that URL as `S3_PUBLIC_URL`
+**API Environment variable** / **CLOUDINARY_URL**
 
-Option B — **Public bucket / r2.dev URL** (quick testing):
+It looks like:
 
-1. Bucket → **Settings** → **Public access** / R2.dev subdomain
-2. Copy the public base URL
+```
+cloudinary://123456789012345:abcdefghijklmnopqrstuvwxyz@your-cloud-name
+```
 
-## 3. Create an API token
+Click **Copy**.
 
-1. R2 → **Manage R2 API Tokens** → **Create API token**
-2. Permissions: **Object Read & Write** on your bucket
-3. Copy:
-   - Access Key ID
-   - Secret Access Key
-   - Endpoint (looks like `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`)
+*(If you only see Cloud Name, API Key, and API Secret separately — that’s fine too. Use Step 3B.)*
 
-## 4. Add variables in Railway
+## 3. Paste into Railway
 
-On your Train2Play web service → **Variables**:
+### Option A — easiest (one variable)
 
-| Variable | Example |
+Railway → your Train2Play service → **Variables** → add:
+
+| Name | Value |
 | --- | --- |
-| `S3_BUCKET` | `train2play-videos` |
-| `S3_ENDPOINT` | `https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com` |
-| `S3_PUBLIC_URL` | `https://videos.train2play.com` (no trailing slash) |
-| `S3_REGION` | `auto` |
-| `AWS_ACCESS_KEY_ID` | (R2 access key id) |
-| `AWS_SECRET_ACCESS_KEY` | (R2 secret) |
+| `CLOUDINARY_URL` | *(paste the whole cloudinary://… string)* |
 
-Redeploy (or wait for auto-redeploy).
+Save. Railway redeploys automatically.
 
-## 5. Confirm it worked
+### Option B — three separate values
 
-Open: `https://YOUR-APP.up.railway.app/api/health`
+| Name | Value |
+| --- | --- |
+| `CLOUDINARY_CLOUD_NAME` | from dashboard |
+| `CLOUDINARY_API_KEY` | from dashboard |
+| `CLOUDINARY_API_SECRET` | from dashboard |
+
+## 4. Confirm it worked
+
+Open:
+
+[https://train2play-production-efb5.up.railway.app/api/health](https://train2play-production-efb5.up.railway.app/api/health)
 
 You want:
 
@@ -59,15 +58,21 @@ You want:
 "objectStorage": true
 ```
 
-Then in the app: **Videos → Add video → Record / take video** or **Choose from gallery**.
+Then in the app:
 
-## Tips for mobile
+**Videos → Add video → Record / take video** or **Choose from gallery**
 
-- Keep clips under **100 MB** (about 1–3 minutes of phone video is usually fine)
-- Prefer Wi‑Fi for longer clips
-- iPhone Camera Roll videos (MOV) are supported
-- Stay on the upload screen until it finishes
+## Tips
 
-## Without R2
+- Keep clips under **100 MB**
+- Use Wi‑Fi for longer videos
+- Stay on the screen until upload finishes
+- iPhone MOV files work
 
-You can still paste a **direct MP4 URL** (not a YouTube page link) on the Add video screen.
+## Don’t paste secrets in chat
+
+Put `CLOUDINARY_URL` / API secret only in Railway — never send them to Cursor or Slack.
+
+## Advanced (optional)
+
+S3 / Cloudflare R2 still works if you already set those variables. Cloudinary is preferred when both are present.

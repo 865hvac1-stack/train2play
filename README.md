@@ -62,21 +62,19 @@ Train2Play is ready for **Railway** or **Render** with PostgreSQL and optional c
 | --- | --- |
 | `RESEND_API_KEY` | Pickup alert + parent invite emails |
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` |
-| `S3_BUCKET` | Video upload storage |
-| `S3_ENDPOINT` | Cloudflare R2 endpoint (S3-compatible) |
-| `S3_PUBLIC_URL` | Public URL for uploaded videos |
-| `AWS_ACCESS_KEY_ID` | R2/S3 access key |
-| `AWS_SECRET_ACCESS_KEY` | R2/S3 secret |
+| `CLOUDINARY_URL` | Phone video uploads (easiest — one value from cloudinary.com) |
 | `SEED_DEMO` | Leave unset or `false` in production |
 
-### 5. Cloud video storage (Cloudflare R2)
+### 5. Phone video uploads (Cloudinary)
 
-Without S3/R2, video uploads are saved to the server disk and **will be lost on redeploy**. For production:
+Without Cloudinary (or S3/R2), production **blocks file uploads**. Quick setup:
 
-1. Create an R2 bucket in Cloudflare
-2. Enable public access or attach a custom domain (e.g. `videos.train2play.com`)
-3. Create API token with Object Read & Write
-4. Set the S3 env vars — R2 is S3-compatible
+1. Free account at [cloudinary.com](https://cloudinary.com/users/register_free)
+2. Copy **CLOUDINARY_URL** from the dashboard
+3. Paste into Railway Variables
+4. Confirm `/api/health` shows `"objectStorage": true`
+
+Full guide: [docs/VIDEO-UPLOAD.md](./docs/VIDEO-UPLOAD.md)
 
 ### 6. Custom domain (train2play.com)
 

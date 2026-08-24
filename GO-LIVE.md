@@ -27,15 +27,12 @@ The app is **code-ready to launch**. Complete the ops steps below, then smoke-te
 | --- | --- |
 | `RESEND_API_KEY` | Pickup alerts, parent invites, **password reset emails** |
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` (verify domain in Resend) |
-| `S3_BUCKET` | Cloudflare R2 bucket |
-| `S3_ENDPOINT` | R2 endpoint |
-| `S3_PUBLIC_URL` | Public video URL / custom domain |
-| `AWS_ACCESS_KEY_ID` | R2 access key |
-| `AWS_SECRET_ACCESS_KEY` | R2 secret |
-| `S3_REGION` | `auto` for R2 |
+| `CLOUDINARY_URL` | **Phone video uploads** (easiest — one variable from cloudinary.com) |
 
-Without R2/S3, **file uploads are blocked in production** (MP4 URL links still work).  
-Step-by-step phone upload setup: [docs/VIDEO-UPLOAD.md](./docs/VIDEO-UPLOAD.md)  
+Optional (only if not using Cloudinary): `S3_BUCKET`, `S3_ENDPOINT`, `S3_PUBLIC_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_REGION`
+
+Without Cloudinary (or S3/R2), **file uploads are blocked in production** (MP4 URL links still work).  
+Phone upload setup: [docs/VIDEO-UPLOAD.md](./docs/VIDEO-UPLOAD.md)  
 Without Resend, password reset emails cannot send.
 
 ## Deploy (Railway)

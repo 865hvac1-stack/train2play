@@ -95,7 +95,7 @@ export async function createVideoFromUploadAction(
   if (isProductionRuntime() && !isObjectStorageConfigured()) {
     return {
       error:
-        "Video uploads require cloud storage in production. Paste a direct MP4 URL instead, or ask your admin to configure S3/R2.",
+        "Phone uploads need Cloudinary. Add CLOUDINARY_URL in Railway (see docs/VIDEO-UPLOAD.md), or paste a direct MP4 URL instead.",
     };
   }
 
