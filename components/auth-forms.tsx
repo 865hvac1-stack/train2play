@@ -17,7 +17,13 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthActionState = {};
 
-export function LoginForm() {
+export function LoginForm({
+  resetSuccess = false,
+  callbackUrl,
+}: {
+  resetSuccess?: boolean;
+  callbackUrl?: string;
+}) {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   return (
@@ -30,6 +36,9 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
+          {callbackUrl ? (
+            <input type="hidden" name="callbackUrl" value={callbackUrl} />
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -38,7 +47,7 @@ export function LoginForm() {
               type="email"
               autoComplete="email"
               required
-              placeholder="coach@example.com"
+              placeholder="you@team.com"
             />
           </div>
           <div className="space-y-2">
@@ -52,14 +61,31 @@ export function LoginForm() {
               placeholder="••••••••"
             />
           </div>
+          {resetSuccess ? (
+            <p className="text-sm text-emerald-700">
+              Password updated. Sign in with your new password.
+            </p>
+          ) : null}
           {state.error ? (
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
-          <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={pending}>
+          <Button
+            type="submit"
+            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            disabled={pending}
+          >
             {pending ? "Signing in..." : "Sign in"}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
+          <Link
+            href="/forgot-password"
+            className="font-medium text-emerald-700 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-slate-600">
           New coach?{" "}
           <Link href="/signup" className="font-medium text-emerald-700 hover:underline">
             Create an account
@@ -78,7 +104,7 @@ export function SignupForm() {
       <CardHeader>
         <CardTitle>Create your coach account</CardTitle>
         <CardDescription>
-          Start building rosters and training plans for your athletes.
+          Start building rosters, film notes, and pickup matches for your athletes.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -101,7 +127,7 @@ export function SignupForm() {
               type="email"
               autoComplete="email"
               required
-              placeholder="coach@example.com"
+              placeholder="you@team.com"
             />
           </div>
           <div className="space-y-2">
@@ -118,10 +144,34 @@ export function SignupForm() {
               Use 8+ characters with at least one letter and one number.
             </p>
           </div>
+          <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <input
+              type="checkbox"
+              name="acceptTerms"
+              value="true"
+              required
+              className="mt-1"
+            />
+            <span className="text-sm text-slate-700">
+              I agree to the{" "}
+              <Link href="/terms" className="font-medium text-emerald-700 hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="font-medium text-emerald-700 hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
           {state.error ? (
             <p className="text-sm text-destructive">{state.error}</p>
           ) : null}
-          <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={pending}>
+          <Button
+            type="submit"
+            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            disabled={pending}
+          >
             {pending ? "Creating account..." : "Create account"}
           </Button>
         </form>

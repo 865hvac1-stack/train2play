@@ -29,7 +29,7 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+    return NextResponse.redirect(new URL("/onboarding", req.nextUrl.origin));
   }
 
   return NextResponse.next();

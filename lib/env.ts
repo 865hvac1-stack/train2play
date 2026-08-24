@@ -13,8 +13,9 @@ export function isProductionRuntime() {
   return process.env.NODE_ENV === "production";
 }
 
+/** Demo credentials only on local/dev — never on a public marketing page in production. */
 export function showDemoCredentials() {
-  return !isProductionRuntime() || process.env.SEED_DEMO === "true";
+  return !isProductionRuntime();
 }
 
 export function validateProductionEnv() {
@@ -35,13 +36,27 @@ export function validateProductionEnv() {
       "Train2Play cannot start — set AUTH_URL (and NEXT_PUBLIC_APP_URL) to your public site URL.",
     );
   }
+
+  if (process.env.RESEND_API_KEY && !process.env.EMAIL_FROM?.trim()) {
+    throw new Error(
+      "RESEND_API_KEY is set but EMAIL_FROM is missing. Use a verified sender like Train2Play <noreply@train2play.com>.",
+    );
+  }
+
+  if (process.env.SEED_DEMO === "true") {
+    console.warn(
+      "[train2play] SEED_DEMO=true in production — demo accounts may be created. Use only on staging.",
+    );
+  }
 }
 
 export function getProductionWarnings() {
   const warnings: string[] = [];
 
   if (!process.env.RESEND_API_KEY) {
-    warnings.push("RESEND_API_KEY is not set — pickup and parent emails are disabled.");
+    warnings.push(
+      "RESEND_API_KEY is not set — pickup alerts, parent invites, and password reset emails are disabled.",
+    );
   }
 
   if (
@@ -50,7 +65,7 @@ export function getProductionWarnings() {
     !process.env.AWS_SECRET_ACCESS_KEY
   ) {
     warnings.push(
-      "Video object storage is not configured — uploads will not survive redeploys.",
+      "Video object storage is not configured — file uploads are blocked in production until S3/R2 is set.",
     );
   }
 

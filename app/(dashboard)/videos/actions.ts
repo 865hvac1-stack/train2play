@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 
 import { annotationSchema, videoUrlSchema } from "@/lib/videos";
 import { prisma } from "@/lib/db";
-import { storeVideoFile } from "@/lib/storage";
+import { isProductionRuntime } from "@/lib/env";
+import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { requireUser } from "@/lib/session";
 
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
@@ -81,6 +82,13 @@ export async function createVideoFromUploadAction(
 
   if (file.size > MAX_UPLOAD_BYTES) {
     return { error: "Video must be 100 MB or smaller" };
+  }
+
+  if (isProductionRuntime() && !isObjectStorageConfigured()) {
+    return {
+      error:
+        "Video uploads require cloud storage in production. Paste a direct MP4 URL instead, or ask your admin to configure S3/R2.",
+    };
   }
 
   if (athleteId) {

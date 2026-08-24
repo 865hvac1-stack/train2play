@@ -4,6 +4,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddVideoUrlForm, UploadVideoForm } from "@/components/video-forms";
+import { isProductionRuntime } from "@/lib/env";
+import { isObjectStorageConfigured } from "@/lib/storage";
 import { requireCoachId } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
@@ -14,6 +16,8 @@ export default async function NewVideoPage({
 }) {
   const coachId = await requireCoachId();
   const { athleteId } = await searchParams;
+  const uploadsEnabled =
+    !isProductionRuntime() || isObjectStorageConfigured();
 
   const athletes = await prisma.athlete.findMany({
     where: { coachId },
@@ -38,6 +42,12 @@ export default async function NewVideoPage({
         />
       }
     >
+      {!uploadsEnabled ? (
+        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          File uploads are temporarily limited until cloud video storage is configured.
+          You can still add coaching clips with a direct MP4 URL.
+        </p>
+      ) : null}
       <div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -45,7 +55,13 @@ export default async function NewVideoPage({
             <CardDescription>Best for game film and phone recordings.</CardDescription>
           </CardHeader>
           <CardContent>
-            <UploadVideoForm athletes={athletes} defaultAthleteId={athleteId} />
+            {uploadsEnabled ? (
+              <UploadVideoForm athletes={athletes} defaultAthleteId={athleteId} />
+            ) : (
+              <p className="text-sm text-slate-600">
+                Upload is unavailable. Use the Link URL form or ask your admin to enable R2/S3.
+              </p>
+            )}
           </CardContent>
         </Card>
 

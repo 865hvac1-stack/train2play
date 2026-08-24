@@ -168,3 +168,53 @@ export async function sendPickupInterestEmail(input: PickupInterestEmailInput) {
 
   return { sent: true as const };
 }
+
+type PasswordResetEmailInput = {
+  to: string;
+  name: string;
+  resetUrl: string;
+};
+
+export async function sendPasswordResetEmail(input: PasswordResetEmailInput) {
+  if (!isEmailConfigured()) {
+    return {
+      sent: false as const,
+      reason:
+        "Password reset email is not configured. Contact support or add RESEND_API_KEY.",
+    };
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const html = `
+    <div style="font-family: sans-serif; max-width: 560px; line-height: 1.5; color: #0f172a;">
+      <p>Hi ${input.name},</p>
+      <p>We received a request to reset your ${brand.name} password.</p>
+      <p style="margin: 24px 0;">
+        <a href="${input.resetUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Reset password
+        </a>
+      </p>
+      <p style="color: #64748b; font-size: 14px;">
+        This link expires in 1 hour. If you did not request a reset, you can ignore this email.
+      </p>
+      <p style="color: #64748b; font-size: 14px;">
+        Or copy this link:<br />
+        <a href="${input.resetUrl}">${input.resetUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: getEmailFromAddress(),
+    to: input.to,
+    subject: `Reset your ${brand.name} password`,
+    html,
+  });
+
+  if (error) {
+    return { sent: false as const, reason: error.message ?? "Unable to send email" };
+  }
+
+  return { sent: true as const };
+}
+

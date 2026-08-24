@@ -10,10 +10,22 @@ export type AuthActionState = {
   error?: string;
 };
 
+function safeCallbackUrl(raw: FormDataEntryValue | null) {
+  const value = String(raw ?? "").trim();
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+  return value;
+}
+
 export async function signupAction(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  if (formData.get("acceptTerms") !== "true") {
+    return { error: "Please agree to the Terms of Service and Privacy Policy." };
+  }
+
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -63,7 +75,14 @@ export async function loginAction(
   }
 
   const email = String(formData.get("email") ?? "").toLowerCase();
-  redirect(await getPostAuthRedirect(email));
+  const defaultRedirect = await getPostAuthRedirect(email);
+  const callbackUrl = safeCallbackUrl(formData.get("callbackUrl"));
+
+  if (callbackUrl && defaultRedirect === "/dashboard") {
+    redirect(callbackUrl);
+  }
+
+  redirect(defaultRedirect);
 }
 
 export async function logoutAction() {

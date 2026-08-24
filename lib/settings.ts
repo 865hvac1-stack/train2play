@@ -41,5 +41,5 @@ export function isEmailConfigured() {
 }
 
 export function getEmailFromAddress() {
-  return process.env.EMAIL_FROM ?? "onboarding@resend.dev";
+  return process.env.EMAIL_FROM ?? "Train2Play <noreply@train2play.com>";
 }

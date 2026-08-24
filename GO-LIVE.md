@@ -2,69 +2,75 @@
 
 Use this when deploying **train2play.com** for real coaches and test accounts.
 
+The app is **code-ready to launch**. Complete the ops steps below, then smoke-test.
+
 ## Before you deploy
 
-- [ ] GitHub repo is connected to Railway or Render
-- [ ] PostgreSQL database is added to the project
-- [ ] Domain **train2play.com** is available in your DNS provider
+- [ ] GitHub repo connected to Railway or Render
+- [ ] PostgreSQL database added to the project
+- [ ] Domain **train2play.com** ready in your DNS provider
+- [ ] Mailbox for `support@train2play.com` (or forward to your inbox)
 
-## Required env vars (set on the app service)
+## Required env vars
 
 | Variable | Value |
 | --- | --- |
-| `DATABASE_URL` | From Postgres service (Railway: reference `${{Postgres.DATABASE_URL}}`) |
-| `AUTH_SECRET` | Run `openssl rand -base64 32` — paste result |
-| `AUTH_URL` | `https://train2play.com` (or your Railway URL until DNS is ready) |
+| `DATABASE_URL` | From Postgres (Railway: reference the Postgres variable) |
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `AUTH_URL` | Temporary Railway URL first, then `https://train2play.com` |
 | `NEXT_PUBLIC_APP_URL` | Same as `AUTH_URL` |
 | `SEED_DEMO` | `false` |
 
-## Recommended before coaches upload video
+## Strongly recommended before testers
 
 | Variable | Purpose |
 | --- | --- |
-| `RESEND_API_KEY` | Pickup alert + parent invite emails |
-| `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` |
-| `S3_BUCKET` | Cloudflare R2 bucket name |
-| `S3_ENDPOINT` | R2 endpoint URL |
-| `S3_PUBLIC_URL` | Public URL for videos (custom domain or R2 dev URL) |
+| `RESEND_API_KEY` | Pickup alerts, parent invites, **password reset emails** |
+| `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` (verify domain in Resend) |
+| `S3_BUCKET` | Cloudflare R2 bucket |
+| `S3_ENDPOINT` | R2 endpoint |
+| `S3_PUBLIC_URL` | Public video URL / custom domain |
 | `AWS_ACCESS_KEY_ID` | R2 access key |
 | `AWS_SECRET_ACCESS_KEY` | R2 secret |
 | `S3_REGION` | `auto` for R2 |
 
-## Deploy steps (Railway)
+Without R2/S3, **file uploads are blocked in production** (MP4 URL links still work).  
+Without Resend, password reset emails cannot send.
 
-1. **New Project** → Deploy from GitHub → select this repo
-2. **Add PostgreSQL** to the project
-3. On the **web service**, add env vars from the table above
-4. Link `DATABASE_URL` to the Postgres plugin variable
-5. Deploy — migrations run automatically on start
-6. Open `https://YOUR-APP.up.railway.app/api/health` → expect `"status":"ok"`
-7. Sign up at `/signup` to create your first test coach account
-8. Add custom domain **train2play.com** in Railway → update DNS (CNAME)
-9. Change `AUTH_URL` and `NEXT_PUBLIC_APP_URL` to `https://train2play.com` → redeploy
+## Deploy (Railway)
+
+1. New Project → Deploy from GitHub → this repo
+2. Add PostgreSQL
+3. Set env vars above on the web service
+4. Deploy — migrations run automatically on start
+5. Open `/api/health` → expect `"status":"ok"` and `"checks":{"database":true,...}`
+6. Sign up at `/signup` (agree to Terms + Privacy) → complete onboarding
+7. Add custom domain `train2play.com` → update DNS CNAME
+8. Set `AUTH_URL` + `NEXT_PUBLIC_APP_URL` to `https://train2play.com` → redeploy
 
 ## After go-live smoke test
 
-- [ ] Sign up → onboarding (zip + sport) → dashboard loads
+- [ ] Sign up → onboarding (zip + sport) → dashboard
 - [ ] Add an athlete
-- [ ] Upload a coaching video (requires R2/S3 configured)
-- [ ] Settings → pickup alerts saved
-- [ ] `/api/health` returns ok with database connected
+- [ ] Add a video via MP4 URL (or upload if R2 is configured)
+- [ ] Settings → pickup alerts save
+- [ ] Forgot password sends email (requires Resend)
+- [ ] `/privacy` and `/terms` load
+- [ ] `/api/health` returns ok
 
 ## Create test accounts
 
-Production does **not** include demo logins. For each tester:
+Production does **not** seed demo logins. For each tester:
 
 1. Send them to `https://train2play.com/signup`
-2. They complete onboarding
-3. They build out roster / pickup / video as needed
+2. They accept Terms/Privacy, complete onboarding, start using the app
 
-For a **staging** copy with demo data: set `SEED_DEMO=true`, run `npm run db:seed` once.
+Staging-only demo data: set `SEED_DEMO=true` and run `npm run db:seed` in a one-off shell (seed does not run on deploy).
 
 ## Push updates after launch
 
-Every push to `main` redeploys automatically. Database migrations run on each deploy — no manual steps.
+Every push to `main` redeploys. Migrations run on each deploy automatically.
 
 ---
 
-Full local dev and stack details are in [README.md](./README.md).
+Local setup details: [README.md](./README.md)

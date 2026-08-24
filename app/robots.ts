@@ -7,7 +7,19 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/athletes", "/settings", "/api/"],
+      disallow: [
+        "/dashboard",
+        "/athletes",
+        "/pickup-players",
+        "/training",
+        "/calendar",
+        "/reports",
+        "/videos",
+        "/settings",
+        "/onboarding",
+        "/view/",
+        "/api/",
+      ],
     },
     sitemap: `${getAppUrl()}/sitemap.xml`,
   };

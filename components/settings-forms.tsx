@@ -7,6 +7,7 @@ import {
   updateProfileAction,
   type SettingsActionState,
 } from "@/app/(dashboard)/settings/actions";
+import { brand } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,7 +49,14 @@ export function ProfileSettingsForm({
             <Label htmlFor="email">Email</Label>
             <Input id="email" value={email} disabled />
             <p className="text-xs text-slate-500">
-              Contact support to change your login email.
+              Contact{" "}
+              <a
+                href={`mailto:${brand.supportEmail}`}
+                className="text-emerald-700 hover:underline"
+              >
+                {brand.supportEmail}
+              </a>{" "}
+              to change your login email.
             </p>
           </div>
           {state.error ? (

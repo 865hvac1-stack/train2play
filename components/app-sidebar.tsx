@@ -8,6 +8,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   Menu,
+  Settings,
   Users,
   UserPlus,
   Video,
@@ -35,6 +36,7 @@ const navItems = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/videos", label: "Videos", icon: Video },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
