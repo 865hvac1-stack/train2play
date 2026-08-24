@@ -230,6 +230,29 @@ async function main() {
     }
   }
 
+  const existingGoals = await prisma.progressGoal.count({
+    where: { athlete: { coachId: coach.id } },
+  });
+
+  if (existingGoals === 0) {
+    const ethan = await prisma.athlete.findFirst({
+      where: { coachId: coach.id, firstName: "Ethan" },
+    });
+
+    if (ethan) {
+      await prisma.progressGoal.create({
+        data: {
+          athleteId: ethan.id,
+          label: "40-yard dash",
+          targetValue: 4.75,
+          unit: "sec",
+          direction: "LOWER",
+          dueDate: new Date("2026-09-30"),
+        },
+      });
+    }
+  }
+
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
 }

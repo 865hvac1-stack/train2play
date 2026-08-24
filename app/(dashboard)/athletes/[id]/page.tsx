@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, ClipboardList, Download, Trash2, TrendingUp } from "lucide-react";
+import { Calendar, ClipboardList, Download, Printer, Target, Trash2, TrendingUp } from "lucide-react";
 
 import { deleteAthleteAction } from "@/app/(dashboard)/athletes/actions";
 import { deleteProgressMetricAction } from "@/app/(dashboard)/athletes/progress-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ParentSharePanel } from "@/components/parent-share-panel";
 import { ProgressCharts } from "@/components/progress-charts";
+import { ProgressGoalForm, ProgressGoalsList } from "@/components/progress-goals";
 import { ProgressMetricForm } from "@/components/progress-metric-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,9 @@ export default async function AthleteDetailPage({
       },
       progressMetrics: {
         orderBy: [{ recordedAt: "desc" }, { createdAt: "desc" }],
-        take: 20,
+      },
+      progressGoals: {
+        orderBy: { createdAt: "desc" },
       },
       shareLinks: {
         orderBy: { createdAt: "desc" },
@@ -76,12 +79,38 @@ export default async function AthleteDetailPage({
     recordedAt: metric.recordedAt.toISOString(),
   }));
 
+  function getLatestMetricValue(label: string) {
+    const matching = athlete.progressMetrics
+      .filter((metric) => metric.label.toLowerCase() === label.toLowerCase())
+      .sort(
+        (a, b) =>
+          new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime(),
+      );
+    return matching[0]?.value ?? null;
+  }
+
+  const goalsWithProgress = athlete.progressGoals.map((goal) => ({
+    ...goal,
+    currentValue: getLatestMetricValue(goal.label),
+  }));
+
+  const displayMetrics = athlete.progressMetrics.slice(0, 20);
+
   return (
     <DashboardShell
       title={`${athlete.firstName} ${athlete.lastName}`}
       description="Athlete profile, training plans, and progress"
       action={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            render={
+              <Link href={`/athletes/${athlete.id}/print`}>
+                <Printer className="h-4 w-4" />
+                Print
+              </Link>
+            }
+          />
           <Button
             variant="outline"
             render={
@@ -177,6 +206,30 @@ export default async function AthleteDetailPage({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Performance goals
+              </CardTitle>
+              <CardDescription>
+                Set targets and track progress toward measurable outcomes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ProgressGoalsList
+                athleteId={athlete.id}
+                goals={goalsWithProgress}
+              />
+              <div className="border-t border-slate-200 pt-6">
+                <h3 className="mb-4 text-sm font-semibold text-slate-900">
+                  Add a goal
+                </h3>
+                <ProgressGoalForm athleteId={athlete.id} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
                 Progress history
               </CardTitle>
@@ -187,8 +240,8 @@ export default async function AthleteDetailPage({
             <CardContent className="space-y-6">
               <ProgressCharts metrics={chartMetrics} />
 
-              {athlete.progressMetrics.length > 0 ? (
-                athlete.progressMetrics.map((metric) => (
+              {displayMetrics.length > 0 ? (
+                displayMetrics.map((metric) => (
                   <div
                     key={metric.id}
                     className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-4"

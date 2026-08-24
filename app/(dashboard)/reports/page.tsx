@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, TrendingUp } from "lucide-react";
+import { Download, Printer, TrendingUp } from "lucide-react";
 
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
@@ -65,15 +65,26 @@ export default async function ReportsPage() {
       title="Reports"
       description="Team-wide progress snapshot and exports."
       action={
-        <Button
-          variant="outline"
-          render={
-            <a href="/api/export/team">
-              <Download className="h-4 w-4" />
-              Export team CSV
-            </a>
-          }
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            render={
+              <Link href="/reports/print">
+                <Printer className="h-4 w-4" />
+                Print
+              </Link>
+            }
+          />
+          <Button
+            variant="outline"
+            render={
+              <a href="/api/export/team">
+                <Download className="h-4 w-4" />
+                Export team CSV
+              </a>
+            }
+          />
+        </div>
       }
     >
       <div className="space-y-6">

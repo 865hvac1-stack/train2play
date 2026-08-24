@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Calendar, ClipboardList, Plus, Users } from "lucide-react";
 
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { AthleteCard } from "@/components/athlete-card";
 import { TrainingPlanCard } from "@/components/training-plan-card";
@@ -37,6 +38,8 @@ export default async function DashboardPage() {
     recentPlans,
     sportsBreakdown,
     upcomingWorkouts,
+    metricCount,
+    goalCount,
   ] = await Promise.all([
     prisma.athlete.count({ where: { coachId: user.id } }),
     prisma.trainingPlan.count({
@@ -84,7 +87,40 @@ export default async function DashboardPage() {
       orderBy: [{ scheduledDate: "asc" }, { sortOrder: "asc" }],
       take: 5,
     }),
+    prisma.progressMetric.count({
+      where: { athlete: { coachId: user.id } },
+    }),
+    prisma.progressGoal.count({
+      where: { athlete: { coachId: user.id } },
+    }),
   ]);
+
+  const onboardingSteps = [
+    {
+      id: "athlete",
+      label: "Add your first athlete",
+      href: "/athletes/new",
+      done: athleteCount > 0,
+    },
+    {
+      id: "plan",
+      label: "Create a training plan",
+      href: "/training/new",
+      done: planCount > 0,
+    },
+    {
+      id: "metric",
+      label: "Log a progress metric",
+      href: athleteCount > 0 ? `/athletes/${recentAthletes[0]?.id ?? ""}` : "/athletes/new",
+      done: metricCount > 0,
+    },
+    {
+      id: "goal",
+      label: "Set a performance goal",
+      href: athleteCount > 0 ? `/athletes/${recentAthletes[0]?.id ?? ""}` : "/athletes/new",
+      done: goalCount > 0,
+    },
+  ];
 
   return (
     <DashboardShell
@@ -103,6 +139,8 @@ export default async function DashboardPage() {
       }
     >
       <div className="space-y-6">
+        <OnboardingChecklist steps={onboardingSteps} />
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
