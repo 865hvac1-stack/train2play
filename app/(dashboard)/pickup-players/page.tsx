@@ -19,16 +19,19 @@ export default async function PickupPlayersPage() {
       title="Pickup players"
       description="Quick-add guest players for tryouts, scrimmages, and showcases — with velo compared to system averages."
       action={
-        <Button
-          className="bg-emerald-600 hover:bg-emerald-700"
-          nativeButton={false}
-          render={
-            <Link href="/pickup-players/new">
-              <Plus className="size-4" />
-              Add pickup player
-            </Link>
-          }
-        />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" nativeButton={false} render={<Link href="/pickup-players/nearby">Players near me</Link>} />
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            nativeButton={false}
+            render={
+              <Link href="/pickup-players/new">
+                <Plus className="size-4" />
+                Add pickup player
+              </Link>
+            }
+          />
+        </div>
       }
     >
       {pickupPlayers.length === 0 ? (

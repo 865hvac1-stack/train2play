@@ -22,6 +22,20 @@ export const changePasswordSchema = z
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
+export const pickupAlertSettingsSchema = z.object({
+  zipCode: z
+    .string()
+    .min(5, "Enter a 5-digit zip code")
+    .regex(/^\d{5}$/, "Enter a valid US zip code"),
+  searchRadiusMiles: z.coerce.number().int().min(5).max(100),
+  pickupAlertsEnabled: z.boolean(),
+  lookingForSport: z.string().optional(),
+  lookingForPositions: z.string().optional(),
+  minThrowingVelo: z.coerce.number().positive().optional(),
+});
+
+export type PickupAlertSettingsInput = z.infer<typeof pickupAlertSettingsSchema>;
+
 export function isEmailConfigured() {
   return Boolean(process.env.RESEND_API_KEY);
 }

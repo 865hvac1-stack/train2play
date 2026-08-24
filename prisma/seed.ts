@@ -16,12 +16,54 @@ async function main() {
 
   const coach = await prisma.user.upsert({
     where: { email: "coach@example.com" },
-    update: {},
+    update: {
+      zipCode: "90210",
+      latitude: 34.1031,
+      longitude: -118.4168,
+      searchRadiusMiles: 50,
+      pickupAlertsEnabled: true,
+      lookingForSport: "Baseball",
+      lookingForPositions: "RHP,SS,OF",
+    },
     create: {
       name: "Demo Coach",
       email: "coach@example.com",
       passwordHash,
+      zipCode: "90210",
+      latitude: 34.1031,
+      longitude: -118.4168,
+      searchRadiusMiles: 50,
+      pickupAlertsEnabled: true,
+      lookingForSport: "Baseball",
+      lookingForPositions: "RHP,SS,OF",
     },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "coach2@example.com" },
+    update: {
+      zipCode: "90045",
+      latitude: 33.9583,
+      longitude: -118.3962,
+      searchRadiusMiles: 50,
+      pickupAlertsEnabled: true,
+      lookingForSport: "Baseball",
+    },
+    create: {
+      name: "Westside Baseball",
+      email: "coach2@example.com",
+      passwordHash,
+      zipCode: "90045",
+      latitude: 33.9583,
+      longitude: -118.3962,
+      searchRadiusMiles: 50,
+      pickupAlertsEnabled: true,
+      lookingForSport: "Baseball",
+    },
+  });
+
+  const coach2 = await prisma.user.findUniqueOrThrow({
+    where: { email: "coach2@example.com" },
   });
 
   const existingAthletes = await prisma.athlete.count({
@@ -349,13 +391,13 @@ async function main() {
   }
 
   const pickupPlayer = await prisma.athlete.findFirst({
-    where: { coachId: coach.id, rosterStatus: "PICKUP" },
+    where: { firstName: "Jordan", lastName: "Price", rosterStatus: "PICKUP" },
   });
 
   if (!pickupPlayer) {
     await prisma.athlete.create({
       data: {
-        coachId: coach.id,
+        coachId: coach2.id,
         firstName: "Jordan",
         lastName: "Price",
         sport: "Baseball",
@@ -364,6 +406,12 @@ async function main() {
         bats: "L",
         notes: "Saturday scrimmage guest — strong hands, needs reps.",
         rosterStatus: "PICKUP",
+        zipCode: "90045",
+        latitude: 33.9583,
+        longitude: -118.3962,
+        pickupType: "LOOKING_FOR_TEAM",
+        availabilityNotes: "Available Saturdays and summer showcases",
+        listedForPickup: true,
         progressMetrics: {
           create: [
             {
@@ -390,10 +438,24 @@ async function main() {
         },
       },
     });
+  } else {
+    await prisma.athlete.update({
+      where: { id: pickupPlayer.id },
+      data: {
+        coachId: coach2.id,
+        zipCode: "90045",
+        latitude: 33.9583,
+        longitude: -118.3962,
+        pickupType: "LOOKING_FOR_TEAM",
+        availabilityNotes: "Available Saturdays and summer showcases",
+        listedForPickup: true,
+      },
+    });
   }
 
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
+  console.log("Second coach (for nearby demo): coach2@example.com / password123");
 }
 
 main()

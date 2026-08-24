@@ -3,6 +3,7 @@ import {
   PasswordSettingsForm,
   ProfileSettingsForm,
 } from "@/components/settings-forms";
+import { PickupAlertSettingsForm } from "@/components/pickup-alert-settings-form";
 import {
   Card,
   CardContent,
@@ -30,6 +31,16 @@ export default async function SettingsPage() {
     >
       <div className="mx-auto grid max-w-3xl gap-6">
         <ProfileSettingsForm defaultName={user.name} email={user.email} />
+        <PickupAlertSettingsForm
+          defaults={{
+            zipCode: user.zipCode ?? "",
+            searchRadiusMiles: user.searchRadiusMiles,
+            pickupAlertsEnabled: user.pickupAlertsEnabled,
+            lookingForSport: user.lookingForSport ?? "",
+            lookingForPositions: user.lookingForPositions ?? "",
+            minThrowingVelo: user.minThrowingVelo?.toString() ?? "",
+          }}
+        />
         <PasswordSettingsForm />
 
         <Card>

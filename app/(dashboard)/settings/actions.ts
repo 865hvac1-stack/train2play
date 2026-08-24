@@ -4,10 +4,12 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
+import { geocodeZipCode, normalizeZipCode } from "@/lib/geocoding";
 import { sendShareInviteEmail } from "@/lib/email";
 import { getShareUrl } from "@/lib/share";
 import {
   changePasswordSchema,
+  pickupAlertSettingsSchema,
   updateProfileSchema,
 } from "@/lib/settings";
 import { requireUser } from "@/lib/session";
@@ -82,6 +84,55 @@ export async function changePasswordAction(
   });
 
   return { success: "Password updated successfully." };
+}
+
+export async function updatePickupAlertSettingsAction(
+  _prevState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const user = await requireUser();
+
+  const minVeloRaw = String(formData.get("minThrowingVelo") ?? "").trim();
+  const minThrowingVelo = minVeloRaw ? Number(minVeloRaw) : undefined;
+
+  const parsed = pickupAlertSettingsSchema.safeParse({
+    zipCode: normalizeZipCode(String(formData.get("zipCode") ?? "")),
+    searchRadiusMiles: formData.get("searchRadiusMiles"),
+    pickupAlertsEnabled: formData.get("pickupAlertsEnabled") === "true",
+    lookingForSport: formData.get("lookingForSport") || undefined,
+    lookingForPositions: formData.get("lookingForPositions") || undefined,
+    minThrowingVelo:
+      minThrowingVelo !== undefined && Number.isFinite(minThrowingVelo)
+        ? minThrowingVelo
+        : undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const geo = await geocodeZipCode(parsed.data.zipCode);
+  if (!geo) {
+    return { error: "Could not find that US zip code. Double-check and try again." };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      zipCode: geo.zipCode,
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+      searchRadiusMiles: parsed.data.searchRadiusMiles,
+      pickupAlertsEnabled: parsed.data.pickupAlertsEnabled,
+      lookingForSport: parsed.data.lookingForSport?.trim() || null,
+      lookingForPositions: parsed.data.lookingForPositions?.trim() || null,
+      minThrowingVelo: parsed.data.minThrowingVelo ?? null,
+    },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/pickup-players/nearby");
+  return { success: "Pickup alert settings saved." };
 }
 
 export type EmailActionState = {

@@ -51,6 +51,51 @@ export function PickupPlayerForm() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
+          <Label htmlFor="zipCode">Zip code</Label>
+          <Input id="zipCode" name="zipCode" required placeholder="90210" maxLength={10} />
+          <p className="text-muted-foreground text-xs">
+            Used for distance matching and alerts to nearby coaches.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="pickupType">Player type</Label>
+          <select
+            id="pickupType"
+            name="pickupType"
+            defaultValue="GUEST"
+            className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+          >
+            <option value="GUEST">Guest / one event</option>
+            <option value="LOOKING_FOR_TEAM">Looking for a team</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="availabilityNotes">Availability (optional)</Label>
+        <Input
+          id="availabilityNotes"
+          name="availabilityNotes"
+          placeholder="Available Saturdays, summer showcase in July…"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          id="listedForPickup"
+          name="listedForPickup"
+          type="checkbox"
+          defaultChecked
+          value="true"
+          className="size-4 rounded border-slate-300"
+        />
+        <Label htmlFor="listedForPickup" className="font-normal">
+          List publicly and notify coaches within their search radius
+        </Label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
           <Label htmlFor="sport">Sport</Label>
           <select
             id="sport"

@@ -47,6 +47,9 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - **Player profiles** with throwing velo, bat speed, exit velo vs system average
 - **Pickup players** — quick-add guest players for tryouts and scrimmages
 - Promote pickup players to full roster when ready
+- **Players near me** — find listed pickup players by zip code and radius
+- Email alerts when a matching pickup player is added nearby
+- **I'm interested** — notify a listing coach when you want a player
 
 ## Video coaching
 

@@ -8,16 +8,25 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  email         String         @unique
-  passwordHash  String
-  role          String         @default("COACH")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  athletes      Athlete[]
-  trainingPlans TrainingPlan[]
-  trainingVideos TrainingVideo[]
+  id                   String         @id @default(cuid())
+  name                 String
+  email                String         @unique
+  passwordHash         String
+  role                 String         @default("COACH")
+  zipCode              String?
+  latitude             Float?
+  longitude            Float?
+  searchRadiusMiles    Int            @default(25)
+  pickupAlertsEnabled  Boolean        @default(true)
+  lookingForSport      String?
+  lookingForPositions  String?
+  minThrowingVelo      Float?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  athletes             Athlete[]
+  trainingPlans        TrainingPlan[]
+  trainingVideos       TrainingVideo[]
+  pickupInterests      PickupInterest[]
 }
 
 model Athlete {
@@ -33,6 +42,12 @@ model Athlete {
   rosterStatus  String         @default("ROSTER")
   throws        String?
   bats          String?
+  zipCode       String?
+  latitude      Float?
+  longitude     Float?
+  pickupType    String?
+  availabilityNotes String?
+  listedForPickup   Boolean      @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   trainingPlans TrainingPlan[]
@@ -40,8 +55,23 @@ model Athlete {
   progressGoals   ProgressGoal[]
   shareLinks      ParentShareLink[]
   trainingVideos  TrainingVideo[]
+  pickupInterests PickupInterest[]
 
   @@index([coachId])
+  @@index([rosterStatus, listedForPickup])
+}
+
+model PickupInterest {
+  id                 String   @id @default(cuid())
+  interestedCoachId  String
+  interestedCoach    User     @relation(fields: [interestedCoachId], references: [id], onDelete: Cascade)
+  pickupAthleteId    String
+  pickupAthlete      Athlete  @relation(fields: [pickupAthleteId], references: [id], onDelete: Cascade)
+  message            String?
+  createdAt          DateTime @default(now())
+
+  @@unique([interestedCoachId, pickupAthleteId])
+  @@index([pickupAthleteId])
 }
 
 model TrainingVideo {

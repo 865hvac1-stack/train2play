@@ -11,6 +11,7 @@ import {
   Users,
   UserPlus,
   Video,
+  MapPin,
 } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand-logo";
@@ -28,6 +29,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/athletes", label: "Athletes", icon: Users },
+  { href: "/pickup-players/nearby", label: "Players near me", icon: MapPin },
   { href: "/pickup-players", label: "Pickup players", icon: UserPlus },
   { href: "/training", label: "Training", icon: ClipboardList },
   { href: "/calendar", label: "Calendar", icon: Calendar },

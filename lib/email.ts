@@ -56,3 +56,115 @@ export async function sendShareInviteEmail(input: ShareInviteEmailInput) {
 
   return { sent: true as const };
 }
+
+type PickupAlertEmailInput = {
+  to: string;
+  coachName: string;
+  playerName: string;
+  sport: string;
+  position: string | null;
+  zipCode: string;
+  distanceMiles: number;
+  throwingVelo: number | null;
+  pickupType: string | null;
+  profileUrl: string;
+  nearbyUrl: string;
+};
+
+export async function sendPickupPlayerAlertEmail(input: PickupAlertEmailInput) {
+  if (!isEmailConfigured()) {
+    return {
+      sent: false as const,
+      reason: "Email is not configured. Add RESEND_API_KEY to your environment.",
+    };
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const veloLine = input.throwingVelo
+    ? `<li>Throwing velo: <strong>${input.throwingVelo} mph</strong></li>`
+    : "";
+  const typeLabel =
+    input.pickupType === "LOOKING_FOR_TEAM" ? "Looking for a team" : "Guest / tryout player";
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 560px; line-height: 1.5; color: #0f172a;">
+      <p>Hi ${input.coachName},</p>
+      <p>A new pickup player near you was just added on ${brand.name}:</p>
+      <p style="font-size: 18px; font-weight: 600;">${input.playerName}</p>
+      <ul>
+        <li>${input.sport}${input.position ? ` · ${input.position}` : ""}</li>
+        <li>${typeLabel}</li>
+        <li>Zip ${input.zipCode} · ~${input.distanceMiles.toFixed(1)} miles from you</li>
+        ${veloLine}
+      </ul>
+      <p style="margin: 24px 0;">
+        <a href="${input.profileUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          View player profile
+        </a>
+      </p>
+      <p style="color: #64748b; font-size: 14px;">
+        Browse all nearby players: <a href="${input.nearbyUrl}">${input.nearbyUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: getEmailFromAddress(),
+    to: input.to,
+    subject: `New pickup player near you — ${input.playerName}`,
+    html,
+  });
+
+  if (error) {
+    return { sent: false as const, reason: error.message ?? "Unable to send email" };
+  }
+
+  return { sent: true as const };
+}
+
+type PickupInterestEmailInput = {
+  to: string;
+  listingCoachName: string;
+  interestedCoachName: string;
+  interestedCoachEmail: string;
+  playerName: string;
+  message: string | null;
+  profileUrl: string;
+};
+
+export async function sendPickupInterestEmail(input: PickupInterestEmailInput) {
+  if (!isEmailConfigured()) {
+    return {
+      sent: false as const,
+      reason: "Email is not configured. Add RESEND_API_KEY to your environment.",
+    };
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 560px; line-height: 1.5; color: #0f172a;">
+      <p>Hi ${input.listingCoachName},</p>
+      <p><strong>${input.interestedCoachName}</strong> (${input.interestedCoachEmail}) is interested in your pickup player <strong>${input.playerName}</strong>.</p>
+      ${input.message ? `<p style="background: #f8fafc; padding: 12px 16px; border-radius: 8px;">"${input.message}"</p>` : ""}
+      <p style="margin: 24px 0;">
+        <a href="${input.profileUrl}" style="background: #059669; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          View player profile
+        </a>
+      </p>
+    </div>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: getEmailFromAddress(),
+    to: input.to,
+    subject: `Coach interested in ${input.playerName}`,
+    html,
+  });
+
+  if (error) {
+    return { sent: false as const, reason: error.message ?? "Unable to send email" };
+  }
+
+  return { sent: true as const };
+}
