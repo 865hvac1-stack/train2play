@@ -10,7 +10,8 @@ export default auth((req) => {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/athletes") ||
     pathname.startsWith("/training") ||
-    pathname.startsWith("/calendar");
+    pathname.startsWith("/calendar") ||
+    pathname.startsWith("/settings");
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -31,6 +32,7 @@ export const config = {
     "/athletes/:path*",
     "/training/:path*",
     "/calendar/:path*",
+    "/settings/:path*",
     "/login",
     "/signup",
   ],

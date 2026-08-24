@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
+import { prisma } from "@/lib/db";
 
 export async function DashboardShell({
   title,
@@ -17,14 +19,21 @@ export async function DashboardShell({
 }) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, email: true },
+  });
+
+  const user = dbUser ?? session.user;
 
   return (
     <>
       <AppHeader
-        user={session.user}
+        user={user}
         title={title}
         description={description}
         action={action}

@@ -7,6 +7,7 @@ import {
   createShareLinkAction,
   revokeShareLinkAction,
 } from "@/app/(dashboard)/athletes/share-actions";
+import { sendShareInviteEmailAction } from "@/app/(dashboard)/settings/actions";
 import { buildShareInviteMailto } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ type ParentSharePanelProps = {
   athleteId: string;
   athleteName: string;
   coachName: string;
+  emailEnabled: boolean;
   links: ShareLink[];
 };
 
@@ -43,10 +45,12 @@ export function ParentSharePanel({
   athleteId,
   athleteName,
   coachName,
+  emailEnabled,
   links,
 }: ParentSharePanelProps) {
   const [parentEmail, setParentEmail] = useState("");
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const activeLinks = links.filter((link) => !link.revokedAt);
@@ -71,6 +75,14 @@ export function ParentSharePanel({
   function handleRevoke(linkId: string) {
     startTransition(async () => {
       await revokeShareLinkAction(athleteId, linkId);
+    });
+  }
+
+  function handleSendEmail(linkId: string) {
+    startTransition(async () => {
+      const result = await sendShareInviteEmailAction(athleteId, linkId);
+      setEmailFeedback(result.success ?? result.error ?? null);
+      setTimeout(() => setEmailFeedback(null), 4000);
     });
   }
 
@@ -106,6 +118,10 @@ export function ParentSharePanel({
         >
           {pending ? "Generating..." : "Generate new link"}
         </Button>
+
+        {emailFeedback ? (
+          <p className="text-sm text-slate-600">{emailFeedback}</p>
+        ) : null}
 
         {activeLinks.length > 0 ? (
           <ul className="space-y-3">
@@ -166,6 +182,18 @@ export function ParentSharePanel({
                           </a>
                         }
                       />
+                    ) : null}
+                    {emailEnabled && link.parentEmail ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => handleSendEmail(link.id)}
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        Send email
+                      </Button>
                     ) : null}
                     <Button
                       type="button"

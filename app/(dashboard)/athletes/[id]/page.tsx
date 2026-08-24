@@ -22,6 +22,7 @@ import {
   formatMetricDate,
   formatMetricValue,
 } from "@/lib/progress";
+import { isEmailConfigured } from "@/lib/settings";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
@@ -237,6 +238,7 @@ export default async function AthleteDetailPage({
             athleteId={athlete.id}
             athleteName={`${athlete.firstName} ${athlete.lastName}`}
             coachName={athlete.coach.name}
+            emailEnabled={isEmailConfigured()}
             links={athlete.shareLinks}
           />
         </div>

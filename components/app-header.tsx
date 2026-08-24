@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { logoutAction } from "@/app/(auth)/actions";
 import { MobileNav } from "@/components/app-sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -79,6 +81,13 @@ export function AppHeader({ user, title, description, action }: AppHeaderProps) 
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                render={
+                  <Link href="/settings" className="w-full">
+                    Settings
+                  </Link>
+                }
+              />
               <DropdownMenuItem
                 render={
                   <form action={logoutAction}>

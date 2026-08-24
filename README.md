@@ -30,7 +30,11 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Mark workouts complete and track plan progress
 - Log performance metrics on athlete profiles (times, weights, jumps)
 - Progress charts when multiple entries exist for the same metric
-- Share read-only family links with parents (no account needed)
+- Monthly workout calendar across all training plans
+- Athlete roster search by name, sport, or position
+- Share read-only family links with optional email invite
+- Coach settings for profile and password updates
+- Optional automated parent emails via Resend (RESEND_API_KEY)
 - Dashboard upcoming workouts for the week
 - Centralized brand configuration
 
