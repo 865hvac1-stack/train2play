@@ -7,9 +7,10 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
+RUN npx prisma generate
 
 # Build-time placeholders — overridden at runtime by the host (Railway, Render, etc.)
 ARG DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
