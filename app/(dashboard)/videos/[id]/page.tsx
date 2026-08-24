@@ -36,6 +36,7 @@ export default async function VideoDetailPage({
           <Badge variant="secondary">{video.sourceType === "UPLOAD" ? "Upload" : "URL"}</Badge>
           <Button
             variant="outline"
+            nativeButton={false}
             render={
               <Link href="/videos">
                 <ArrowLeft className="size-4" />
@@ -73,7 +74,13 @@ export default async function VideoDetailPage({
           <VideoAnnotator
             videoId={video.id}
             videoUrl={video.videoUrl}
-            initialAnnotations={video.annotations}
+            initialAnnotations={video.annotations.map((annotation) => ({
+              id: annotation.id,
+              timestampMs: annotation.timestampMs,
+              label: annotation.label,
+              note: annotation.note,
+              strokes: annotation.strokes,
+            }))}
           />
         </CardContent>
       </Card>

@@ -3,17 +3,16 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+import { authConfig } from "@/auth.config";
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
+  ...authConfig,
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
   providers: [
     Credentials({
       name: "credentials",
@@ -54,18 +53,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    },
-  },
 });

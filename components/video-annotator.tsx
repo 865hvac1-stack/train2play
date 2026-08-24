@@ -261,23 +261,24 @@ export function VideoAnnotator({
     }
 
     startTransition(async () => {
-      try {
-        await saveVideoAnnotationAction(videoId, {
-          timestampMs: Math.floor(video.currentTime * 1000),
-          label: label || undefined,
-          note: note || undefined,
-          strokes: JSON.stringify(draftStrokes),
-        });
-        setMessage("Coaching note saved at this timestamp.");
-        setLabel("");
-        setNote("");
-        clearDraft();
-        router.refresh();
-      } catch (error) {
-        setMessage(
-          error instanceof Error ? error.message : "Unable to save annotation",
-        );
+      const result = await saveVideoAnnotationAction(videoId, {
+        timestampMs: Math.floor(video.currentTime * 1000),
+        label: label || undefined,
+        note: note || undefined,
+        strokes: JSON.stringify(draftStrokes),
+      });
+
+      if (result.error) {
+        setMessage(result.error);
+        return;
       }
+
+      setMessage("Coaching note saved at this timestamp.");
+      setLabel("");
+      setNote("");
+      setIsDrawing(false);
+      clearDraft();
+      router.refresh();
     });
   }
 
@@ -331,9 +332,10 @@ export function VideoAnnotator({
         {videoStatus === "error" ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center">
             <div className="max-w-sm text-white">
-              <p className="font-medium">Video failed to load</p>
+              <p className="font-medium">This video link couldn&apos;t be loaded</p>
               <p className="mt-2 text-sm text-white/80">
-                Try uploading the file directly instead of using a link.
+                Upload the file directly from the Add video page — that works best for coaching
+                clips.
               </p>
             </div>
           </div>

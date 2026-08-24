@@ -28,6 +28,7 @@ export default async function NewVideoPage({
       action={
         <Button
           variant="outline"
+          nativeButton={false}
           render={
             <Link href="/videos">
               <ArrowLeft className="size-4" />

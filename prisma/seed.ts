@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import "dotenv/config";
 
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { DEMO_VIDEO_URL } from "../lib/videos";
 
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
@@ -253,6 +254,17 @@ async function main() {
     }
   }
 
+  await prisma.trainingVideo.updateMany({
+    where: {
+      videoUrl: {
+        contains: "ForBiggerBlazes",
+      },
+    },
+    data: {
+      videoUrl: DEMO_VIDEO_URL,
+    },
+  });
+
   const existingVideos = await prisma.trainingVideo.count({
     where: { coachId: coach.id },
   });
@@ -269,8 +281,7 @@ async function main() {
         title: "Route break — coaching example",
         description: "Sample clip for drawing arrows and adding written direction.",
         sourceType: "URL",
-        videoUrl:
-          "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        videoUrl: DEMO_VIDEO_URL,
         annotations: {
           create: {
             timestampMs: 3000,

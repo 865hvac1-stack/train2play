@@ -25,6 +25,7 @@ export default async function VideosPage() {
       action={
         <Button
           className="bg-emerald-600 hover:bg-emerald-700"
+          nativeButton={false}
           render={
             <Link href="/videos/new">
               <Plus className="size-4" />
@@ -45,6 +46,7 @@ export default async function VideosPage() {
             </p>
             <Button
               className="mt-6 bg-emerald-600 hover:bg-emerald-700"
+              nativeButton={false}
               render={<Link href="/videos/new">Add your first video</Link>}
             />
           </CardContent>
