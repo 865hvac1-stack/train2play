@@ -174,3 +174,57 @@ export async function deleteTrainingPlanAction(planId: string) {
   revalidatePath("/dashboard");
   redirect("/training");
 }
+
+export async function duplicateTrainingPlanAction(
+  planId: string,
+  formData: FormData,
+) {
+  const user = await requireUser();
+
+  const plan = await prisma.trainingPlan.findFirst({
+    where: { id: planId, coachId: user.id },
+    include: {
+      workouts: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+    },
+  });
+
+  if (!plan) {
+    throw new Error("Training plan not found");
+  }
+
+  const athleteId = (formData.get("athleteId") as string) || null;
+
+  if (athleteId) {
+    const athlete = await prisma.athlete.findFirst({
+      where: { id: athleteId, coachId: user.id },
+    });
+    if (!athlete) {
+      throw new Error("Athlete not found");
+    }
+  }
+
+  const copy = await prisma.trainingPlan.create({
+    data: {
+      coachId: user.id,
+      athleteId,
+      title: `${plan.title} (Copy)`,
+      description: plan.description,
+      status: "ACTIVE",
+      startDate: plan.startDate,
+      endDate: plan.endDate,
+      workouts: {
+        create: plan.workouts.map((workout, index) => ({
+          title: workout.title,
+          description: workout.description,
+          durationMinutes: workout.durationMinutes,
+          sortOrder: index,
+        })),
+      },
+    },
+  });
+
+  revalidatePath("/training");
+  revalidatePath("/dashboard");
+  revalidatePath("/reports");
+  redirect(`/training/${copy.id}`);
+}

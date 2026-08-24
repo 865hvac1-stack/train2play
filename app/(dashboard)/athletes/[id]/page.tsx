@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, ClipboardList, Trash2, TrendingUp } from "lucide-react";
+import { Calendar, ClipboardList, Download, Trash2, TrendingUp } from "lucide-react";
 
 import { deleteAthleteAction } from "@/app/(dashboard)/athletes/actions";
 import { deleteProgressMetricAction } from "@/app/(dashboard)/athletes/progress-actions";
@@ -81,7 +81,18 @@ export default async function AthleteDetailPage({
       title={`${athlete.firstName} ${athlete.lastName}`}
       description="Athlete profile, training plans, and progress"
       action={
-        <Button variant="outline" render={<Link href="/athletes">Back to roster</Link>} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            render={
+              <a href={`/api/export/athlete/${athlete.id}`}>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </a>
+            }
+          />
+          <Button variant="outline" render={<Link href="/athletes">Back to roster</Link>} />
+        </div>
       }
     >
       <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[2fr_1fr]">

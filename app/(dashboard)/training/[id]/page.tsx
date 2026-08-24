@@ -8,6 +8,7 @@ import {
   updatePlanStatusAction,
 } from "@/app/(dashboard)/training/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DuplicatePlanForm } from "@/components/duplicate-plan-form";
 import { WorkoutForm } from "@/components/workout-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,12 @@ export default async function TrainingPlanDetailPage({
   if (!plan) {
     notFound();
   }
+
+  const athletes = await prisma.athlete.findMany({
+    where: { coachId: user.id },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    select: { id: true, firstName: true, lastName: true },
+  });
 
   const completedCount = plan.workouts.filter((w) => w.completed).length;
 
@@ -187,6 +194,22 @@ export default async function TrainingPlanDetailPage({
             </CardHeader>
             <CardContent>
               <WorkoutForm planId={plan.id} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Duplicate plan</CardTitle>
+              <CardDescription>
+                Copy this program to reuse with another athlete.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DuplicatePlanForm
+                planId={plan.id}
+                athletes={athletes}
+                currentAthleteId={plan.athleteId}
+              />
             </CardContent>
           </Card>
 

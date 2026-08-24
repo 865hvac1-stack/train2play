@@ -31,6 +31,8 @@ A SaaS platform for youth athlete training — helping coaches manage rosters, b
 - Log performance metrics on athlete profiles (times, weights, jumps)
 - Progress charts when multiple entries exist for the same metric
 - Monthly workout calendar across all training plans
+- Team reports with per-athlete completion rates and CSV export
+- Duplicate training plans to reuse programs across athletes
 - Athlete roster search by name, sport, or position
 - Share read-only family links with optional email invite
 - Coach settings for profile and password updates

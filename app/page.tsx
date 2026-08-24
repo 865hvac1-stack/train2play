@@ -77,6 +77,8 @@ export default async function HomePage() {
                 "Create training plans with scheduled workouts",
                 "Track workout completion and progress metrics",
                 "View workouts on a monthly calendar",
+                "Team reports with CSV export",
+                "Duplicate training plans across athletes",
                 "Share read-only family links with parents",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-slate-700">

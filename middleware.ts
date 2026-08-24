@@ -11,6 +11,7 @@ export default auth((req) => {
     pathname.startsWith("/athletes") ||
     pathname.startsWith("/training") ||
     pathname.startsWith("/calendar") ||
+    pathname.startsWith("/reports") ||
     pathname.startsWith("/settings");
 
   if (isProtected && !isLoggedIn) {
@@ -32,6 +33,7 @@ export const config = {
     "/athletes/:path*",
     "/training/:path*",
     "/calendar/:path*",
+    "/reports/:path*",
     "/settings/:path*",
     "/login",
     "/signup",
