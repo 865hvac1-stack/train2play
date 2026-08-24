@@ -18,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { formatPlanStatus, PLAN_STATUSES } from "@/lib/training";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 

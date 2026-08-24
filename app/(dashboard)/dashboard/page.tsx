@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Plus, Users } from "lucide-react";
+import { Calendar, ClipboardList, Plus, Users } from "lucide-react";
 
 import { DashboardShell } from "@/components/dashboard-shell";
 import { AthleteCard } from "@/components/athlete-card";
@@ -15,37 +15,76 @@ import {
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
+function formatWorkoutDate(date: Date | null) {
+  if (!date) return "Unscheduled";
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
 export default async function DashboardPage() {
   const user = await requireUser();
+  const now = new Date();
+  const weekFromNow = new Date(now);
+  weekFromNow.setDate(weekFromNow.getDate() + 7);
 
-  const [athleteCount, planCount, recentAthletes, recentPlans, sportsBreakdown] =
-    await Promise.all([
-      prisma.athlete.count({ where: { coachId: user.id } }),
-      prisma.trainingPlan.count({
-        where: { coachId: user.id, status: "ACTIVE" },
-      }),
-      prisma.athlete.findMany({
-        where: { coachId: user.id },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      }),
-      prisma.trainingPlan.findMany({
-        where: { coachId: user.id },
-        include: {
-          athlete: { select: { firstName: true, lastName: true } },
-          workouts: { select: { completed: true } },
+  const [
+    athleteCount,
+    planCount,
+    recentAthletes,
+    recentPlans,
+    sportsBreakdown,
+    upcomingWorkouts,
+  ] = await Promise.all([
+    prisma.athlete.count({ where: { coachId: user.id } }),
+    prisma.trainingPlan.count({
+      where: { coachId: user.id, status: "ACTIVE" },
+    }),
+    prisma.athlete.findMany({
+      where: { coachId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+    prisma.trainingPlan.findMany({
+      where: { coachId: user.id },
+      include: {
+        athlete: { select: { firstName: true, lastName: true } },
+        workouts: { select: { completed: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+    }),
+    prisma.athlete.groupBy({
+      by: ["sport"],
+      where: { coachId: user.id },
+      _count: { sport: true },
+      orderBy: { _count: { sport: "desc" } },
+      take: 4,
+    }),
+    prisma.workout.findMany({
+      where: {
+        completed: false,
+        trainingPlan: { coachId: user.id, status: "ACTIVE" },
+        OR: [
+          { scheduledDate: { gte: now, lte: weekFromNow } },
+          { scheduledDate: { lt: now } },
+        ],
+      },
+      include: {
+        trainingPlan: {
+          select: {
+            id: true,
+            title: true,
+            athlete: { select: { firstName: true, lastName: true } },
+          },
         },
-        orderBy: { updatedAt: "desc" },
-        take: 3,
-      }),
-      prisma.athlete.groupBy({
-        by: ["sport"],
-        where: { coachId: user.id },
-        _count: { sport: true },
-        orderBy: { _count: { sport: "desc" } },
-        take: 4,
-      }),
-    ]);
+      },
+      orderBy: [{ scheduledDate: "asc" }, { sortOrder: "asc" }],
+      take: 5,
+    }),
+  ]);
 
   return (
     <DashboardShell
@@ -105,6 +144,53 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Upcoming workouts
+            </h2>
+            <Link
+              href="/training"
+              className="text-sm font-medium text-emerald-700 hover:underline"
+            >
+              All plans
+            </Link>
+          </div>
+
+          {upcomingWorkouts.length > 0 ? (
+            <div className="space-y-3">
+              {upcomingWorkouts.map((workout) => (
+                <Link
+                  key={workout.id}
+                  href={`/training/${workout.trainingPlan.id}`}
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50"
+                >
+                  <div>
+                    <p className="font-medium text-slate-900">{workout.title}</p>
+                    <p className="text-sm text-slate-500">
+                      {workout.trainingPlan.title}
+                      {workout.trainingPlan.athlete
+                        ? ` · ${workout.trainingPlan.athlete.firstName} ${workout.trainingPlan.athlete.lastName}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Calendar className="h-4 w-4" />
+                    {formatWorkoutDate(workout.scheduledDate)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="py-6 text-sm text-slate-500">
+                No upcoming workouts this week. Add workouts to your active
+                training plans to see them here.
+              </CardContent>
+            </Card>
+          )}
+        </section>
 
         <section>
           <div className="mb-4 flex items-center justify-between">

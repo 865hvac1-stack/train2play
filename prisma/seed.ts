@@ -172,6 +172,64 @@ async function main() {
     });
   }
 
+  const existingMetrics = await prisma.progressMetric.count({
+    where: { athlete: { coachId: coach.id } },
+  });
+
+  if (existingMetrics === 0) {
+    const maya = await prisma.athlete.findFirst({
+      where: { coachId: coach.id, firstName: "Maya" },
+    });
+    const ethan = await prisma.athlete.findFirst({
+      where: { coachId: coach.id, firstName: "Ethan" },
+    });
+
+    if (maya) {
+      await prisma.progressMetric.createMany({
+        data: [
+          {
+            athleteId: maya.id,
+            label: "Vertical jump",
+            value: 22,
+            unit: "in",
+            recordedAt: new Date("2026-07-15"),
+            notes: "Baseline measurement",
+          },
+          {
+            athleteId: maya.id,
+            label: "Free throw %",
+            value: 68,
+            unit: "%",
+            recordedAt: new Date("2026-08-10"),
+          },
+        ],
+      });
+    }
+
+    if (ethan) {
+      await prisma.progressMetric.createMany({
+        data: [
+          {
+            athleteId: ethan.id,
+            label: "40-yard dash",
+            value: 4.92,
+            unit: "sec",
+            recordedAt: new Date("2026-07-20"),
+            notes: "Hand-timed",
+          },
+          {
+            athleteId: ethan.id,
+            label: "40-yard dash",
+            value: 4.85,
+            unit: "sec",
+            recordedAt: new Date("2026-08-18"),
+            notes: "Improved burst off the line",
+          },
+        ],
+      });
+    }
+  }
+
   console.log("Seed complete.");
   console.log("Demo login: coach@example.com / password123");
 }

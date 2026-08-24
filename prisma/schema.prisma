@@ -32,8 +32,24 @@ model Athlete {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   trainingPlans TrainingPlan[]
+  progressMetrics ProgressMetric[]
 
   @@index([coachId])
+}
+
+model ProgressMetric {
+  id         String   @id @default(cuid())
+  athleteId  String
+  athlete    Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  label      String
+  value      Float
+  unit       String
+  recordedAt DateTime @default(now())
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([athleteId])
+  @@index([athleteId, label])
 }
 
 model TrainingPlan {
