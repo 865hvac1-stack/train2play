@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("COACH")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  athletes     Athlete[]
+}
+
+model Athlete {
+  id          String    @id @default(cuid())
+  coachId     String
+  coach       User      @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  sport       String
+  position    String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([coachId])
+}
