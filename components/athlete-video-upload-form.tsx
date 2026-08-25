@@ -76,11 +76,14 @@ export function AthleteVideoUploadForm({
           id="videoFile"
           name="videoFile"
           type="file"
-          accept="video/*"
-          capture="environment"
+          accept="video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm"
           required
           className="min-h-12 border-white/15 bg-black text-white file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-bold file:text-black"
         />
+        <p className="text-xs text-slate-500">
+          Choose a video from your camera roll / files (up to 100 MB). You can
+          also record a new one if your phone offers that option.
+        </p>
       </div>
 
       <div className="space-y-2">
