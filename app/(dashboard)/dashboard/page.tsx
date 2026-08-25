@@ -286,60 +286,82 @@ export default async function DashboardPage() {
         ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-brand/15 bg-white/90 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardDescription>Athletes</CardDescription>
-              <CardTitle className="font-heading text-3xl">{athleteCount}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Users className="h-4 w-4 text-brand" />
-                On your roster
-              </div>
-            </CardContent>
-          </Card>
+          <Link
+            href="/athletes"
+            className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          >
+            <Card className="h-full border-brand/15 bg-white/90 shadow-sm transition-all group-hover:-translate-y-0.5 group-hover:border-brand/35 group-hover:shadow-md">
+              <CardHeader className="pb-2">
+                <CardDescription>Athletes</CardDescription>
+                <CardTitle className="font-heading text-3xl">
+                  {athleteCount}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Users className="h-4 w-4 text-brand" />
+                  On your roster
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="border-brand/15 bg-white/90 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardDescription>Active plans</CardDescription>
-              <CardTitle className="font-heading text-3xl">{planCount}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <ClipboardList className="h-4 w-4 text-brand" />
-                In progress
-              </div>
-            </CardContent>
-          </Card>
+          <Link
+            href="/training"
+            className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          >
+            <Card className="h-full border-brand/15 bg-white/90 shadow-sm transition-all group-hover:-translate-y-0.5 group-hover:border-brand/35 group-hover:shadow-md">
+              <CardHeader className="pb-2">
+                <CardDescription>Active plans</CardDescription>
+                <CardTitle className="font-heading text-3xl">{planCount}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <ClipboardList className="h-4 w-4 text-brand" />
+                  In progress
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="border-brand/15 bg-white/90 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardDescription>Videos</CardDescription>
-              <CardTitle className="font-heading text-3xl">{videoCount}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Video className="h-4 w-4 text-brand" />
-                Film on file
-              </div>
-            </CardContent>
-          </Card>
+          <Link
+            href="/videos"
+            className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          >
+            <Card className="h-full border-brand/15 bg-white/90 shadow-sm transition-all group-hover:-translate-y-0.5 group-hover:border-brand/35 group-hover:shadow-md">
+              <CardHeader className="pb-2">
+                <CardDescription>Videos</CardDescription>
+                <CardTitle className="font-heading text-3xl">{videoCount}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Video className="h-4 w-4 text-brand" />
+                  Film on file
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="border-brand/15 bg-white/90 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardDescription>Sports</CardDescription>
-              <CardTitle className="font-heading text-3xl">
-                {sportsBreakdown.length}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="truncate text-sm text-slate-500">
-                {sportsBreakdown.length > 0
-                  ? sportsBreakdown.map((s) => s.sport).join(", ")
-                  : "Add athletes to begin"}
-              </p>
-            </CardContent>
-          </Card>
+          <Link
+            href="/athletes"
+            className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          >
+            <Card className="h-full border-brand/15 bg-white/90 shadow-sm transition-all group-hover:-translate-y-0.5 group-hover:border-brand/35 group-hover:shadow-md">
+              <CardHeader className="pb-2">
+                <CardDescription>Sports</CardDescription>
+                <CardTitle className="font-heading text-3xl">
+                  {sportsBreakdown.length}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="truncate text-sm text-slate-500">
+                  {sportsBreakdown.length > 0
+                    ? sportsBreakdown.map((s) => s.sport).join(", ")
+                    : "Add athletes to begin"}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
