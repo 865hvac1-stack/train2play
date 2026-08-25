@@ -25,7 +25,9 @@ export default auth((req) => {
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isOnboardingPage = pathname === "/onboarding";
-  const isAthleteArea = pathname.startsWith("/athlete");
+  // Must not match coach "/athletes*" — only the athlete portal "/athlete" and "/athlete/..."
+  const isAthleteArea =
+    pathname === "/athlete" || pathname.startsWith("/athlete/");
   const isCoachArea =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/athletes") ||

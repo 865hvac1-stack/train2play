@@ -83,8 +83,10 @@ export async function loginAction(
   const callbackUrl = safeCallbackUrl(formData.get("callbackUrl"));
 
   if (callbackUrl) {
-    const athleteHome = defaultRedirect.startsWith("/athlete");
-    const callbackIsAthlete = callbackUrl.startsWith("/athlete");
+    const athleteHome =
+      defaultRedirect === "/athlete" || defaultRedirect.startsWith("/athlete/");
+    const callbackIsAthlete =
+      callbackUrl === "/athlete" || callbackUrl.startsWith("/athlete/");
     const callbackIsCoach =
       callbackUrl.startsWith("/dashboard") ||
       callbackUrl.startsWith("/athletes") ||
