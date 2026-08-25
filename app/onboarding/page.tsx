@@ -23,8 +23,12 @@ export default async function OnboardingPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { onboardingCompletedAt: true, name: true },
+    select: { onboardingCompletedAt: true, name: true, role: true },
   });
+
+  if (user?.role === "ATHLETE") {
+    redirect("/athlete");
+  }
 
   if (user?.onboardingCompletedAt) {
     redirect("/dashboard");

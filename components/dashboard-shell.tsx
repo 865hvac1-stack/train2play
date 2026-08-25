@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { prisma } from "@/lib/db";
+import { isAthleteRole } from "@/lib/roles";
+import { requireCoach } from "@/lib/session";
 
 export async function DashboardShell({
   title,
@@ -16,28 +18,26 @@ export async function DashboardShell({
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+  const user = await requireCoach();
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: user.id },
     select: { id: true, name: true, email: true },
   });
 
-  const user = dbUser ?? session.user;
+  const displayUser = dbUser ?? user;
 
   return (
     <>
       <AppHeader
-        user={user}
+        user={displayUser}
         title={title}
         description={description}
         action={action}
       />
-      <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">{children}</main>
+      <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">
+        {children}
+      </main>
     </>
   );
 }
@@ -52,6 +52,12 @@ export async function DashboardLayoutWrapper({
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  if (isAthleteRole(session.user.role)) {
+    redirect("/athlete");
+  }
+
+  await requireCoach();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

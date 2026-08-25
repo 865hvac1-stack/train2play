@@ -60,8 +60,14 @@ export async function completeOnboardingAction(
 export async function getPostAuthRedirect(email: string) {
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
-    select: { onboardingCompletedAt: true },
+    select: { onboardingCompletedAt: true, role: true },
   });
 
-  return user?.onboardingCompletedAt ? "/dashboard" : "/onboarding";
+  if (!user) return "/dashboard";
+
+  const { getLoginLandingPath } = await import("@/lib/roles");
+  return getLoginLandingPath({
+    role: user.role,
+    onboardingCompletedAt: user.onboardingCompletedAt,
+  });
 }

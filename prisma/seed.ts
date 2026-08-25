@@ -3,6 +3,7 @@ import "dotenv/config";
 
 import { createPrismaClient } from "../lib/db";
 import { DEMO_VIDEO_URL } from "../lib/videos";
+import { syncAthleteProfile } from "../lib/athlete-profiles";
 import { runPhase1Foundation } from "../scripts/backfill-phase1";
 
 const prisma = createPrismaClient();
@@ -468,9 +469,173 @@ async function main() {
     });
   }
 
+  // Demo athlete login (Hudson) — shared AthleteProfile linked to User
+  let hudson = await prisma.athlete.findFirst({
+    where: { coachId: coach.id, firstName: "Hudson", lastName: "Reed" },
+  });
+
+  if (!hudson) {
+    hudson = await prisma.athlete.create({
+      data: {
+        coachId: coach.id,
+        firstName: "Hudson",
+        lastName: "Reed",
+        sport: "Baseball",
+        position: "Shortstop",
+        throws: "R",
+        bats: "R",
+        dateOfBirth: new Date("2012-05-18"),
+        notes: "Demo athlete account for Athlete Portal.",
+        rosterStatus: "ROSTER",
+        progressMetrics: {
+          create: [
+            {
+              label: "Throwing velo",
+              value: 68,
+              unit: "mph",
+              recordedAt: new Date("2026-07-01"),
+            },
+            {
+              label: "Throwing velo",
+              value: 71,
+              unit: "mph",
+              recordedAt: new Date("2026-08-10"),
+            },
+            {
+              label: "Throwing velo",
+              value: 72,
+              unit: "mph",
+              recordedAt: new Date("2026-08-24"),
+            },
+            {
+              label: "60-yard dash",
+              value: 8.03,
+              unit: "sec",
+              recordedAt: new Date("2026-07-15"),
+            },
+            {
+              label: "60-yard dash",
+              value: 7.82,
+              unit: "sec",
+              recordedAt: new Date("2026-08-20"),
+            },
+            {
+              label: "Exit velo",
+              value: 78,
+              unit: "mph",
+              recordedAt: new Date("2026-08-12"),
+            },
+            {
+              label: "Exit velo",
+              value: 81,
+              unit: "mph",
+              recordedAt: new Date("2026-08-24"),
+            },
+          ],
+        },
+        progressGoals: {
+          create: [
+            {
+              label: "Throwing velo",
+              targetValue: 75,
+              unit: "mph",
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const hudsonPlan = await prisma.trainingPlan.findFirst({
+    where: { coachId: coach.id, athleteId: hudson.id, title: "12-Week Baseball Development" },
+  });
+
+  if (!hudsonPlan) {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    await prisma.trainingPlan.create({
+      data: {
+        coachId: coach.id,
+        athleteId: hudson.id,
+        title: "12-Week Baseball Development",
+        description: "Week 4 focus: arm strength, timing, and athleticism.",
+        status: "ACTIVE",
+        startDate: new Date("2026-08-01"),
+        endDate: new Date("2026-10-24"),
+        workouts: {
+          create: [
+            {
+              title: "Arm care + long toss",
+              description:
+                "Band warm-up.\nProgressive long toss.\n8 pull-downs.\nCool-down stretch.",
+              scheduledDate: yesterday,
+              durationMinutes: 35,
+              completed: true,
+              completedAt: yesterday,
+              sortOrder: 0,
+            },
+            {
+              title: "Front toss timing + med ball",
+              description:
+                "Front toss rounds.\nRotational med-ball throws.\nExit-velo competitive swings.",
+              scheduledDate: today,
+              durationMinutes: 38,
+              sortOrder: 1,
+              instructionVideoUrl: DEMO_VIDEO_URL,
+            },
+            {
+              title: "Infield funnel + sprint starts",
+              description:
+                "Ground-ball funnel.\nFirst-step acceleration.\nBase-running through the bag.",
+              scheduledDate: new Date(today.getTime() + 86400000 * 2),
+              durationMinutes: 40,
+              sortOrder: 2,
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const hudsonProfile = await syncAthleteProfile({
+    id: hudson.id,
+    coachId: coach.id,
+    firstName: hudson.firstName,
+    lastName: hudson.lastName,
+    dateOfBirth: hudson.dateOfBirth,
+    sport: hudson.sport,
+    position: hudson.position,
+  });
+
+  const athleteUser = await prisma.user.upsert({
+    where: { email: "athlete@example.com" },
+    update: {
+      name: "Hudson Reed",
+      role: "ATHLETE",
+      passwordHash,
+      onboardingCompletedAt,
+    },
+    create: {
+      name: "Hudson Reed",
+      email: "athlete@example.com",
+      passwordHash,
+      role: "ATHLETE",
+      onboardingCompletedAt,
+    },
+  });
+
+  await prisma.athleteProfile.update({
+    where: { id: hudsonProfile.id },
+    data: { userId: athleteUser.id },
+  });
+
   console.log("Seed complete.");
-  console.log("Demo login: coach@example.com / password123");
-  console.log("Second coach (for nearby demo): coach2@example.com / password123");
+  console.log("Demo coach: coach@example.com / password123");
+  console.log("Demo athlete: athlete@example.com / password123");
+  console.log("Second coach (nearby demo): coach2@example.com / password123");
 
   await runPhase1Foundation();
 }

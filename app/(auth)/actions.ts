@@ -78,8 +78,28 @@ export async function loginAction(
   const defaultRedirect = await getPostAuthRedirect(email);
   const callbackUrl = safeCallbackUrl(formData.get("callbackUrl"));
 
-  if (callbackUrl && defaultRedirect === "/dashboard") {
-    redirect(callbackUrl);
+  if (callbackUrl) {
+    const athleteHome = defaultRedirect.startsWith("/athlete");
+    const callbackIsAthlete = callbackUrl.startsWith("/athlete");
+    const callbackIsCoach =
+      callbackUrl.startsWith("/dashboard") ||
+      callbackUrl.startsWith("/athletes") ||
+      callbackUrl.startsWith("/training") ||
+      callbackUrl.startsWith("/courses") ||
+      callbackUrl.startsWith("/videos") ||
+      callbackUrl.startsWith("/settings") ||
+      callbackUrl.startsWith("/reports") ||
+      callbackUrl.startsWith("/calendar") ||
+      callbackUrl.startsWith("/teams") ||
+      callbackUrl.startsWith("/pickup-players") ||
+      callbackUrl === "/onboarding";
+
+    if (athleteHome && callbackIsAthlete) {
+      redirect(callbackUrl);
+    }
+    if (!athleteHome && callbackIsCoach) {
+      redirect(callbackUrl);
+    }
   }
 
   redirect(defaultRedirect);

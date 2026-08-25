@@ -19,7 +19,7 @@ export const brand = {
   subtagline: "Training. Progress. Performance. One athlete profile.",
   /** One-line description for meta tags and auth pages */
   description:
-    "Train2Play helps coaches manage rosters, film, velo, and pickup players — from training to game day.",
+    "Train2Play helps athletes train, track progress, and develop — with coaches and parents supporting the same athlete profile.",
   /** Home page hero badge text */
   heroBadge: "train2play.com",
   /** Support / contact */

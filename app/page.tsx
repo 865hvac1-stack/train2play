@@ -38,10 +38,16 @@ export default async function HomePage() {
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { onboardingCompletedAt: true },
+      select: { onboardingCompletedAt: true, role: true },
     });
 
-    redirect(user?.onboardingCompletedAt ? "/dashboard" : "/onboarding");
+    const { getLoginLandingPath } = await import("@/lib/roles");
+    redirect(
+      getLoginLandingPath({
+        role: user?.role,
+        onboardingCompletedAt: user?.onboardingCompletedAt,
+      }),
+    );
   }
 
   return (
@@ -114,7 +120,8 @@ export default async function HomePage() {
             </div>
             {showDemoCredentials() ? (
               <p className="text-sm text-white/50">
-                Local demo: coach@example.com / password123
+                Local demo — Coach: coach@example.com / password123 · Athlete:
+                athlete@example.com / password123
               </p>
             ) : null}
           </div>

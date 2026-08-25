@@ -2,14 +2,15 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 
 import { authConfig } from "@/auth.config";
+import { getLoginLandingPath, isAthleteRole, isCoachPortalRole } from "@/lib/roles";
 
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
+  const role = req.auth?.user?.role;
 
-  // Railway may expose multiple domains — always send visitors to the canonical one.
   const canonicalHost = process.env.RAILWAY_PUBLIC_DOMAIN;
   if (
     canonicalHost &&
@@ -24,16 +25,21 @@ export default auth((req) => {
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isOnboardingPage = pathname === "/onboarding";
-  const isProtected =
+  const isAthleteArea = pathname.startsWith("/athlete");
+  const isCoachArea =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/athletes") ||
     pathname.startsWith("/pickup-players") ||
     pathname.startsWith("/training") ||
+    pathname.startsWith("/courses") ||
     pathname.startsWith("/calendar") ||
     pathname.startsWith("/reports") ||
     pathname.startsWith("/videos") ||
     pathname.startsWith("/settings") ||
+    pathname.startsWith("/teams") ||
     isOnboardingPage;
+
+  const isProtected = isCoachArea || isAthleteArea;
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -42,7 +48,26 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isAuthPage) {
+    const landing = getLoginLandingPath({
+      role,
+      onboardingCompletedAt: isAthleteRole(role) ? new Date() : null,
+    });
+    // Coaches without onboarding still need /onboarding — JWT lacks that flag.
+    // Send coaches to /dashboard; layout will bounce incomplete onboarding.
+    const dest = isAthleteRole(role)
+      ? "/athlete"
+      : isCoachPortalRole(role)
+        ? "/dashboard"
+        : landing;
+    return NextResponse.redirect(new URL(dest, req.nextUrl.origin));
+  }
+
+  if (isLoggedIn && isAthleteArea && isCoachPortalRole(role) && !isAthleteRole(role)) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+  }
+
+  if (isLoggedIn && isCoachArea && isAthleteRole(role)) {
+    return NextResponse.redirect(new URL("/athlete", req.nextUrl.origin));
   }
 
   return NextResponse.next();
@@ -55,10 +80,13 @@ export const config = {
     "/athletes/:path*",
     "/pickup-players/:path*",
     "/training/:path*",
+    "/courses/:path*",
     "/calendar/:path*",
     "/reports/:path*",
     "/videos/:path*",
     "/settings/:path*",
+    "/teams/:path*",
+    "/athlete/:path*",
     "/onboarding",
     "/login",
     "/signup",
