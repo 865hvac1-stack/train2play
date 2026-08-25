@@ -10,6 +10,7 @@ import {
   updateCourseItemAction,
   type CourseActionState,
 } from "@/app/(dashboard)/courses/actions";
+import { InstructionVideoFields } from "@/components/instruction-video-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,39 +22,18 @@ import {
 
 const initialState: CourseActionState = {};
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({
+  label,
+  pendingLabel = "Saving…",
+}: {
+  label: string;
+  pendingLabel?: string;
+}) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending ? "Saving…" : label}
+      {pending ? pendingLabel : label}
     </Button>
-  );
-}
-
-function VideoLinkField({
-  defaultValue,
-  required,
-}: {
-  defaultValue?: string | null;
-  required?: boolean;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border border-brand/20 bg-brand-light/40 p-3">
-      <input type="hidden" name="instructionVideoMode" value="url" />
-      <Label htmlFor="instructionVideoUrl">Video link (optional)</Label>
-      <Input
-        id="instructionVideoUrl"
-        name="instructionVideoUrl"
-        type="url"
-        defaultValue={defaultValue ?? ""}
-        required={required}
-        placeholder="YouTube, Vimeo, or direct MP4 URL"
-        className="h-11 text-base sm:h-9 sm:text-sm"
-      />
-      <p className="text-xs text-slate-500">
-        Kids can watch this from Courses. YouTube links work.
-      </p>
-    </div>
   );
 }
 
@@ -190,7 +170,11 @@ export function CourseItemForm({
   const [state, formAction] = useActionState(action, initialState);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      action={formAction}
+      className="space-y-4"
+      encType="multipart/form-data"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="type">Type</Label>
@@ -290,7 +274,12 @@ export function CourseItemForm({
         </div>
       </div>
 
-      <VideoLinkField defaultValue={defaults?.videoUrl} />
+      <InstructionVideoFields
+        idPrefix={itemId ? `course-item-${itemId}` : "course-item-new"}
+        defaultUrl={defaults?.videoUrl}
+        title="Drill video (optional)"
+        description="Record or upload a demo, or paste a YouTube / Vimeo / MP4 link."
+      />
 
       {state.error ? (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -298,7 +287,10 @@ export function CourseItemForm({
         </p>
       ) : null}
 
-      <SubmitButton label={mode === "edit" ? "Save item" : "Add to course"} />
+      <SubmitButton
+        label={mode === "edit" ? "Save item" : "Add to course"}
+        pendingLabel="Saving… keep this screen open"
+      />
     </form>
   );
 }

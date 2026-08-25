@@ -27,7 +27,12 @@ async function resolveOptionalVideo(formData: FormData): Promise<
   ).trim();
   const file = formData.get("instructionVideoFile") ?? formData.get("videoFile");
 
-  if (mode === "url" || urlRaw) {
+  // Prefer explicit upload mode so an empty URL field never blocks a file.
+  if (mode === "upload") {
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: true, url: null, storageKey: null };
+    }
+  } else if (mode === "url" || urlRaw) {
     if (!urlRaw) return { ok: true, url: null, storageKey: null };
     if (!isValidInstructionVideoUrl(urlRaw)) {
       return {
