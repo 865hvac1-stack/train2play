@@ -55,7 +55,7 @@ export function PlayerProfileStats({
           </div>
           <div className="flex flex-wrap gap-2">
             {isPickup ? <Badge variant="outline">Pickup player</Badge> : null}
-            <Badge variant="secondary">vs system average</Badge>
+            <Badge variant="secondary">vs {sport} average</Badge>
           </div>
         </div>
       </CardHeader>
@@ -63,7 +63,7 @@ export function PlayerProfileStats({
         {!hasAnyStat ? (
           <p className="text-muted-foreground text-sm">
             Log throwing velo, bat speed, or exit velo to see how this player stacks up against
-            everyone in the system.
+            other {sport} athletes in Train2Play.
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

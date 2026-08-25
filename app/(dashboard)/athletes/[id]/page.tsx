@@ -78,7 +78,10 @@ export default async function AthleteDetailPage({
   const athleteRecord = athlete;
 
   const athleteVideos = await getVideosForAthlete(user.id, athleteRecord.id);
-  const profileStats = await getAthleteProfileComparisons(athleteRecord.progressMetrics);
+  const profileStats = await getAthleteProfileComparisons(
+    athleteRecord.progressMetrics,
+    athleteRecord.sport,
+  );
 
   const chartMetrics = athleteRecord.progressMetrics.map((metric) => ({
     id: metric.id,

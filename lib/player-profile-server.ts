@@ -7,10 +7,17 @@ import {
   type ProfileStatComparison,
 } from "@/lib/player-profile";
 
-export async function getSystemMetricSamples(label: string, unit: string) {
+export async function getSystemMetricSamples(
+  label: string,
+  unit: string,
+  sport?: string,
+) {
   const normalized = normalizeMetricLabel(label);
   const metrics = await prisma.progressMetric.findMany({
-    where: { unit },
+    where: {
+      unit,
+      ...(sport ? { athlete: { sport } } : {}),
+    },
     select: {
       athleteId: true,
       label: true,
@@ -32,14 +39,14 @@ export async function getSystemMetricSamples(label: string, unit: string) {
   return Array.from(latestByAthlete.values());
 }
 
-export async function getSystemBenchmarks() {
+export async function getSystemBenchmarks(sport?: string) {
   const benchmarks: Record<
     string,
     { average: number | null; sampleSize: number; unit: string; direction: "HIGHER" | "LOWER" }
   > = {};
 
   for (const metric of PROFILE_METRICS) {
-    const samples = await getSystemMetricSamples(metric.label, metric.unit);
+    const samples = await getSystemMetricSamples(metric.label, metric.unit, sport);
     benchmarks[metric.label] = {
       average:
         samples.length > 0
@@ -61,8 +68,9 @@ export async function getAthleteProfileComparisons(
     unit: string;
     recordedAt: Date;
   }[],
+  sport?: string,
 ): Promise<ProfileStatComparison[]> {
-  const benchmarks = await getSystemBenchmarks();
+  const benchmarks = await getSystemBenchmarks(sport);
   const resolved: ProfileStatComparison[] = [];
 
   for (const config of PROFILE_METRICS) {
@@ -72,7 +80,7 @@ export async function getAthleteProfileComparisons(
     const systemAverage = benchmark?.average ?? null;
     const delta =
       value !== null && systemAverage !== null ? value - systemAverage : null;
-    const samples = await getSystemMetricSamples(config.label, config.unit);
+    const samples = await getSystemMetricSamples(config.label, config.unit, sport);
 
     resolved.push({
       label: config.label,
@@ -109,5 +117,24 @@ export async function getRosterAthletesForCoach(coachId: string) {
   return prisma.athlete.findMany({
     where: { coachId, rosterStatus: "ROSTER" },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+}
+
+export async function getListedPickupPlayerForView(id: string) {
+  return prisma.athlete.findFirst({
+    where: {
+      id,
+      rosterStatus: "PICKUP",
+      listedForPickup: true,
+    },
+    include: {
+      coach: { select: { id: true, name: true } },
+      progressMetrics: {
+        orderBy: [{ recordedAt: "desc" }, { createdAt: "desc" }],
+      },
+      pickupInterests: {
+        select: { interestedCoachId: true },
+      },
+    },
   });
 }

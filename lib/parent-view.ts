@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { prisma } from "@/lib/db";
+import { isShareLinkActive } from "@/lib/share";
 
 export async function getAthleteByShareToken(token: string) {
   const link = await prisma.parentShareLink.findUnique({
@@ -31,7 +32,7 @@ export async function getAthleteByShareToken(token: string) {
     },
   });
 
-  if (!link || link.revokedAt) {
+  if (!link || !isShareLinkActive(link)) {
     return null;
   }
 

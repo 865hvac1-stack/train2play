@@ -72,7 +72,7 @@ export default async function TrainingPlanDetailPage({
         <Button variant="outline" render={<Link href="/training">All plans</Link>} />
       }
     >
-      <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="mx-auto grid w-full max-w-5xl min-w-0 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6">
           <Card>
             <CardHeader>

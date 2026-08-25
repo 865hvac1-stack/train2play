@@ -75,7 +75,7 @@ export function NearbyPickupFeed({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardTitle className="text-base">
-                  <Link href={`/athletes/${player.id}`} className="hover:underline">
+                  <Link href={`/pickup-players/${player.id}`} className="hover:underline">
                     {player.firstName} {player.lastName}
                   </Link>
                 </CardTitle>
@@ -114,7 +114,7 @@ export function NearbyPickupFeed({
             ) : null}
             <p className="text-muted-foreground text-xs">Listed by {player.coachName}</p>
             <div className="flex gap-2 pt-1">
-              <Button size="sm" nativeButton={false} render={<Link href={`/athletes/${player.id}`}>View profile</Link>} />
+              <Button size="sm" nativeButton={false} render={<Link href={`/pickup-players/${player.id}`}>View profile</Link>} />
               {player.alreadyInterested ? (
                 <Badge variant="secondary">Interest sent</Badge>
               ) : (

@@ -8,7 +8,7 @@ import {
   revokeShareLinkAction,
 } from "@/app/(dashboard)/athletes/share-actions";
 import { sendShareInviteEmailAction } from "@/app/(dashboard)/settings/actions";
-import { buildShareInviteMailto } from "@/lib/share";
+import { buildShareInviteMailto, formatShareLinkExpiry } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +25,7 @@ type ShareLink = {
   token: string;
   label: string | null;
   parentEmail: string | null;
+  expiresAt: Date | null;
   createdAt: Date;
   revokedAt: Date | null;
 };
@@ -94,8 +95,8 @@ export function ParentSharePanel({
           Family share link
         </CardTitle>
         <CardDescription>
-          Generate a read-only link for parents. Optionally add their email to
-          send an invite from your mail app.
+          Generate a read-only link for parents. Links expire after 90 days. Optionally add
+          their email to send an invite from your mail app.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -152,6 +153,11 @@ export function ParentSharePanel({
                   <p className="mt-1 truncate text-xs text-slate-500">
                     {shareUrl}
                   </p>
+                  {link.expiresAt ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Expires {formatShareLinkExpiry(link.expiresAt)}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       type="button"

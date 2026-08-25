@@ -49,9 +49,12 @@ export function OnboardingForm() {
           id="lookingForSport"
           name="lookingForSport"
           required
-          defaultValue="Baseball"
-          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+          defaultValue=""
+          className="border-input bg-background h-11 w-full rounded-md border px-3 text-base sm:h-9 sm:text-sm"
         >
+          <option value="" disabled>
+            Select a sport
+          </option>
           {SPORTS.map((sport) => (
             <option key={sport} value={sport}>
               {sport}
@@ -65,7 +68,7 @@ export function OnboardingForm() {
         <Input
           id="lookingForPositions"
           name="lookingForPositions"
-          placeholder="RHP, SS, OF"
+          placeholder="e.g. PG, WR, Setter"
         />
       </div>
 

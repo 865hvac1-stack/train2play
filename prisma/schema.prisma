@@ -323,6 +323,7 @@ model ParentShareLink {
   token       String    @unique
   label       String?
   parentEmail String?
+  expiresAt   DateTime?
   createdAt   DateTime  @default(now())
   revokedAt   DateTime?
 

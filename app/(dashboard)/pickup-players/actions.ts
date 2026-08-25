@@ -7,7 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { geocodeZipCode, normalizeZipCode, distanceMiles } from "@/lib/geocoding";
-import { getAthleteProfileUrl, getNearbyPickupUrl } from "@/lib/app-url";
+import { getNearbyPickupUrl, getPickupProfileUrl } from "@/lib/app-url";
 import { sendPickupInterestEmail, sendPickupPlayerAlertEmail } from "@/lib/email";
 import { findCoachesToNotifyForPickupPlayer } from "@/lib/pickup-matching-server";
 import { getLatestMetricForLabel, PROFILE_METRICS } from "@/lib/player-profile";
@@ -130,7 +130,7 @@ export async function createPickupPlayerAction(
 
   if (listedForPickup) {
     const coaches = await findCoachesToNotifyForPickupPlayer(athlete.id, user.id);
-    const profileUrl = getAthleteProfileUrl(athlete.id);
+    const profileUrl = getPickupProfileUrl(athlete.id);
     const nearbyUrl = getNearbyPickupUrl();
     const playerWithMetrics = await prisma.athlete.findUnique({
       where: { id: athlete.id },
@@ -241,7 +241,7 @@ export async function expressInterestAction(pickupAthleteId: string) {
     interestedCoachEmail: interestedCoach?.email ?? user.email ?? "",
     playerName: `${pickupAthlete.firstName} ${pickupAthlete.lastName}`,
     message: null,
-    profileUrl: getAthleteProfileUrl(pickupAthleteId),
+    profileUrl: getPickupProfileUrl(pickupAthleteId),
   });
 
   revalidatePath("/pickup-players/nearby");

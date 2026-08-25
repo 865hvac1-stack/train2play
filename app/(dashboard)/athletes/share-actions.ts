@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { generateShareToken } from "@/lib/share";
+import { generateShareToken, getDefaultShareLinkExpiry } from "@/lib/share";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
@@ -28,6 +28,7 @@ export async function createShareLinkAction(
       token: generateShareToken(),
       label: normalizedEmail ? `Sent to ${normalizedEmail}` : "Family view",
       parentEmail: normalizedEmail,
+      expiresAt: getDefaultShareLinkExpiry(),
     },
   });
 
