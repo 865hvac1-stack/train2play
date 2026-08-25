@@ -15,9 +15,13 @@ export async function getAthleteByShareToken(token: string) {
             include: {
               workouts: {
                 select: {
+                  id: true,
                   title: true,
+                  description: true,
                   completed: true,
                   scheduledDate: true,
+                  durationMinutes: true,
+                  instructionVideoUrl: true,
                 },
                 orderBy: { sortOrder: "asc" },
               },

@@ -1,8 +1,9 @@
-import { Calendar, ClipboardList, TrendingUp } from "lucide-react";
+import { Calendar, ClipboardList, PlayCircle, TrendingUp } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { ProgressCharts } from "@/components/progress-charts";
 import { BrandLogoLarge } from "@/components/brand-logo";
+import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -56,6 +57,15 @@ export default async function ParentViewPage({
     recordedAt: m.recordedAt,
   }));
 
+  const watchableWorkouts = athlete.trainingPlans.flatMap((plan) =>
+    plan.workouts
+      .filter((workout) => Boolean(workout.instructionVideoUrl))
+      .map((workout) => ({
+        planTitle: plan.title,
+        workout,
+      })),
+  );
+
   return (
     <div className="min-h-full t2p-page-gradient">
       <header className="border-b border-slate-200 bg-white px-6 py-4">
@@ -65,9 +75,9 @@ export default async function ParentViewPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {athlete.firstName} {athlete.lastName}
           </h1>
           <p className="mt-1 text-slate-600">
@@ -90,9 +100,45 @@ export default async function ParentViewPage({
           </CardHeader>
         </Card>
 
+        {watchableWorkouts.length > 0 ? (
+          <Card className="border-brand/25 bg-gradient-to-br from-white to-brand-light/50">
+            <CardHeader>
+              <CardTitle className="font-heading flex items-center gap-2 text-xl">
+                <PlayCircle className="h-5 w-5 text-brand" />
+                Videos to watch
+              </CardTitle>
+              <CardDescription>
+                Your coach added these so {athlete.firstName} can see how to do
+                each workout.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {watchableWorkouts.map(({ planTitle, workout }) => (
+                <div key={workout.id} className="space-y-2">
+                  <div>
+                    <p className="font-semibold text-slate-900">{workout.title}</p>
+                    <p className="text-sm text-slate-500">{planTitle}</p>
+                    {workout.description ? (
+                      <p className="mt-1 text-sm text-slate-600">
+                        {workout.description}
+                      </p>
+                    ) : null}
+                  </div>
+                  {workout.instructionVideoUrl ? (
+                    <InstructionVideoPlayer
+                      src={workout.instructionVideoUrl}
+                      title="Tap play"
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
+
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="font-heading flex items-center gap-2 text-xl">
               <ClipboardList className="h-5 w-5" />
               Training plans
             </CardTitle>
@@ -117,24 +163,35 @@ export default async function ParentViewPage({
                       {completed}/{plan.workouts.length} workouts complete
                     </p>
                     {plan.workouts.length > 0 ? (
-                      <ul className="mt-3 space-y-2">
-                        {plan.workouts.map((workout, index) => (
-                          <li
-                            key={`${plan.id}-${index}`}
-                            className="flex items-center justify-between text-sm"
-                          >
-                            <span
-                              className={
-                                workout.completed
-                                  ? "text-slate-400 line-through"
-                                  : "text-slate-700"
-                              }
-                            >
-                              {workout.title}
-                            </span>
-                            <span className="text-slate-500">
-                              {formatWorkoutDate(workout.scheduledDate)}
-                            </span>
+                      <ul className="mt-3 space-y-3">
+                        {plan.workouts.map((workout) => (
+                          <li key={workout.id} className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={
+                                  workout.completed
+                                    ? "text-slate-400 line-through"
+                                    : "text-slate-700"
+                                }
+                              >
+                                {workout.title}
+                                {workout.instructionVideoUrl ? (
+                                  <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-brand">
+                                    <PlayCircle className="size-3.5" />
+                                    Has video
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span className="shrink-0 text-slate-500">
+                                {formatWorkoutDate(workout.scheduledDate)}
+                              </span>
+                            </div>
+                            {workout.instructionVideoUrl ? (
+                              <InstructionVideoPlayer
+                                src={workout.instructionVideoUrl}
+                                title="Watch"
+                              />
+                            ) : null}
                           </li>
                         ))}
                       </ul>
@@ -152,7 +209,7 @@ export default async function ParentViewPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="font-heading flex items-center gap-2 text-xl">
               <TrendingUp className="h-5 w-5" />
               Progress
             </CardTitle>

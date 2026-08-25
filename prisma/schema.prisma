@@ -367,18 +367,21 @@ model TrainingPlan {
 }
 
 model Workout {
-  id              String       @id @default(cuid())
-  trainingPlanId  String
-  trainingPlan    TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
-  title           String
-  description     String?
-  scheduledDate   DateTime?
-  durationMinutes Int?
-  completed       Boolean      @default(false)
-  completedAt     DateTime?
-  sortOrder       Int          @default(0)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                         String       @id @default(cuid())
+  trainingPlanId             String
+  trainingPlan               TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  title                      String
+  description                String?
+  scheduledDate              DateTime?
+  durationMinutes            Int?
+  completed                  Boolean      @default(false)
+  completedAt                DateTime?
+  sortOrder                  Int          @default(0)
+  /** Demo / how-to clip kids and parents can watch (share link + coach portal) */
+  instructionVideoUrl        String?
+  instructionVideoStorageKey String?
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
 
   @@index([trainingPlanId])
 }

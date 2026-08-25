@@ -1,15 +1,24 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, CheckCircle2, Circle, Clock, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Film,
+  Trash2,
+} from "lucide-react";
 
 import {
   deleteTrainingPlanAction,
+  removeWorkoutInstructionVideoAction,
   toggleWorkoutCompleteAction,
   updatePlanStatusAction,
 } from "@/app/(dashboard)/training/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DuplicatePlanForm } from "@/components/duplicate-plan-form";
-import { WorkoutForm } from "@/components/workout-form";
+import { InstructionVideoPlayer } from "@/components/instruction-video-player";
+import { AttachWorkoutVideoForm, WorkoutForm } from "@/components/workout-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -112,7 +121,8 @@ export default async function TrainingPlanDetailPage({
             <CardHeader>
               <CardTitle>Workouts</CardTitle>
               <CardDescription>
-                Mark workouts complete as athletes finish them.
+                Mark complete as athletes finish. Add a video so kids can watch
+                how to do the session on the family share link.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -120,62 +130,99 @@ export default async function TrainingPlanDetailPage({
                 plan.workouts.map((workout) => (
                   <div
                     key={workout.id}
-                    className="flex items-start gap-3 rounded-lg border border-slate-200 p-4"
+                    className="space-y-3 rounded-xl border border-slate-200 bg-white/90 p-4"
                   >
-                    <form
-                      action={toggleWorkoutCompleteAction.bind(
-                        null,
-                        plan.id,
-                        workout.id,
-                        !workout.completed,
-                      )}
-                    >
-                      <button
-                        type="submit"
-                        className="mt-0.5 text-primary transition-colors hover:text-primary/80"
-                        aria-label={
-                          workout.completed
-                            ? "Mark incomplete"
-                            : "Mark complete"
-                        }
-                      >
-                        {workout.completed ? (
-                          <CheckCircle2 className="h-5 w-5" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-slate-300" />
+                    <div className="flex items-start gap-3">
+                      <form
+                        action={toggleWorkoutCompleteAction.bind(
+                          null,
+                          plan.id,
+                          workout.id,
+                          !workout.completed,
                         )}
-                      </button>
-                    </form>
-                    <div className="flex-1 space-y-1">
-                      <p
-                        className={
-                          workout.completed
-                            ? "font-medium text-slate-500 line-through"
-                            : "font-medium text-slate-900"
-                        }
                       >
-                        {workout.title}
-                      </p>
-                      {workout.description ? (
-                        <p className="text-sm text-slate-600">
-                          {workout.description}
-                        </p>
-                      ) : null}
-                      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                        {workout.scheduledDate ? (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
-                            {formatDate(workout.scheduledDate)}
-                          </span>
+                        <button
+                          type="submit"
+                          className="mt-0.5 text-primary transition-colors hover:text-primary/80"
+                          aria-label={
+                            workout.completed
+                              ? "Mark incomplete"
+                              : "Mark complete"
+                          }
+                        >
+                          {workout.completed ? (
+                            <CheckCircle2 className="h-5 w-5" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-slate-300" />
+                          )}
+                        </button>
+                      </form>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p
+                            className={
+                              workout.completed
+                                ? "font-medium text-slate-500 line-through"
+                                : "font-medium text-slate-900"
+                            }
+                          >
+                            {workout.title}
+                          </p>
+                          {workout.instructionVideoUrl ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <Film className="size-3" />
+                              Watch video
+                            </Badge>
+                          ) : null}
+                        </div>
+                        {workout.description ? (
+                          <p className="text-sm text-slate-600">
+                            {workout.description}
+                          </p>
                         ) : null}
-                        {workout.durationMinutes ? (
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {workout.durationMinutes} min
-                          </span>
-                        ) : null}
+                        <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                          {workout.scheduledDate ? (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {formatDate(workout.scheduledDate)}
+                            </span>
+                          ) : null}
+                          {workout.durationMinutes ? (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {workout.durationMinutes} min
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
+
+                    {workout.instructionVideoUrl ? (
+                      <div className="space-y-2 pl-8">
+                        <InstructionVideoPlayer
+                          src={workout.instructionVideoUrl}
+                          title="Video for kids / parents"
+                        />
+                        <form
+                          action={removeWorkoutInstructionVideoAction.bind(
+                            null,
+                            plan.id,
+                            workout.id,
+                          )}
+                        >
+                          <Button type="submit" variant="ghost" size="sm">
+                            Remove video
+                          </Button>
+                        </form>
+                      </div>
+                    ) : (
+                      <div className="pl-8">
+                        <AttachWorkoutVideoForm
+                          planId={plan.id}
+                          workoutId={workout.id}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (

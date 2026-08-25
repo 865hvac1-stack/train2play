@@ -5,11 +5,102 @@ import { redirect } from "next/navigation";
 
 import { trainingPlanSchema, workoutSchema } from "@/lib/training";
 import { prisma } from "@/lib/db";
+import { isProductionRuntime } from "@/lib/env";
+import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { requireUser } from "@/lib/session";
+
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 export type TrainingActionState = {
   error?: string;
 };
+
+async function resolveInstructionVideo(formData: FormData): Promise<
+  | { ok: true; url: string | null; storageKey: string | null }
+  | { ok: false; error: string }
+> {
+  const mode = String(formData.get("instructionVideoMode") ?? "").trim();
+  const urlRaw = String(formData.get("instructionVideoUrl") ?? "").trim();
+  const file = formData.get("instructionVideoFile");
+
+  if (mode === "url" || (!mode && urlRaw)) {
+    if (!urlRaw) {
+      return { ok: true, url: null, storageKey: null };
+    }
+    try {
+      new URL(urlRaw);
+    } catch {
+      return { ok: false, error: "Instruction video URL is not valid" };
+    }
+    return { ok: true, url: urlRaw, storageKey: null };
+  }
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: true, url: null, storageKey: null };
+  }
+
+  const nameLower = file.name.toLowerCase();
+  const looksLikeVideoExt = /\.(mp4|mov|webm|m4v|mpeg|mpg|avi)$/i.test(nameLower);
+  const hasVideoMime =
+    file.type.startsWith("video/") ||
+    file.type === "application/octet-stream" ||
+    file.type === "";
+
+  if (!file.type.startsWith("video/") && !(hasVideoMime && looksLikeVideoExt)) {
+    return { ok: false, error: "File must be a video (mp4, mov, webm)" };
+  }
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { ok: false, error: "Video must be 100 MB or smaller" };
+  }
+
+  if (isProductionRuntime() && !isObjectStorageConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Phone uploads need Cloudinary. Add CLOUDINARY_URL in Railway, or paste a direct MP4 URL instead.",
+    };
+  }
+
+  try {
+    const ext =
+      file.name.split(".").pop()?.toLowerCase() ||
+      (file.type === "video/quicktime" ? "mov" : "mp4");
+    const filename = `${crypto.randomUUID()}.${ext}`;
+    const contentType =
+      file.type && file.type !== "application/octet-stream"
+        ? file.type
+        : ext === "mov"
+          ? "video/quicktime"
+          : ext === "webm"
+            ? "video/webm"
+            : "video/mp4";
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const stored = await storeVideoFile(buffer, filename, contentType);
+    return {
+      ok: true,
+      url: stored.videoUrl,
+      storageKey: stored.storageKey,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Could not upload the workout video",
+    };
+  }
+}
+
+function revalidateTraining(planId: string, athleteId?: string | null) {
+  revalidatePath(`/training/${planId}`);
+  revalidatePath("/training");
+  revalidatePath("/dashboard");
+  if (athleteId) {
+    revalidatePath(`/athletes/${athleteId}`);
+  }
+}
 
 export async function createTrainingPlanAction(
   _prevState: TrainingActionState,
@@ -82,6 +173,11 @@ export async function createWorkoutAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  const video = await resolveInstructionVideo(formData);
+  if (!video.ok) {
+    return { error: video.error };
+  }
+
   const workoutCount = await prisma.workout.count({
     where: { trainingPlanId: planId },
   });
@@ -96,13 +192,83 @@ export async function createWorkoutAction(
         : null,
       durationMinutes: parsed.data.durationMinutes ?? null,
       sortOrder: workoutCount,
+      instructionVideoUrl: video.url,
+      instructionVideoStorageKey: video.storageKey,
     },
   });
 
-  revalidatePath(`/training/${planId}`);
-  revalidatePath("/training");
-  revalidatePath("/dashboard");
+  revalidateTraining(planId, plan.athleteId);
   redirect(`/training/${planId}`);
+}
+
+export async function attachWorkoutInstructionVideoAction(
+  planId: string,
+  workoutId: string,
+  _prevState: TrainingActionState,
+  formData: FormData,
+): Promise<TrainingActionState> {
+  const user = await requireUser();
+
+  const workout = await prisma.workout.findFirst({
+    where: {
+      id: workoutId,
+      trainingPlan: { id: planId, coachId: user.id },
+    },
+    include: { trainingPlan: { select: { athleteId: true } } },
+  });
+
+  if (!workout) {
+    return { error: "Workout not found" };
+  }
+
+  const video = await resolveInstructionVideo(formData);
+  if (!video.ok) {
+    return { error: video.error };
+  }
+
+  if (!video.url) {
+    return { error: "Choose a video file or paste a URL" };
+  }
+
+  await prisma.workout.update({
+    where: { id: workoutId },
+    data: {
+      instructionVideoUrl: video.url,
+      instructionVideoStorageKey: video.storageKey,
+    },
+  });
+
+  revalidateTraining(planId, workout.trainingPlan.athleteId);
+  redirect(`/training/${planId}`);
+}
+
+export async function removeWorkoutInstructionVideoAction(
+  planId: string,
+  workoutId: string,
+) {
+  const user = await requireUser();
+
+  const workout = await prisma.workout.findFirst({
+    where: {
+      id: workoutId,
+      trainingPlan: { id: planId, coachId: user.id },
+    },
+    include: { trainingPlan: { select: { athleteId: true } } },
+  });
+
+  if (!workout) {
+    throw new Error("Workout not found");
+  }
+
+  await prisma.workout.update({
+    where: { id: workoutId },
+    data: {
+      instructionVideoUrl: null,
+      instructionVideoStorageKey: null,
+    },
+  });
+
+  revalidateTraining(planId, workout.trainingPlan.athleteId);
 }
 
 export async function toggleWorkoutCompleteAction(
@@ -218,6 +384,8 @@ export async function duplicateTrainingPlanAction(
           description: workout.description,
           durationMinutes: workout.durationMinutes,
           sortOrder: index,
+          instructionVideoUrl: workout.instructionVideoUrl,
+          instructionVideoStorageKey: workout.instructionVideoStorageKey,
         })),
       },
     },
