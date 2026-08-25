@@ -3,22 +3,53 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 import { ensureOrganizationMembership } from "@/lib/organizations";
+import { SPORTS } from "@/lib/athletes";
 
-export const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Enter a valid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Za-z]/, "Password must include a letter")
-    .regex(/[0-9]/, "Password must include a number"),
-});
+export const signupSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Enter a valid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Za-z]/, "Password must include a letter")
+      .regex(/[0-9]/, "Password must include a number"),
+    accountType: z.enum(["COACH", "ATHLETE"]).default("COACH"),
+    sport: z.string().optional(),
+    position: z.string().optional(),
+    dateOfBirth: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.accountType === "ATHLETE") {
+      if (!data.sport || data.sport.trim() === "") {
+        ctx.addIssue({
+          code: "custom",
+          message: "Select your sport",
+          path: ["sport"],
+        });
+      } else if (!SPORTS.includes(data.sport as (typeof SPORTS)[number])) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Select a valid sport",
+          path: ["sport"],
+        });
+      }
+    }
+  });
 
 export type SignupInput = z.infer<typeof signupSchema>;
+
+function splitDisplayName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const firstName = parts[0] ?? "Athlete";
+  const lastName = parts.length > 1 ? parts.slice(1).join(" ") : firstName;
+  return { firstName, lastName };
+}
 
 export async function createUser(input: SignupInput) {
   const data = signupSchema.parse(input);
   const email = data.email.toLowerCase();
+  const accountType = data.accountType ?? "COACH";
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -26,12 +57,55 @@ export async function createUser(input: SignupInput) {
   }
 
   const passwordHash = await bcrypt.hash(data.password, 12);
+  const displayName = data.name.trim();
+
+  if (accountType === "ATHLETE") {
+    const { firstName, lastName } = splitDisplayName(displayName);
+    const sport = data.sport!.trim();
+    const position = data.position?.trim() || null;
+    const dateOfBirth = data.dateOfBirth
+      ? new Date(`${data.dateOfBirth}T12:00:00`)
+      : null;
+
+    const user = await prisma.user.create({
+      data: {
+        name: displayName,
+        email,
+        passwordHash,
+        role: "ATHLETE",
+        onboardingCompletedAt: new Date(),
+      },
+    });
+
+    await prisma.athleteProfile.create({
+      data: {
+        userId: user.id,
+        firstName,
+        lastName,
+        dateOfBirth:
+          dateOfBirth && !Number.isNaN(dateOfBirth.getTime())
+            ? dateOfBirth
+            : null,
+        primarySport: sport,
+        sports: {
+          create: {
+            sport,
+            position,
+            isPrimary: true,
+          },
+        },
+      },
+    });
+
+    return user;
+  }
 
   const user = await prisma.user.create({
     data: {
-      name: data.name.trim(),
+      name: displayName,
       email,
       passwordHash,
+      role: "COACH",
     },
   });
 

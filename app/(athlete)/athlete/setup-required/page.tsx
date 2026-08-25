@@ -9,8 +9,8 @@ export default async function AthleteSetupRequiredPage() {
       <h1 className="font-heading text-2xl font-bold">Almost ready</h1>
       <p className="text-sm leading-relaxed text-slate-300">
         Your athlete login is active, but it is not linked to an athlete profile
-        yet. Ask your coach to connect your account, or use the demo athlete
-        login after seeding local data.
+        yet. Sign up again as an Athlete to create your profile, or ask your
+        coach to send you an invite so your account can be connected.
       </p>
       <SignOutButton />
     </div>

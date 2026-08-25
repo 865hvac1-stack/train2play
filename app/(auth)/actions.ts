@@ -30,6 +30,10 @@ export async function signupAction(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    accountType: formData.get("accountType") || "COACH",
+    sport: formData.get("sport") || undefined,
+    position: formData.get("position") || undefined,
+    dateOfBirth: formData.get("dateOfBirth") || undefined,
   });
 
   if (!parsed.success) {
