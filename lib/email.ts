@@ -252,21 +252,27 @@ export async function sendAthleteLoginInviteEmail(
   input: AthleteLoginInviteEmailInput,
 ) {
   const html = emailShell({
-    preheader: `${input.coachName} invited you to train on ${brand.name}`,
+    preheader: `${input.coachName} invited you to register on ${brand.name}`,
     title: `You're invited to ${brand.name}`,
     bodyHtml: `
       <p style="margin:0 0 12px;">Hi ${escapeHtml(input.athleteName)},</p>
-      <p style="margin:0 0 12px;"><strong>${escapeHtml(input.coachName)}</strong> invited you to train on ${escapeHtml(brand.name)} with your own login.</p>
-      <p style="margin:0;color:#64748b;font-size:14px;">Create your password to open Today&apos;s Training on your phone.</p>
+      <p style="margin:0 0 12px;"><strong>${escapeHtml(input.coachName)}</strong> added you on ${escapeHtml(brand.name)} and invited you to register.</p>
+      <p style="margin:0 0 8px;font-weight:700;">Create your login to:</p>
+      <ul style="margin:0 0 12px;padding-left:20px;color:#334155;">
+        <li style="margin-bottom:6px;">See Today&apos;s Training on your phone</li>
+        <li style="margin-bottom:6px;">Complete workouts and log results</li>
+        <li style="margin-bottom:6px;">Track progress and personal records</li>
+      </ul>
+      <p style="margin:0;color:#64748b;font-size:14px;">Use the button below to set your own password. Do not share this link.</p>
     `,
-    ctaLabel: "Accept invite & create password",
+    ctaLabel: "Accept invite & register",
     ctaUrl: input.inviteUrl,
     footerNote: "This invite link expires in 14 days.",
   });
 
   return sendResendEmail({
     to: input.to,
-    subject: `You're invited to ${brand.name}`,
+    subject: `Register for ${brand.name} — invite from ${input.coachName}`,
     html,
     unavailableReason:
       "Email is not configured. Add RESEND_API_KEY to your environment.",

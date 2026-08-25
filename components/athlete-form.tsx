@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import {
@@ -18,6 +19,29 @@ export function AthleteForm() {
     createAthleteAction,
     initialState,
   );
+
+  if (state.inviteUrl && state.athleteId) {
+    return (
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div>
+          <p className="font-semibold text-slate-900">Athlete saved</p>
+          <p className="mt-1 text-sm text-slate-600">
+            {state.emailSent
+              ? "Invite email sent. They can register with the link in their inbox."
+              : state.emailReason ??
+                "Invite created. Copy the link below and send it to the athlete so they can register."}
+          </p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
+          <p className="font-medium text-slate-900">Invite link (copy now)</p>
+          <p className="mt-1 break-all text-primary">{state.inviteUrl}</p>
+        </div>
+        <Button nativeButton={false} render={<Link href={`/athletes/${state.athleteId}`} />}>
+          Open athlete profile
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-6">
@@ -78,16 +102,34 @@ export function AthleteForm() {
         />
       </div>
 
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">
+            Invite athlete to register (optional)
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            Enter their email and we&apos;ll send an invite so they can create
+            their own password and open Today&apos;s Training on their phone.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="inviteEmail">Athlete email</Label>
+          <Input
+            id="inviteEmail"
+            name="inviteEmail"
+            type="email"
+            placeholder="athlete@family.com"
+            autoComplete="email"
+          />
+        </div>
+      </div>
+
       {state.error ? (
         <p className="text-sm text-destructive">{state.error}</p>
       ) : null}
 
       <div className="flex justify-end gap-3">
-        <Button
-          type="submit"
-         
-          disabled={pending}
-        >
+        <Button type="submit" disabled={pending}>
           {pending ? "Saving..." : "Add athlete"}
         </Button>
       </div>

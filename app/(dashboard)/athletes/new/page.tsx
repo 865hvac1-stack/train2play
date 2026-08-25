@@ -15,7 +15,7 @@ export default function NewAthletePage() {
   return (
     <DashboardShell
       title="Add athlete"
-      description="Create a new athlete profile for your roster."
+      description="Create a roster profile and optionally email an invite so they can register."
       action={
         <Button variant="outline" render={<Link href="/athletes">Cancel</Link>} />
       }
@@ -24,7 +24,8 @@ export default function NewAthletePage() {
         <CardHeader>
           <CardTitle>Athlete details</CardTitle>
           <CardDescription>
-            Basic profile information. You can add training history later.
+            Add basic profile info. Include their email if you want to send a
+            registration invite right away.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -10,7 +10,59 @@ import { getAppUrl } from "@/lib/env";
 import { isEmailConfigured } from "@/lib/settings";
 import { requireCoach } from "@/lib/session";
 
-export type InviteActionState = { error?: string; inviteUrl?: string };
+export type InviteActionState = {
+  error?: string;
+  inviteUrl?: string;
+  emailSent?: boolean;
+  emailReason?: string;
+};
+
+/** Create invite + attempt email. Raw token only returned to coach UI, never logged. */
+export async function issueAthleteInviteEmail(options: {
+  coachUserId: string;
+  coachName: string;
+  athleteId: string;
+  email: string;
+}) {
+  const invite = await createAthleteInvite({
+    coachUserId: options.coachUserId,
+    athleteId: options.athleteId,
+    email: options.email,
+  });
+
+  const inviteUrl = `${getAppUrl()}/accept-invite?token=${invite.token}`;
+
+  let emailSent = false;
+  let emailReason: string | undefined;
+
+  if (!isEmailConfigured()) {
+    emailReason =
+      "Email is not configured yet. Copy the invite link and send it to the athlete.";
+  } else {
+    const athlete = await prisma.athlete.findUnique({
+      where: { id: options.athleteId },
+      select: { firstName: true, lastName: true },
+    });
+    try {
+      const result = await sendAthleteLoginInviteEmail({
+        to: options.email,
+        athleteName: athlete
+          ? `${athlete.firstName} ${athlete.lastName}`
+          : "Athlete",
+        coachName: options.coachName || "Your coach",
+        inviteUrl,
+      });
+      emailSent = result.sent;
+      if (!result.sent) {
+        emailReason = result.reason;
+      }
+    } catch {
+      emailReason = "Invite created, but the email could not be sent.";
+    }
+  }
+
+  return { inviteUrl, emailSent, emailReason, email: invite.email };
+}
 
 export async function inviteAthleteLoginAction(
   athleteId: string,
@@ -24,36 +76,19 @@ export async function inviteAthleteLoginAction(
   }
 
   try {
-    const invite = await createAthleteInvite({
+    const result = await issueAthleteInviteEmail({
       coachUserId: coach.id,
+      coachName: coach.name ?? "Your coach",
       athleteId,
       email,
     });
 
-    // Token only returned to the coach UI — never logged
-    const inviteUrl = `${getAppUrl()}/accept-invite?token=${invite.token}`;
-
-    if (isEmailConfigured()) {
-      const athlete = await prisma.athlete.findUnique({
-        where: { id: athleteId },
-        select: { firstName: true, lastName: true },
-      });
-      try {
-        await sendAthleteLoginInviteEmail({
-          to: email,
-          athleteName: athlete
-            ? `${athlete.firstName} ${athlete.lastName}`
-            : "Athlete",
-          coachName: coach.name ?? "Your coach",
-          inviteUrl,
-        });
-      } catch {
-        // Coach can still copy the link
-      }
-    }
-
     revalidatePath(`/athletes/${athleteId}`);
-    return { inviteUrl };
+    return {
+      inviteUrl: result.inviteUrl,
+      emailSent: result.emailSent,
+      emailReason: result.emailReason,
+    };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Could not create invite",

@@ -7,6 +7,9 @@ export const athleteSchema = z.object({
   position: z.string().optional(),
   dateOfBirth: z.string().optional(),
   notes: z.string().optional(),
+  inviteEmail: z
+    .union([z.string().email("Enter a valid invite email"), z.literal("")])
+    .optional(),
 });
 
 export type AthleteInput = z.infer<typeof athleteSchema>;

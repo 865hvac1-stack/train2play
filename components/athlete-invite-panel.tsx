@@ -15,7 +15,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending ? "Creating invite…" : "Send / create invite"}
+      {pending ? "Sending invite…" : "Send invite email"}
     </Button>
   );
 }
@@ -52,8 +52,9 @@ export function AthleteInvitePanel({
   return (
     <div className="space-y-3">
       <p className="text-sm text-slate-600">
-        Invite this athlete to create their own password. The invite link is
-        shown once for you to copy if email is not configured.
+        Send an email invite so this athlete can create their own password and
+        register. If email is not configured yet, you&apos;ll get a copyable
+        link.
       </p>
       <form action={formAction} className="space-y-3">
         <div className="space-y-2">
@@ -69,8 +70,16 @@ export function AthleteInvitePanel({
         {state.error ? (
           <p className="text-sm text-destructive">{state.error}</p>
         ) : null}
-        {state.inviteUrl ? (
+        {state.emailSent ? (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            Invite email sent. They can open the link to register.
+          </p>
+        ) : null}
+        {state.inviteUrl && !state.emailSent ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+            {state.emailReason ? (
+              <p className="mb-2 text-slate-600">{state.emailReason}</p>
+            ) : null}
             <p className="font-medium text-slate-900">Invite link (copy now)</p>
             <p className="mt-1 break-all text-primary">{state.inviteUrl}</p>
           </div>

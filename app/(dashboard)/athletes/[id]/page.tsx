@@ -44,11 +44,14 @@ function formatBirthDate(date: Date | null) {
 
 export default async function AthleteDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ invite?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
+  const { invite } = await searchParams;
 
   const athlete = await prisma.athlete.findFirst({
     where: { id, coachId: user.id },
@@ -172,6 +175,12 @@ export default async function AthleteDetailPage({
         </div>
       }
     >
+      {invite === "sent" ? (
+        <div className="mx-auto mb-4 w-full max-w-5xl rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Invite email sent. The athlete can open the link to register and create
+          their password.
+        </div>
+      ) : null}
       <div className="mx-auto grid w-full max-w-5xl min-w-0 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6 lg:col-span-2">
           <PlayerProfileStats
