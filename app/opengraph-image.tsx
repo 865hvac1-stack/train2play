@@ -51,10 +51,20 @@ export default function OpenGraphImage() {
             marginTop: 20,
             fontSize: 28,
             letterSpacing: 4,
-            color: "#cccccc",
+            color: brand.colors.orange,
           }}
         >
           {brand.tagline}
+        </div>
+        <div
+          style={{
+            marginTop: 16,
+            fontSize: 22,
+            letterSpacing: 1,
+            color: "#cccccc",
+          }}
+        >
+          The Athlete Development Platform
         </div>
       </div>
     ),

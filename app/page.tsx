@@ -1,6 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Crosshair, Film, MapPin, Users } from "lucide-react";
+import {
+  ChartNoAxesCombined,
+  Dumbbell,
+  Link2,
+  UserRound,
+} from "lucide-react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -12,24 +17,24 @@ import { redirect } from "next/navigation";
 
 const features = [
   {
-    icon: Users,
+    icon: Dumbbell,
+    title: "Personalized training",
+    body: "Follow structured programs and workouts built around the athlete's sport, goals, age, and development.",
+  },
+  {
+    icon: ChartNoAxesCombined,
+    title: "Track real progress",
+    body: "Record performance metrics, monitor improvement, celebrate personal records, and see development over time.",
+  },
+  {
+    icon: Link2,
+    title: "Coach connected",
+    body: "Coaches can assign training, review results, provide feedback, and help athletes stay on track.",
+  },
+  {
+    icon: UserRound,
     title: "One athlete profile",
-    body: "Roster, plans, metrics, film, and parent share links — tied to the kid, not scattered notes.",
-  },
-  {
-    icon: Crosshair,
-    title: "Progress that coaches trust",
-    body: "Log velo, bat speed, and exit velo. Compare against other athletes in the same sport.",
-  },
-  {
-    icon: Film,
-    title: "Film with direction",
-    body: "Upload from your phone, mark key frames, and leave notes parents and athletes can follow.",
-  },
-  {
-    icon: MapPin,
-    title: "Pickup when you need coverage",
-    body: "List available players by zip and connect with nearby coaches who need a fill-in.",
+    body: "Training, metrics, videos, achievements, goals, and development history — connected to one athlete.",
   },
 ];
 
@@ -54,10 +59,7 @@ export default async function HomePage() {
     <div className="min-h-full max-w-[100vw] overflow-x-hidden bg-black text-white">
       {/* Full-bleed hero — one composition */}
       <section className="relative isolate min-h-[100svh] overflow-hidden">
-        <div
-          aria-hidden
-          className="t2p-hero-field absolute inset-0"
-        />
+        <div aria-hidden className="t2p-hero-field absolute inset-0" />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-black"
@@ -89,7 +91,7 @@ export default async function HomePage() {
         </header>
 
         <div className="relative z-10 mx-auto flex min-h-[calc(100svh-5.5rem)] w-full max-w-6xl flex-col justify-end px-4 pb-16 pt-10 sm:px-6 sm:pb-20 md:justify-center md:pb-24">
-          <div className="t2p-fade-up max-w-2xl space-y-6">
+          <div className="t2p-fade-up max-w-2xl space-y-5 sm:space-y-6">
             <Image
               src={brand.logo.full}
               alt={brand.name}
@@ -98,18 +100,25 @@ export default async function HomePage() {
               className="h-24 w-auto object-contain drop-shadow-lg sm:h-32"
               priority
             />
+            <p className="text-xs font-semibold tracking-[0.2em] text-brand uppercase sm:text-sm">
+              {brand.heroBadge}
+            </p>
             <h1 className="font-heading text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
               {brand.tagline}
             </h1>
-            <p className="max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
-              The coach portal for youth athletes — rosters, film, velo, training,
-              and pickup matching in one place.
-            </p>
+            <div className="max-w-xl space-y-3">
+              <p className="text-lg font-semibold text-white sm:text-xl">
+                {brand.positioning}
+              </p>
+              <p className="text-base leading-relaxed text-white/75 sm:text-lg">
+                {brand.heroSupport}
+              </p>
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 size="lg"
-                className="bg-brand px-8 text-base text-white hover:bg-brand-hover"
-                render={<Link href="/signup">Create free coach account</Link>}
+                className="bg-brand px-8 text-base font-semibold tracking-wide text-white hover:bg-brand-hover"
+                render={<Link href="/signup">Get started</Link>}
               />
               <Button
                 size="lg"
@@ -131,16 +140,16 @@ export default async function HomePage() {
       <main>
         <section className="border-t border-white/10 bg-zinc-950 px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-6xl">
-            <div className="max-w-xl">
+            <div className="max-w-2xl">
               <p className="font-heading text-sm font-semibold tracking-[0.2em] text-brand uppercase">
-                Built for the field
+                Built around the athlete
               </p>
               <h2 className="font-heading mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                Everything a coach needs between practices
+                Everything your athlete needs to get better
               </h2>
               <p className="mt-3 text-white/65">
-                Less clipboard chaos. More clear plans, tracked progress, and film
-                that actually teaches.
+                Training, progress, coaching, and performance — connected in one
+                athlete development platform.
               </p>
             </div>
 
@@ -161,6 +170,12 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
+
+            <p className="mt-12 max-w-2xl text-sm text-white/45">
+              Built for youth athletes across sports — from the field and court to
+              the gym — with parents and coaches connected around one long-term
+              profile.
+            </p>
           </div>
         </section>
 
@@ -172,11 +187,11 @@ export default async function HomePage() {
           <div className="relative mx-auto flex max-w-6xl flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="max-w-xl">
               <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
-                Ready for your next session?
+                Ready to get better?
               </h2>
               <p className="mt-3 text-black/75">
-                Sign up, set your zip and sport, and start adding athletes, film,
-                and age-right drill suggestions in minutes.
+                Start building your athlete&apos;s training, progress, and
+                development journey with Train2Play.
               </p>
             </div>
             <Button
@@ -195,6 +210,7 @@ export default async function HomePage() {
               {brand.name}
             </p>
             <p className="text-brand">{brand.tagline}</p>
+            <p className="mt-1 text-white/45">{brand.subtagline}</p>
             <p className="mt-1">{brand.domain}</p>
           </div>
           <div className="flex flex-wrap gap-4">
@@ -212,6 +228,9 @@ export default async function HomePage() {
             </a>
             <Link href="/login" className="hover:text-brand">
               Sign in
+            </Link>
+            <Link href="/signup" className="hover:text-brand">
+              Get started
             </Link>
           </div>
         </div>

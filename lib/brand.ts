@@ -15,13 +15,22 @@ export const brand = {
   portalLabel: "Coach Portal",
   /** Marketing tagline on the home page */
   tagline: "Train Better. Play Better.",
+  /** Product positioning line under the tagline */
+  positioning: "One platform for the entire athlete journey.",
+  /** Supporting hero sentence */
+  heroSupport:
+    "Personalized training, measurable progress, coaching, and performance tracking — built around the athlete.",
+  /** Framework line used in product UI */
+  framework: "Train. Track. Develop. Perform.",
   /** Secondary tagline for descriptions */
-  subtagline: "Training. Progress. Performance. One athlete profile.",
+  subtagline: "The Athlete Development Platform",
   /** One-line description for meta tags and auth pages */
   description:
-    "Train2Play helps athletes train, track progress, and develop — with coaches and parents supporting the same athlete profile.",
+    "Train better. Play better. Train2Play connects youth athletes, parents, and coaches through personalized training, measurable progress, and long-term athlete development.",
+  /** Document / SEO title */
+  metaTitle: "Train2Play | The Athlete Development Platform",
   /** Home page hero badge text */
-  heroBadge: "train2play.com",
+  heroBadge: "The Athlete Development Platform",
   /** Support / contact */
   supportEmail: "support@train2play.com",
   /** Brand colors from logo */

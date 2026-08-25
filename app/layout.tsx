@@ -26,13 +26,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(getAppUrl()),
   title: {
-    default: brand.name,
+    default: brand.metaTitle,
     template: `%s · ${brand.name}`,
   },
   description: brand.description,
   applicationName: brand.name,
   openGraph: {
-    title: brand.name,
+    title: brand.metaTitle,
     description: brand.description,
     url: getAppUrl(),
     siteName: brand.name,
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: brand.name,
+    title: brand.metaTitle,
     description: brand.description,
   },
 };

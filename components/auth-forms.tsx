@@ -31,7 +31,7 @@ export function LoginForm({
       <CardHeader>
         <CardTitle className="font-heading text-2xl">Welcome back</CardTitle>
         <CardDescription>
-          Sign in to manage your athletes and training programs.
+          Sign in to Train2Play — your athlete development platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -93,9 +93,10 @@ export function SignupForm() {
   return (
     <Card className="border-white/10 bg-white/95 shadow-xl backdrop-blur">
       <CardHeader>
-        <CardTitle className="font-heading text-2xl">Create your coach account</CardTitle>
+        <CardTitle className="font-heading text-2xl">Get started</CardTitle>
         <CardDescription>
-          Start building rosters, film notes, and pickup matches for your athletes.
+          Create your Train2Play account. Coach tools are available today — athlete
+          and parent experiences are expanding next.
         </CardDescription>
       </CardHeader>
       <CardContent>
