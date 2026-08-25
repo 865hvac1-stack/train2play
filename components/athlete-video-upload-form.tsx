@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -18,17 +18,28 @@ type CoachOption = {
   organizationName: string | null;
 };
 
-function SubmitButton() {
+/** Prefer gallery-friendly types (no capture attribute anywhere). */
+const LIBRARY_ACCEPT =
+  "video/mp4,video/quicktime,video/x-m4v,video/webm,.mp4,.mov,.m4v,.webm";
+
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-brand px-6 text-base font-bold text-black disabled:opacity-60"
     >
       {pending ? "Sending…" : "SEND FOR REVIEW"}
     </button>
   );
+}
+
+function copyFileToInput(file: File, target: HTMLInputElement | null) {
+  if (!target) return;
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  target.files = transfer.files;
 }
 
 export function AthleteVideoUploadForm({
@@ -39,6 +50,12 @@ export function AthleteVideoUploadForm({
   coaches: CoachOption[];
 }) {
   const [sport, setSport] = useState(defaultSport || "Basketball");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const formFileRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
+  const recordRef = useRef<HTMLInputElement>(null);
+
   const [state, action] = useActionState(
     submitAthleteVideoReviewAction,
     {} as AthleteVideoActionState,
@@ -48,6 +65,19 @@ export function AthleteVideoUploadForm({
     () => getVideoCategoriesForSport(sport),
     [sport],
   );
+
+  function onPickedFile(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("video/") && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) {
+      setFileError("Please choose a video file from your camera roll.");
+      setFileName(null);
+      if (formFileRef.current) formFileRef.current.value = "";
+      return;
+    }
+    copyFileToInput(file, formFileRef.current);
+    setFileName(file.name || "Selected video");
+    setFileError(null);
+  }
 
   if (coaches.length === 0) {
     return (
@@ -68,22 +98,76 @@ export function AthleteVideoUploadForm({
 
   return (
     <form action={action} className="space-y-5" encType="multipart/form-data">
-      <div className="space-y-2">
-        <Label htmlFor="videoFile" className="text-slate-300">
-          Video
-        </Label>
-        <Input
-          id="videoFile"
-          name="videoFile"
+      <div className="space-y-3">
+        <Label className="text-slate-300">Video</Label>
+
+        {/* Named field the server action reads — never uses capture */}
+        <input
+          ref={formFileRef}
           type="file"
-          accept="video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm"
+          name="videoFile"
+          accept={LIBRARY_ACCEPT}
           required
-          className="min-h-12 border-white/15 bg-black text-white file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-bold file:text-black"
+          className="sr-only"
+          tabIndex={-1}
+          onChange={(e) => onPickedFile(e.target.files?.[0])}
         />
-        <p className="text-xs text-slate-500">
-          Choose a video from your camera roll / files (up to 100 MB). You can
-          also record a new one if your phone offers that option.
-        </p>
+
+        {/* Gallery / camera roll — explicit, no capture */}
+        <input
+          ref={libraryRef}
+          type="file"
+          accept={LIBRARY_ACCEPT}
+          className="sr-only"
+          tabIndex={-1}
+          onChange={(e) => {
+            onPickedFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+
+        {/* Optional record — only this one uses capture */}
+        <input
+          ref={recordRef}
+          type="file"
+          accept="video/*"
+          capture="environment"
+          className="sr-only"
+          tabIndex={-1}
+          onChange={(e) => {
+            onPickedFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => libraryRef.current?.click()}
+            className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-brand px-4 text-sm font-bold text-black"
+          >
+            Choose from camera roll
+          </button>
+          <button
+            type="button"
+            onClick={() => recordRef.current?.click()}
+            className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/20 bg-zinc-900 px-4 text-sm font-bold text-white"
+          >
+            Record new video
+          </button>
+        </div>
+
+        {fileName ? (
+          <p className="rounded-xl border border-brand/30 bg-brand/10 px-3 py-2 text-sm text-brand">
+            Selected: {fileName}
+          </p>
+        ) : (
+          <p className="text-xs text-slate-500">
+            Tap <strong className="text-slate-300">Choose from camera roll</strong>{" "}
+            to upload a video already on your phone (up to 100 MB).
+          </p>
+        )}
+        {fileError ? <p className="text-sm text-red-400">{fileError}</p> : null}
       </div>
 
       <div className="space-y-2">
@@ -182,7 +266,7 @@ export function AthleteVideoUploadForm({
         <p className="text-sm text-red-400">{state.error}</p>
       ) : null}
 
-      <SubmitButton />
+      <SubmitButton disabled={!fileName} />
     </form>
   );
 }
