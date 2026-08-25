@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  BookOpen,
   Calendar,
   ClipboardList,
   LayoutDashboard,
@@ -33,6 +34,7 @@ const navItems = [
   { href: "/pickup-players/nearby", label: "Players near me", icon: MapPin },
   { href: "/pickup-players", label: "Pickup players", icon: UserPlus },
   { href: "/training", label: "Training", icon: ClipboardList },
+  { href: "/courses", label: "Courses", icon: BookOpen },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/videos", label: "Videos", icon: Video },
   { href: "/reports", label: "Reports", icon: BarChart3 },

@@ -25,7 +25,7 @@ export default async function TrainingPlansPage() {
   return (
     <DashboardShell
       title="Training plans"
-      description="Build workout schedules and track athlete completion."
+      description="Build workout schedules, attach videos kids can watch, and track completion."
       action={
         <Button
          

@@ -600,3 +600,29 @@ export function getSuggestedDrills(options: {
     sportLabel: options.sport.trim() || "Multi-sport",
   };
 }
+
+/** Flat catalog for seeding Courses from the in-house drill library. */
+export function listCatalogDrillsForSport(sport: string): {
+  ageBandId: AgeBandId;
+  ageBandLabel: string;
+  drill: Drill;
+}[] {
+  const catalog = drillsForSport(sport);
+  const rows: {
+    ageBandId: AgeBandId;
+    ageBandLabel: string;
+    drill: Drill;
+  }[] = [];
+
+  for (const band of AGE_BANDS) {
+    for (const drill of catalog[band.id] ?? []) {
+      rows.push({
+        ageBandId: band.id,
+        ageBandLabel: band.label,
+        drill,
+      });
+    }
+  }
+
+  return rows;
+}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { trainingPlanSchema, workoutSchema } from "@/lib/training";
 import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
@@ -27,10 +28,11 @@ async function resolveInstructionVideo(formData: FormData): Promise<
     if (!urlRaw) {
       return { ok: true, url: null, storageKey: null };
     }
-    try {
-      new URL(urlRaw);
-    } catch {
-      return { ok: false, error: "Instruction video URL is not valid" };
+    if (!isValidInstructionVideoUrl(urlRaw)) {
+      return {
+        ok: false,
+        error: "Use a YouTube, Vimeo, or direct MP4/MOV link",
+      };
     }
     return { ok: true, url: urlRaw, storageKey: null };
   }
