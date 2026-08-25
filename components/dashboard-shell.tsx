@@ -63,7 +63,7 @@ export async function DashboardLayoutWrapper({
   }
 
   return (
-    <div className="flex min-h-full min-w-0 overflow-x-hidden bg-brand-light/30">
+    <div className="t2p-portal-bg flex min-h-full min-w-0 overflow-x-hidden">
       <AppSidebar />
       <div className="flex min-h-full min-w-0 flex-1 flex-col overflow-x-hidden">
         {children}

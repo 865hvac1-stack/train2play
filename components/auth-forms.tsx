@@ -27,9 +27,9 @@ export function LoginForm({
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   return (
-    <Card className="border-slate-200 shadow-sm">
+    <Card className="border-white/10 bg-white/95 shadow-xl backdrop-blur">
       <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
+        <CardTitle className="font-heading text-2xl">Welcome back</CardTitle>
         <CardDescription>
           Sign in to manage your athletes and training programs.
         </CardDescription>
@@ -91,9 +91,9 @@ export function SignupForm() {
   const [state, formAction, pending] = useActionState(signupAction, initialState);
 
   return (
-    <Card className="border-slate-200 shadow-sm">
+    <Card className="border-white/10 bg-white/95 shadow-xl backdrop-blur">
       <CardHeader>
-        <CardTitle>Create your coach account</CardTitle>
+        <CardTitle className="font-heading text-2xl">Create your coach account</CardTitle>
         <CardDescription>
           Start building rosters, film notes, and pickup matches for your athletes.
         </CardDescription>

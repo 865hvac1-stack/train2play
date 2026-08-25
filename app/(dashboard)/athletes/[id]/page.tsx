@@ -11,6 +11,7 @@ import { PromotePickupButton } from "@/components/promote-pickup-button";
 import { ProgressCharts } from "@/components/progress-charts";
 import { ProgressGoalForm, ProgressGoalsList } from "@/components/progress-goals";
 import { ProgressMetricForm } from "@/components/progress-metric-form";
+import { SuggestedDrills } from "@/components/suggested-drills";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -195,6 +196,12 @@ export default async function AthleteDetailPage({
               </p>
             </CardContent>
           </Card>
+
+          <SuggestedDrills
+            sport={athlete.sport}
+            dateOfBirth={athlete.dateOfBirth}
+            athleteFirstName={athlete.firstName}
+          />
 
           <Card>
             <CardHeader>

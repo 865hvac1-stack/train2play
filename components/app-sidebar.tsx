@@ -74,12 +74,18 @@ function NavLinks({ onNavigate, dark }: { onNavigate?: () => void; dark?: boolea
 
 export function AppSidebar() {
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-black/10 bg-black md:flex md:flex-col">
+    <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-zinc-950 md:flex md:flex-col">
       <div className="flex h-16 items-center border-b border-white/10 px-6">
         <BrandLogo subtitle={brand.portalLabel} variant="dark" />
       </div>
       <div className="flex flex-1 flex-col p-4">
+        <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.18em] text-brand uppercase">
+          Coach portal
+        </p>
         <NavLinks dark />
+      </div>
+      <div className="border-t border-white/10 p-4">
+        <p className="px-3 text-xs text-slate-500">{brand.tagline}</p>
       </div>
     </aside>
   );
