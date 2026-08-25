@@ -12,6 +12,7 @@ import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { AthleteCard } from "@/components/athlete-card";
 import { CoachConnectionRequests } from "@/components/coach-connection-requests";
+import { NotificationFeed } from "@/components/notification-feed";
 import { SuggestedDrills } from "@/components/suggested-drills";
 import { TrainingPlanCard } from "@/components/training-plan-card";
 import { Button } from "@/components/ui/button";
@@ -249,6 +250,8 @@ export default async function DashboardPage() {
     >
       <div className="space-y-6">
         <OnboardingChecklist steps={onboardingSteps} />
+
+        <NotificationFeed userId={user.id} variant="coach" />
 
         <CoachConnectionRequests
           requests={pendingConnections.map((c) => ({

@@ -13,6 +13,7 @@ import {
   getAthleteDashboardData,
   requireAthleteContext,
 } from "@/lib/athlete-dashboard";
+import { NotificationFeed } from "@/components/notification-feed";
 import { formatMetricValue } from "@/lib/progress";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,8 @@ export default async function AthleteHomePage() {
         </h1>
         <p className="text-slate-400">{sportLine}</p>
       </section>
+
+      <NotificationFeed userId={ctx.userId} variant="athlete" />
 
       {/* TODAY'S TRAINING — primary */}
       <section className="relative overflow-hidden rounded-3xl border border-brand/40 bg-gradient-to-br from-brand via-brand to-[#c44f00] p-5 text-black shadow-[0_20px_50px_-24px_rgba(255,102,0,0.8)] sm:p-6">

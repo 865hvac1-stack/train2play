@@ -94,6 +94,7 @@ model AthleteProfile {
   guardianLinks   GuardianLink[]
   metricEntries   MetricEntry[]
   coachConnections CoachAthleteConnection[]
+  videoReviews     VideoReview[]
 
   @@index([legacyAthleteId])
 }
@@ -248,6 +249,10 @@ model User {
   athleteInvitesSent    AthleteInvite[]          @relation("AthleteInviteSender")
   workoutSessions       WorkoutSession[]         @relation("WorkoutSessionAthleteUser")
   coachConnections      CoachAthleteConnection[] @relation("CoachConnectionCoach")
+  videoReviewsAsCoach   VideoReview[]            @relation("VideoReviewCoach")
+  videoReviewsUploaded  VideoReview[]            @relation("VideoReviewUploadedBy")
+  notifications         AppNotification[]
+  videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
 }
 
 model PasswordResetToken {
@@ -321,9 +326,12 @@ model TrainingVideo {
   description String?
   sourceType  String            @default("URL")
   videoUrl    String
+  /** Object-storage key when uploaded (Cloudinary/S3); not used for URL pastes */
+  storageKey  String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   annotations VideoAnnotation[]
+  videoReviews VideoReview[]
 
   @@index([coachId])
   @@index([athleteId])
@@ -341,6 +349,83 @@ model VideoAnnotation {
 
   @@index([videoId])
   @@index([videoId, timestampMs])
+}
+
+/**
+ * Athlete-submitted film for a connected coach to review.
+ * Reuses TrainingVideo for storage + VideoAnnotation for drawings.
+ */
+model VideoReview {
+  id                 String         @id @default(cuid())
+  trainingVideoId    String
+  trainingVideo      TrainingVideo  @relation(fields: [trainingVideoId], references: [id], onDelete: Cascade)
+  athleteProfileId   String
+  athleteProfile     AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  coachUserId        String
+  coachUser          User           @relation("VideoReviewCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
+  uploadedByUserId   String
+  uploadedByUser     User           @relation("VideoReviewUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  title              String
+  sport              String
+  category           String
+  athleteNote        String?
+  coachFeedback      String?
+  /** AWAITING_REVIEW | IN_REVIEW | REVIEWED */
+  status             String         @default("AWAITING_REVIEW")
+  submittedAt        DateTime       @default(now())
+  reviewedAt         DateTime?
+  /** Future: AI observations JSON — not used yet */
+  aiObservationsJson String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  trainingLinks      VideoReviewTrainingLink[]
+
+  @@index([coachUserId, status])
+  @@index([athleteProfileId, status])
+  @@index([trainingVideoId])
+  @@index([submittedAt])
+}
+
+/** Links a video review to training assigned from that review (TrainingPlan). */
+model VideoReviewTrainingLink {
+  id               String       @id @default(cuid())
+  videoReviewId    String
+  videoReview      VideoReview  @relation(fields: [videoReviewId], references: [id], onDelete: Cascade)
+  trainingPlanId   String
+  trainingPlan     TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  /** DRILL | WORKOUT | PROGRAM */
+  assignmentKind   String       @default("DRILL")
+  coachNote        String?
+  /** Future: COACH | AI_SUGGESTED | AI_APPROVED */
+  recommendationSource String   @default("COACH")
+  assignedByUserId String
+  assignedByUser   User         @relation("VideoReviewTrainingAssignedBy", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now())
+
+  @@index([videoReviewId])
+  @@index([trainingPlanId])
+}
+
+/** Extensible in-app notification feed. */
+model AppNotification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** VIDEO_SUBMITTED | VIDEO_REVIEWED | VIDEO_TRAINING_ASSIGNED | ... */
+  type        String
+  title       String
+  body        String?
+  href        String?
+  /** Opaque related entity id (e.g. videoReviewId) */
+  entityId    String?
+  entityType  String?
+  readAt      DateTime?
+  emailSentAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([type])
 }
 
 model ProgressGoal {
@@ -403,6 +488,7 @@ model TrainingPlan {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   workouts    Workout[]
+  videoReviewLinks VideoReviewTrainingLink[]
 
   @@index([coachId])
   @@index([athleteId])

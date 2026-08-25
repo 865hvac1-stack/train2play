@@ -37,6 +37,8 @@ type VideoAnnotatorProps = {
   videoId: string;
   videoUrl: string;
   initialAnnotations: Annotation[];
+  /** Athlete viewing coach notes — no draw/save/delete */
+  readOnly?: boolean;
 };
 
 const COLORS = ["#FF6600", "#dc2626", "#2563eb", "#eab308", "#ffffff"];
@@ -45,6 +47,7 @@ export function VideoAnnotator({
   videoId,
   videoUrl,
   initialAnnotations,
+  readOnly = false,
 }: VideoAnnotatorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,7 +66,7 @@ export function VideoAnnotator({
   const [videoStatus, setVideoStatus] = useState<"loading" | "ready" | "error">("loading");
   const router = useRouter();
 
-  const canDraw = isPaused && isDrawing && videoStatus === "ready";
+  const canDraw = !readOnly && isPaused && isDrawing && videoStatus === "ready";
 
   const syncCanvasSize = useCallback(() => {
     const video = videoRef.current;
@@ -342,6 +345,7 @@ export function VideoAnnotator({
         ) : null}
       </div>
 
+      {!readOnly ? (
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
         <Button
           type="button"
@@ -364,7 +368,14 @@ export function VideoAnnotator({
                 : "Paused — click Draw on frame to start annotating."}
         </span>
       </div>
+      ) : (
+        <p className="rounded-lg border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-slate-400">
+          Tap a coaching note timestamp below to see your coach&apos;s drawings
+          on that frame.
+        </p>
+      )}
 
+      {!readOnly ? (
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
           <div>
@@ -508,6 +519,39 @@ export function VideoAnnotator({
           )}
         </div>
       </div>
+      ) : (
+        <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4">
+          <p className="mb-3 text-sm font-semibold text-white">
+            Coach annotations
+          </p>
+          {initialAnnotations.length > 0 ? (
+            <ul className="space-y-3">
+              {initialAnnotations.map((annotation) => (
+                <li
+                  key={annotation.id}
+                  className="rounded-xl border border-white/10 p-3 text-sm"
+                >
+                  <button
+                    type="button"
+                    className="font-medium text-brand hover:underline"
+                    onClick={() => seekTo(annotation.timestampMs)}
+                  >
+                    {formatTimestamp(annotation.timestampMs)}
+                    {annotation.label ? ` · ${annotation.label}` : ""}
+                  </button>
+                  {annotation.note ? (
+                    <p className="mt-1 text-slate-400">{annotation.note}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No drawings saved yet. Check back after your coach reviews.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

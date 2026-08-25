@@ -110,7 +110,22 @@ export default async function AthleteDetailPage({
 
   const athleteRecord = athlete;
 
-  const athleteVideos = await getVideosForAthlete(user.id, athleteRecord.id);
+  const [athleteVideos, videoReviews] = await Promise.all([
+    getVideosForAthlete(user.id, athleteRecord.id),
+    athleteRecord.athleteProfile
+      ? prisma.videoReview.findMany({
+          where: {
+            athleteProfileId: athleteRecord.athleteProfile.id,
+            coachUserId: user.id,
+          },
+          include: {
+            trainingLinks: { select: { id: true }, take: 1 },
+          },
+          orderBy: { submittedAt: "desc" },
+          take: 10,
+        })
+      : Promise.resolve([]),
+  ]);
   const profileStats = await getAthleteProfileComparisons(
     athleteRecord.progressMetrics,
     athleteRecord.sport,
@@ -374,16 +389,33 @@ export default async function AthleteDetailPage({
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Video className="h-5 w-5" />
-                    Video coaching
+                    Video development
                   </CardTitle>
                   <CardDescription>
-                    Film review with on-frame drawings and written direction.
+                    Athlete submissions and coach film with annotations.
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" render={<Link href={`/videos/new?athleteId=${athlete.id}`}>Add video</Link>} />
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
+              {videoReviews.length > 0 ? (
+                videoReviews.map((review) => (
+                  <Link
+                    key={review.id}
+                    href={`/videos/reviews/${review.id}`}
+                    className="block rounded-lg border border-slate-200 p-4 transition-colors hover:bg-slate-50"
+                  >
+                    <p className="font-medium text-slate-900">{review.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {review.sport} · {review.category} · {review.status.replaceAll("_", " ")}
+                      {review.trainingLinks.length > 0
+                        ? " · Training assigned"
+                        : ""}
+                    </p>
+                  </Link>
+                ))
+              ) : null}
               {athleteVideos.length > 0 ? (
                 athleteVideos.map((video) => (
                   <Link
@@ -398,18 +430,19 @@ export default async function AthleteDetailPage({
                     </p>
                   </Link>
                 ))
-              ) : (
+              ) : null}
+              {videoReviews.length === 0 && athleteVideos.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-slate-200 p-4 text-sm text-slate-500">
-                  No videos yet.{" "}
+                  No videos yet. Athletes can send film for review, or{" "}
                   <Link
                     href={`/videos/new?athleteId=${athlete.id}`}
                     className="font-medium text-primary hover:underline"
                   >
-                    Upload film
+                    upload film
                   </Link>{" "}
-                  to draw coaching notes on key moments.
+                  yourself.
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 

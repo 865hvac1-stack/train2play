@@ -363,3 +363,75 @@ export async function sendPasswordResetEmail(input: PasswordResetEmailInput) {
       "Password reset email is not configured. Contact support or add RESEND_API_KEY.",
   });
 }
+
+export type VideoSubmittedEmailInput = {
+  to: string;
+  coachName: string;
+  athleteName: string;
+  title: string;
+  sport: string;
+  category: string;
+  reviewUrl: string;
+};
+
+export async function sendVideoSubmittedEmail(input: VideoSubmittedEmailInput) {
+  const html = emailShell({
+    preheader: `${input.athleteName} sent you a video on ${brand.name}`,
+    title: `${input.athleteName} sent you a video`,
+    bodyHtml: `
+      <p style="margin:0 0 12px;">Hi ${escapeHtml(input.coachName)},</p>
+      <p style="margin:0 0 12px;"><strong>${escapeHtml(input.athleteName)}</strong> sent you a video for review.</p>
+      <p style="margin:0 0 12px;"><strong>${escapeHtml(input.title)}</strong><br />
+      ${escapeHtml(input.sport)} · ${escapeHtml(input.category)}</p>
+      <p style="margin:0;color:#64748b;font-size:14px;">Sign in to watch, annotate, leave feedback, and assign training. This email does not include the video file.</p>
+    `,
+    ctaLabel: "Review video",
+    ctaUrl: input.reviewUrl,
+  });
+
+  return sendResendEmail({
+    to: input.to,
+    subject: `${input.athleteName} sent you a video on ${brand.name}`,
+    html,
+    unavailableReason:
+      "Video review email is not configured. Add RESEND_API_KEY to enable it.",
+  });
+}
+
+export type VideoReviewCompleteEmailInput = {
+  to: string;
+  athleteName: string;
+  coachName: string;
+  title: string;
+  hasTraining: boolean;
+  reviewUrl: string;
+};
+
+export async function sendVideoReviewCompleteEmail(
+  input: VideoReviewCompleteEmailInput,
+) {
+  const trainingLine = input.hasTraining
+    ? `<p style="margin:0 0 12px;">${escapeHtml(input.coachName)} also assigned training based on your video.</p>`
+    : "";
+
+  const html = emailShell({
+    preheader: `${input.coachName} reviewed your ${input.title} video`,
+    title: "Coach feedback ready",
+    bodyHtml: `
+      <p style="margin:0 0 12px;">Hi ${escapeHtml(input.athleteName)},</p>
+      <p style="margin:0 0 12px;"><strong>${escapeHtml(input.coachName)}</strong> reviewed your <strong>${escapeHtml(input.title)}</strong> video.</p>
+      ${trainingLine}
+      <p style="margin:0;color:#64748b;font-size:14px;">Open Train2Play to watch annotations, read feedback, and start any assigned training.</p>
+    `,
+    ctaLabel: "View review",
+    ctaUrl: input.reviewUrl,
+  });
+
+  return sendResendEmail({
+    to: input.to,
+    subject: `${input.coachName} reviewed your video on ${brand.name}`,
+    html,
+    unavailableReason:
+      "Video review email is not configured. Add RESEND_API_KEY to enable it.",
+  });
+}
