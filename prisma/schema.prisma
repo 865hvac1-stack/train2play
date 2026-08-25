@@ -154,6 +154,7 @@ model MetricDefinition {
   isActive  Boolean         @default(true)
   createdAt DateTime        @default(now())
   entries   MetricEntry[]
+  workoutExercises WorkoutExercise[]
 
   @@unique([sport, slug])
   @@index([sport, isActive])
@@ -175,6 +176,7 @@ model MetricEntry {
   legacyMetricId     String?          @unique
   legacyMetric       ProgressMetric?  @relation("LegacyMetricEntry", fields: [legacyMetricId], references: [id], onDelete: SetNull)
   createdAt          DateTime         @default(now())
+  exerciseResult     ExerciseResult?
 
   @@index([athleteProfileId])
   @@index([metricDefinitionId])
@@ -209,6 +211,8 @@ model User {
   coachedAthleteMemberships AthleteMembership[]  @relation("AthleteMembershipCoach")
   guardianLinks         GuardianLink[]           @relation("GuardianUser")
   metricEntriesEntered  MetricEntry[]            @relation("MetricEntryEnteredBy")
+  athleteInvitesSent    AthleteInvite[]          @relation("AthleteInviteSender")
+  workoutSessions       WorkoutSession[]         @relation("WorkoutSessionAthleteUser")
 }
 
 model PasswordResetToken {
@@ -252,6 +256,8 @@ model Athlete {
   trainingVideos    TrainingVideo[]
   pickupInterests   PickupInterest[]
   athleteProfile    AthleteProfile?   @relation("LegacyAthleteProfile")
+  athleteInvites    AthleteInvite[]
+  workoutSessions   WorkoutSession[]
 
   @@index([coachId])
   @@index([rosterStatus, listedForPickup])
@@ -381,10 +387,112 @@ model Workout {
   /** Demo / how-to clip kids and parents can watch (share link + coach portal) */
   instructionVideoUrl        String?
   instructionVideoStorageKey String?
-  createdAt                  DateTime     @default(now())
-  updatedAt                  DateTime     @updatedAt
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+  exercises                  WorkoutExercise[]
+  sessions                   WorkoutSession[]
 
   @@index([trainingPlanId])
+}
+
+/** Prescription line inside a workout (reusable structure, assigned with the plan). */
+model WorkoutExercise {
+  id                 String            @id @default(cuid())
+  workoutId          String
+  workout            Workout           @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name               String
+  instructions       String?
+  coachingCue        String?
+  videoUrl           String?
+  sets               Int?
+  reps               Int?
+  durationSec        Int?
+  restSec            Int?
+  equipment          String?
+  sortOrder          Int               @default(0)
+  resultRequired     Boolean           @default(false)
+  /** NUMBER | RATIO | COUNT | TIME | WEIGHT | NONE */
+  resultKind         String            @default("NONE")
+  resultUnit         String?
+  metricDefinitionId String?
+  metricDefinition   MetricDefinition? @relation(fields: [metricDefinitionId], references: [id], onDelete: SetNull)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  results            ExerciseResult[]
+
+  @@index([workoutId])
+  @@index([metricDefinitionId])
+}
+
+/** One athlete's attempt at a prescribed workout. */
+model WorkoutSession {
+  id              String           @id @default(cuid())
+  workoutId       String
+  workout         Workout          @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  athleteId       String
+  athlete         Athlete          @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  /** Logged-in athlete user when they run the session */
+  athleteUserId   String?
+  athleteUser     User?            @relation("WorkoutSessionAthleteUser", fields: [athleteUserId], references: [id], onDelete: SetNull)
+  /** NOT_STARTED | IN_PROGRESS | COMPLETED */
+  status          String           @default("IN_PROGRESS")
+  startedAt       DateTime         @default(now())
+  completedAt     DateTime?
+  durationMinutes Int?
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  results         ExerciseResult[]
+
+  @@index([workoutId])
+  @@index([athleteId])
+  @@index([athleteUserId])
+  @@index([status])
+}
+
+/** Per-exercise completion + flexible result payload. */
+model ExerciseResult {
+  id                String          @id @default(cuid())
+  sessionId         String
+  session           WorkoutSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  workoutExerciseId String
+  workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
+  completed         Boolean         @default(true)
+  completedAt       DateTime        @default(now())
+  /** NUMBER | RATIO | COUNT | TIME | WEIGHT | NONE */
+  resultKind        String          @default("NONE")
+  valuePrimary      Float?
+  valueSecondary    Float?
+  valueText         String?
+  unit              String?
+  notes             String?
+  metricEntryId     String?         @unique
+  metricEntry       MetricEntry?    @relation(fields: [metricEntryId], references: [id], onDelete: SetNull)
+  isPersonalRecord  Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([sessionId, workoutExerciseId])
+  @@index([sessionId])
+  @@index([workoutExerciseId])
+}
+
+/** Coach invites an athlete to create their own login linked to AthleteProfile. */
+model AthleteInvite {
+  id              String    @id @default(cuid())
+  athleteId       String
+  athlete         Athlete   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  email           String
+  tokenHash       String    @unique
+  invitedByUserId String
+  invitedBy       User      @relation("AthleteInviteSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([athleteId])
+  @@index([email])
+  @@index([invitedByUserId])
 }
 
 model Course {

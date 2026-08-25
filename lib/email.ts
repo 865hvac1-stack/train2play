@@ -175,6 +175,57 @@ type PasswordResetEmailInput = {
   resetUrl: string;
 };
 
+type AthleteLoginInviteEmailInput = {
+  to: string;
+  athleteName: string;
+  coachName: string;
+  inviteUrl: string;
+};
+
+export async function sendAthleteLoginInviteEmail(
+  input: AthleteLoginInviteEmailInput,
+) {
+  if (!isEmailConfigured()) {
+    return {
+      sent: false as const,
+      reason: "Email is not configured. Add RESEND_API_KEY to your environment.",
+    };
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const html = `
+    <div style="font-family: sans-serif; max-width: 560px; line-height: 1.5; color: #0f172a;">
+      <p>Hi ${input.athleteName},</p>
+      <p><strong>${input.coachName}</strong> invited you to train on ${brand.name} with your own login.</p>
+      <p style="margin: 24px 0;">
+        <a href="${input.inviteUrl}" style="background: #FF6600; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Accept invite &amp; create password
+        </a>
+      </p>
+      <p style="color: #64748b; font-size: 14px;">
+        This link expires in 14 days. Or copy it:<br />
+        <a href="${input.inviteUrl}">${input.inviteUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: getEmailFromAddress(),
+    to: input.to,
+    subject: `You're invited to ${brand.name}`,
+    html,
+  });
+
+  if (error) {
+    return {
+      sent: false as const,
+      reason: error.message ?? "Unable to send email",
+    };
+  }
+
+  return { sent: true as const };
+}
+
 export async function sendPasswordResetEmail(input: PasswordResetEmailInput) {
   if (!isEmailConfigured()) {
     return {

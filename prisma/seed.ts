@@ -547,52 +547,283 @@ async function main() {
   }
 
   const hudsonPlan = await prisma.trainingPlan.findFirst({
-    where: { coachId: coach.id, athleteId: hudson.id, title: "12-Week Baseball Development" },
+    where: {
+      coachId: coach.id,
+      athleteId: hudson.id,
+      title: "4-Week Baseball Foundation (Sample/Demo)",
+    },
   });
 
   if (!hudsonPlan) {
+    // Soft-close older demo plans so Today's Training points at the sample loop
+    await prisma.trainingPlan.updateMany({
+      where: {
+        coachId: coach.id,
+        athleteId: hudson.id,
+        status: "ACTIVE",
+      },
+      data: { status: "COMPLETED" },
+    });
+
     const today = new Date();
     today.setHours(12, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const day3 = new Date(today);
+    day3.setDate(day3.getDate() + 2);
+    const day5 = new Date(today);
+    day5.setDate(day5.getDate() + 4);
+    const day7 = new Date(today);
+    day7.setDate(day7.getDate() + 6);
+
+    const throwingMetric = await prisma.metricDefinition.findUnique({
+      where: {
+        sport_slug: { sport: "Baseball", slug: "throwing_velocity" },
+      },
+    });
+    const sprintMetric = await prisma.metricDefinition.findUnique({
+      where: {
+        sport_slug: { sport: "Baseball", slug: "ten_yard_sprint" },
+      },
+    });
+
+    // Ensure metric defs exist even if foundation backfill order differs
+    const throwingId =
+      throwingMetric?.id ??
+      (
+        await prisma.metricDefinition.upsert({
+          where: {
+            sport_slug: { sport: "Baseball", slug: "throwing_velocity" },
+          },
+          update: {},
+          create: {
+            sport: "Baseball",
+            slug: "throwing_velocity",
+            name: "Throwing Velocity",
+            category: "speed",
+            unit: "mph",
+            direction: "HIGHER_IS_BETTER",
+          },
+        })
+      ).id;
+    const sprintId =
+      sprintMetric?.id ??
+      (
+        await prisma.metricDefinition.upsert({
+          where: {
+            sport_slug: { sport: "Baseball", slug: "ten_yard_sprint" },
+          },
+          update: {},
+          create: {
+            sport: "Baseball",
+            slug: "ten_yard_sprint",
+            name: "10-Yard Sprint",
+            category: "speed",
+            unit: "sec",
+            direction: "LOWER_IS_BETTER",
+          },
+        })
+      ).id;
 
     await prisma.trainingPlan.create({
       data: {
         coachId: coach.id,
         athleteId: hudson.id,
-        title: "12-Week Baseball Development",
-        description: "Week 4 focus: arm strength, timing, and athleticism.",
+        title: "4-Week Baseball Foundation (Sample/Demo)",
+        description:
+          "SAMPLE/DEMO program for testing the coach → athlete training loop. Not a professionally validated protocol.",
         status: "ACTIVE",
-        startDate: new Date("2026-08-01"),
-        endDate: new Date("2026-10-24"),
+        startDate: today,
+        endDate: new Date(today.getTime() + 86400000 * 28),
         workouts: {
           create: [
             {
-              title: "Arm care + long toss",
-              description:
-                "Band warm-up.\nProgressive long toss.\n8 pull-downs.\nCool-down stretch.",
-              scheduledDate: yesterday,
-              durationMinutes: 35,
-              completed: true,
-              completedAt: yesterday,
-              sortOrder: 0,
-            },
-            {
-              title: "Front toss timing + med ball",
-              description:
-                "Front toss rounds.\nRotational med-ball throws.\nExit-velo competitive swings.",
+              title: "Workout A — Arm + Intent",
+              description: "Arm care, intent throws, tee work, sprint.",
               scheduledDate: today,
-              durationMinutes: 38,
-              sortOrder: 1,
+              durationMinutes: 42,
+              sortOrder: 0,
               instructionVideoUrl: DEMO_VIDEO_URL,
+              exercises: {
+                create: [
+                  {
+                    name: "Arm Care",
+                    instructions:
+                      "Band external rotations, scap pulls, and light catch.",
+                    coachingCue: "Smooth tempo — no max effort.",
+                    sets: 2,
+                    reps: 10,
+                    restSec: 45,
+                    sortOrder: 0,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Intent Throw Series",
+                    instructions: "Build from 50% to intent. 3 sets of 8 throws.",
+                    coachingCue: "Athletic base. Finish through the target.",
+                    sets: 3,
+                    reps: 8,
+                    restSec: 60,
+                    sortOrder: 1,
+                    resultRequired: true,
+                    resultKind: "NUMBER",
+                    resultUnit: "mph",
+                    metricDefinitionId: throwingId,
+                  },
+                  {
+                    name: "Tee Work",
+                    instructions: "Line-drive focus. Middle-away and middle-in.",
+                    coachingCue: "See it deep. Stay through contact.",
+                    sets: 3,
+                    reps: 8,
+                    restSec: 45,
+                    sortOrder: 2,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "10-Yard Sprint",
+                    instructions: "3 timed attempts from a two-point start.",
+                    coachingCue: "Drive the first three steps.",
+                    sets: 3,
+                    reps: 1,
+                    restSec: 90,
+                    sortOrder: 3,
+                    resultRequired: true,
+                    resultKind: "TIME",
+                    resultUnit: "sec",
+                    metricDefinitionId: sprintId,
+                  },
+                ],
+              },
             },
             {
-              title: "Infield funnel + sprint starts",
-              description:
-                "Ground-ball funnel.\nFirst-step acceleration.\nBase-running through the bag.",
-              scheduledDate: new Date(today.getTime() + 86400000 * 2),
+              title: "Workout B — Mobility + Defense",
+              description: "Mobility, hitting drill, footwork, core.",
+              scheduledDate: day3,
               durationMinutes: 40,
+              sortOrder: 1,
+              exercises: {
+                create: [
+                  {
+                    name: "Mobility",
+                    instructions: "Hips, T-spine, and shoulder openers.",
+                    sets: 2,
+                    durationSec: 300,
+                    sortOrder: 0,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Hitting Drill",
+                    instructions: "Front toss — quality contact over volume.",
+                    coachingCue: "Quiet head. Aggressive through the zone.",
+                    sets: 4,
+                    reps: 6,
+                    restSec: 60,
+                    sortOrder: 1,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Defensive Footwork",
+                    instructions: "Funnel progressions and first-step angles.",
+                    sets: 3,
+                    reps: 8,
+                    restSec: 45,
+                    sortOrder: 2,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Core Work",
+                    instructions: "Dead bugs, side planks, med-ball rotations.",
+                    sets: 3,
+                    reps: 10,
+                    restSec: 40,
+                    sortOrder: 3,
+                    resultKind: "NONE",
+                  },
+                ],
+              },
+            },
+            {
+              title: "Workout A — Repeat",
+              description: "Second A session in the sample week.",
+              scheduledDate: day5,
+              durationMinutes: 42,
               sortOrder: 2,
+              exercises: {
+                create: [
+                  {
+                    name: "Arm Care",
+                    sets: 2,
+                    reps: 10,
+                    sortOrder: 0,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Intent Throw Series",
+                    sets: 3,
+                    reps: 8,
+                    sortOrder: 1,
+                    resultRequired: true,
+                    resultKind: "NUMBER",
+                    resultUnit: "mph",
+                    metricDefinitionId: throwingId,
+                  },
+                  {
+                    name: "Tee Work",
+                    sets: 3,
+                    reps: 8,
+                    sortOrder: 2,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "10-Yard Sprint",
+                    sets: 3,
+                    reps: 1,
+                    sortOrder: 3,
+                    resultRequired: true,
+                    resultKind: "TIME",
+                    resultUnit: "sec",
+                    metricDefinitionId: sprintId,
+                  },
+                ],
+              },
+            },
+            {
+              title: "Workout B — Repeat",
+              description: "Second B session in the sample week.",
+              scheduledDate: day7,
+              durationMinutes: 40,
+              sortOrder: 3,
+              exercises: {
+                create: [
+                  {
+                    name: "Mobility",
+                    sets: 2,
+                    durationSec: 300,
+                    sortOrder: 0,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Hitting Drill",
+                    sets: 4,
+                    reps: 6,
+                    sortOrder: 1,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Defensive Footwork",
+                    sets: 3,
+                    reps: 8,
+                    sortOrder: 2,
+                    resultKind: "NONE",
+                  },
+                  {
+                    name: "Core Work",
+                    sets: 3,
+                    reps: 10,
+                    sortOrder: 3,
+                    resultKind: "NONE",
+                  },
+                ],
+              },
             },
           ],
         },

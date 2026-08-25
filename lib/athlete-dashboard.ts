@@ -88,13 +88,22 @@ function isSameLocalDay(a: Date, b: Date) {
 export async function getAthleteDashboardData(ctx: AthleteContext) {
   const athleteId = ctx.athleteId;
 
-  const [plans, metrics, goals, videos, metricEntries] = await Promise.all([
+  const [plans, metrics, goals, videos, metricEntries, sessions] = await Promise.all([
     athleteId
       ? prisma.trainingPlan.findMany({
           where: { athleteId, status: "ACTIVE" },
           include: {
             workouts: {
               orderBy: [{ sortOrder: "asc" }, { scheduledDate: "asc" }],
+              include: {
+                exercises: { select: { id: true } },
+                sessions: {
+                  where: { athleteId },
+                  select: { id: true, status: true, completedAt: true },
+                  orderBy: { startedAt: "desc" },
+                  take: 1,
+                },
+              },
             },
           },
           orderBy: { updatedAt: "desc" },
@@ -125,6 +134,24 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
       orderBy: [{ recordedAt: "desc" }, { createdAt: "desc" }],
       take: 40,
     }),
+    athleteId
+      ? prisma.workoutSession.findMany({
+          where: { athleteId },
+          orderBy: [{ completedAt: "desc" }, { startedAt: "desc" }],
+          take: 8,
+          include: {
+            workout: { select: { title: true } },
+            results: {
+              where: { isPersonalRecord: true },
+              take: 3,
+              include: {
+                workoutExercise: { select: { name: true } },
+                metricEntry: { include: { metricDefinition: true } },
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   const activePlan = plans[0] ?? null;
@@ -335,7 +362,35 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
   // Recent activity (simple timeline)
   const activity: { id: string; title: string; detail: string; at: Date }[] = [];
 
+  for (const s of sessions) {
+    if (s.status === "COMPLETED" && s.completedAt) {
+      activity.push({
+        id: `session-${s.id}`,
+        title: "Workout completed",
+        detail: s.workout.title,
+        at: s.completedAt,
+      });
+      for (const pr of s.results) {
+        const label =
+          pr.metricEntry?.metricDefinition.name ?? pr.workoutExercise.name;
+        const unit = pr.metricEntry?.metricDefinition.unit ?? pr.unit ?? "";
+        activity.push({
+          id: `pr-${pr.id}`,
+          title: "New personal record",
+          detail:
+            pr.valuePrimary != null
+              ? `${label}: ${pr.valuePrimary} ${unit}`
+              : label,
+          at: pr.completedAt,
+        });
+      }
+    }
+  }
+
   for (const w of completedWorkouts.slice(0, 5)) {
+    if (activity.some((a) => a.detail === w.title && a.title === "Workout completed")) {
+      continue;
+    }
     activity.push({
       id: `workout-${w.id}`,
       title: "Workout completed",
@@ -394,7 +449,7 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
     {
       id: "new-pr",
       label: "New PR",
-      earned: Boolean(personalRecord),
+      earned: Boolean(personalRecord) || sessions.some((s) => s.results.length > 0),
     },
     {
       id: "seven-day-streak",
@@ -414,14 +469,16 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
     limit: 2,
   });
 
-  const exerciseCountHint = todaysWorkout?.description
-    ? Math.max(
-        3,
-        todaysWorkout.description.split(/\n|;|\. /).filter(Boolean).length,
-      )
-    : todaysWorkout
-      ? 5
-      : 0;
+  const exerciseCountHint = todaysWorkout?.exercises?.length
+    ? todaysWorkout.exercises.length
+    : todaysWorkout?.description
+      ? Math.max(
+          3,
+          todaysWorkout.description.split(/\n|;|\. /).filter(Boolean).length,
+        )
+      : todaysWorkout
+        ? 0
+        : 0;
 
   return {
     activePlan,

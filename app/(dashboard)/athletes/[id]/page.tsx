@@ -4,6 +4,7 @@ import { Calendar, ClipboardList, Download, Printer, Target, Trash2, TrendingUp,
 
 import { deleteAthleteAction } from "@/app/(dashboard)/athletes/actions";
 import { deleteProgressMetricAction } from "@/app/(dashboard)/athletes/progress-actions";
+import { AthleteInvitePanel } from "@/components/athlete-invite-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ParentSharePanel } from "@/components/parent-share-panel";
 import { PlayerProfileStats } from "@/components/player-profile-stats";
@@ -53,12 +54,33 @@ export default async function AthleteDetailPage({
     where: { id, coachId: user.id },
     include: {
       coach: { select: { name: true } },
+      athleteProfile: {
+        include: {
+          user: { select: { email: true, id: true } },
+        },
+      },
       trainingPlans: {
         where: { status: "ACTIVE" },
         include: {
-          workouts: { select: { completed: true } },
+          workouts: { select: { completed: true, completedAt: true, title: true } },
         },
         orderBy: { updatedAt: "desc" },
+      },
+      workoutSessions: {
+        orderBy: [{ completedAt: "desc" }, { startedAt: "desc" }],
+        take: 10,
+        include: {
+          workout: {
+            include: {
+              trainingPlan: { select: { title: true } },
+            },
+          },
+          results: {
+            include: {
+              workoutExercise: { select: { name: true } },
+            },
+          },
+        },
       },
       progressMetrics: {
         orderBy: [{ recordedAt: "desc" }, { createdAt: "desc" }],
@@ -230,7 +252,7 @@ export default async function AthleteDetailPage({
                           <p className="font-medium text-slate-900">{plan.title}</p>
                           <p className="mt-1 text-sm text-slate-500">
                             {total > 0
-                              ? `${completed}/${total} workouts complete`
+                              ? `${completed}/${total} workouts complete (${Math.round((completed / total) * 100)}%)`
                               : "No workouts yet"}
                           </p>
                         </div>
@@ -252,6 +274,80 @@ export default async function AthleteDetailPage({
                   </Link>{" "}
                   and assign it to this athlete.
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent training activity</CardTitle>
+              <CardDescription>
+                Workouts the athlete completed in the athlete portal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {athlete.workoutSessions.length > 0 ? (
+                athlete.workoutSessions.map((session) => {
+                  const prCount = session.results.filter(
+                    (r) => r.isPersonalRecord,
+                  ).length;
+                  const resultBits = session.results
+                    .filter((r) => r.valuePrimary != null)
+                    .slice(0, 3)
+                    .map((r) => {
+                      const secondary =
+                        r.valueSecondary != null
+                          ? `/${r.valueSecondary}`
+                          : "";
+                      return `${r.workoutExercise.name}: ${r.valuePrimary}${secondary}${r.unit ? ` ${r.unit}` : ""}`;
+                    });
+
+                  return (
+                    <div
+                      key={session.id}
+                      className="rounded-lg border border-slate-200 p-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-slate-900">
+                          {session.workout.title}
+                        </p>
+                        <Badge
+                          variant={
+                            session.status === "COMPLETED"
+                              ? "secondary"
+                              : "outline"
+                          }
+                        >
+                          {session.status === "COMPLETED"
+                            ? "Completed"
+                            : "In progress"}
+                        </Badge>
+                        {prCount > 0 ? (
+                          <Badge variant="outline">{prCount} PR</Badge>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {session.workout.trainingPlan.title}
+                        {session.completedAt
+                          ? ` · ${formatMetricDate(session.completedAt)}`
+                          : ""}
+                        {session.durationMinutes
+                          ? ` · ${session.durationMinutes} min`
+                          : ""}
+                      </p>
+                      {resultBits.length > 0 ? (
+                        <p className="mt-2 text-sm text-slate-600">
+                          {resultBits.join(" · ")}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No athlete-completed sessions yet. After they finish a workout
+                  on their phone, it shows up here.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -384,6 +480,23 @@ export default async function AthleteDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Athlete login</CardTitle>
+              <CardDescription>
+                Give this athlete their own account so they can complete
+                workouts on their phone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AthleteInvitePanel
+                athleteId={athlete.id}
+                hasLogin={Boolean(athlete.athleteProfile?.userId)}
+                linkedEmail={athlete.athleteProfile?.user?.email ?? null}
+              />
+            </CardContent>
+          </Card>
+
           <Card className="h-fit">
             <CardHeader>
               <CardTitle>Log progress</CardTitle>

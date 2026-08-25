@@ -15,6 +15,7 @@ export default async function AthletesPage() {
   const serializedAthletes = athletes.map((athlete) => ({
     ...athlete,
     dateOfBirth: athlete.dateOfBirth?.toISOString() ?? null,
+    lastActivityAt: athlete.lastActivityAt?.toISOString() ?? null,
   }));
 
   return (

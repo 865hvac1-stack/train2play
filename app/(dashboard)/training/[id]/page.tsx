@@ -15,10 +15,15 @@ import {
   toggleWorkoutCompleteAction,
   updatePlanStatusAction,
 } from "@/app/(dashboard)/training/actions";
+import { deleteWorkoutExerciseAction } from "@/app/(dashboard)/training/exercise-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DuplicatePlanForm } from "@/components/duplicate-plan-form";
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { AttachWorkoutVideoForm, WorkoutForm } from "@/components/workout-form";
+import {
+  AssignPlanForm,
+  WorkoutExerciseForm,
+} from "@/components/workout-exercise-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,7 +58,24 @@ export default async function TrainingPlanDetailPage({
     where: { id, coachId: user.id },
     include: {
       athlete: true,
-      workouts: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+      workouts: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: {
+          exercises: { orderBy: { sortOrder: "asc" } },
+          sessions: {
+            where: { status: "COMPLETED" },
+            orderBy: { completedAt: "desc" },
+            take: 3,
+            include: {
+              athlete: { select: { firstName: true, lastName: true } },
+              results: {
+                where: { isPersonalRecord: true },
+                include: { workoutExercise: { select: { name: true } } },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -65,6 +87,13 @@ export default async function TrainingPlanDetailPage({
     where: { coachId: user.id },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     select: { id: true, firstName: true, lastName: true },
+  });
+
+  const sport = plan.athlete?.sport ?? "Baseball";
+  const metrics = await prisma.metricDefinition.findMany({
+    where: { sport, isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, unit: true },
   });
 
   const completedCount = plan.workouts.filter((w) => w.completed).length;
@@ -223,6 +252,84 @@ export default async function TrainingPlanDetailPage({
                         />
                       </div>
                     )}
+
+                    <div className="space-y-2 border-t border-slate-100 pt-3 pl-8">
+                      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                        Exercises ({workout.exercises.length})
+                      </p>
+                      {workout.exercises.length > 0 ? (
+                        <ul className="space-y-2">
+                          {workout.exercises.map((ex) => (
+                            <li
+                              key={ex.id}
+                              className="flex items-start justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-900">
+                                  {ex.name}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {[
+                                    ex.sets != null ? `${ex.sets} sets` : null,
+                                    ex.reps != null ? `${ex.reps} reps` : null,
+                                    ex.resultRequired
+                                      ? `result: ${ex.resultKind}`
+                                      : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </p>
+                              </div>
+                              <form
+                                action={deleteWorkoutExerciseAction.bind(
+                                  null,
+                                  plan.id,
+                                  ex.id,
+                                )}
+                              >
+                                <Button
+                                  type="submit"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive"
+                                >
+                                  Remove
+                                </Button>
+                              </form>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          No exercises yet — add the prescription athletes will
+                          complete.
+                        </p>
+                      )}
+                      <WorkoutExerciseForm
+                        planId={plan.id}
+                        workoutId={workout.id}
+                        metrics={metrics}
+                      />
+                    </div>
+
+                    {workout.sessions.length > 0 ? (
+                      <div className="space-y-1 border-t border-slate-100 pt-3 pl-8 text-xs text-slate-600">
+                        <p className="font-semibold text-slate-700">
+                          Recent athlete completions
+                        </p>
+                        {workout.sessions.map((s) => (
+                          <p key={s.id}>
+                            {s.athlete.firstName} {s.athlete.lastName}
+                            {s.completedAt
+                              ? ` · ${formatDate(s.completedAt)}`
+                              : ""}
+                            {s.results.length > 0
+                              ? ` · PR: ${s.results.map((r) => r.workoutExercise.name).join(", ")}`
+                              : ""}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))
               ) : (
@@ -235,6 +342,22 @@ export default async function TrainingPlanDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Assign athlete</CardTitle>
+              <CardDescription>
+                Link this program to one athlete as their active assignment.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AssignPlanForm
+                planId={plan.id}
+                athletes={athletes}
+                currentAthleteId={plan.athleteId}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Add workout</CardTitle>

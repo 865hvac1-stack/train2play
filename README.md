@@ -16,9 +16,12 @@
 6. Run: `npm run dev`
 7. Open [http://localhost:43123](http://localhost:43123)
 
-**Demo login (dev only):** `coach@example.com` / `password123`
+**Demo logins (dev only, when `SEED_DEMO=true`):**
+- Coach: `coach@example.com` / `password123`
+- Athlete: `athlete@example.com` / `password123` (Hudson Reed)
 
-New signups go through a short onboarding (zip + sport) before the dashboard.
+New coach signups go through a short onboarding (zip + sport) before the Coach Portal.
+Athlete accounts are created via coach invite (`/accept-invite`) or the demo seed.
 
 ---
 

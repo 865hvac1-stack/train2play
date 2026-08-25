@@ -18,6 +18,10 @@ type AthleteCardProps = {
     sport: string;
     position: string | null;
     dateOfBirth: Date | null;
+    activeProgram?: string | null;
+    completionPercent?: number | null;
+    lastWorkoutTitle?: string | null;
+    lastActivityAt?: Date | string | null;
   };
 };
 
@@ -28,6 +32,15 @@ function formatDate(date: Date | null) {
     day: "numeric",
     year: "numeric",
   }).format(date);
+}
+
+function formatActivity(date: Date | string | null | undefined) {
+  if (!date) return null;
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(d);
 }
 
 export function AthleteCard({ athlete }: AthleteCardProps) {
@@ -50,11 +63,31 @@ export function AthleteCard({ athlete }: AthleteCardProps) {
             <ChevronRight className="h-5 w-5 text-slate-400" />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Calendar className="h-4 w-4" />
             {formatDate(athlete.dateOfBirth)}
           </div>
+          {athlete.activeProgram ? (
+            <p className="text-sm text-slate-700">
+              <span className="font-medium">{athlete.activeProgram}</span>
+              {athlete.completionPercent != null
+                ? ` · ${athlete.completionPercent}%`
+                : ""}
+            </p>
+          ) : (
+            <p className="text-sm text-slate-400">No active program</p>
+          )}
+          {athlete.lastWorkoutTitle ? (
+            <p className="text-xs text-slate-500">
+              Last: {athlete.lastWorkoutTitle}
+              {athlete.lastActivityAt
+                ? ` · ${formatActivity(athlete.lastActivityAt)}`
+                : ""}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400">No workouts completed yet</p>
+          )}
         </CardContent>
       </Card>
     </Link>

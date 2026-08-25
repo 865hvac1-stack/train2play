@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
 
+import { startWorkoutAction } from "@/app/(athlete)/athlete/session-actions";
 import {
   getAthleteDashboardData,
   requireAthleteContext,
 } from "@/lib/athlete-dashboard";
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
+import { prisma } from "@/lib/db";
 
 export default async function AthleteTrainPage({
   searchParams,
@@ -22,6 +24,25 @@ export default async function AthleteTrainPage({
     data.activePlan?.workouts.find((w) => !w.completed) ??
     null;
 
+  let inProgressSessionId: string | null = null;
+  if (workout && ctx.athleteId) {
+    const open = await prisma.workoutSession.findFirst({
+      where: {
+        workoutId: workout.id,
+        athleteId: ctx.athleteId,
+        status: "IN_PROGRESS",
+      },
+      select: { id: true },
+    });
+    inProgressSessionId = open?.id ?? null;
+  }
+
+  const exerciseCount =
+    workout && "exercises" in workout
+      ? (workout as { exercises?: { id: string }[] }).exercises?.length ??
+        data.exerciseCountHint
+      : data.exerciseCountHint;
+
   return (
     <div className="space-y-6">
       <div>
@@ -36,15 +57,22 @@ export default async function AthleteTrainPage({
       {workout ? (
         <section className="space-y-4 rounded-3xl border border-brand/30 bg-zinc-900 p-5">
           <p className="text-xs font-bold tracking-[0.16em] text-brand uppercase">
-            Focus session
+            {workout.completed ? "Already completed" : "Focus session"}
           </p>
           <h2 className="font-heading text-2xl font-bold">{workout.title}</h2>
           {data.activePlan ? (
             <p className="text-sm text-slate-400">{data.activePlan.title}</p>
           ) : null}
-          {workout.durationMinutes ? (
-            <p className="text-sm text-slate-300">{workout.durationMinutes} minutes</p>
-          ) : null}
+          <p className="text-sm text-slate-300">
+            {[
+              workout.durationMinutes
+                ? `${workout.durationMinutes} minutes`
+                : null,
+              exerciseCount ? `${exerciseCount} exercises` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
           {workout.description ? (
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
               {workout.description}
@@ -56,10 +84,31 @@ export default async function AthleteTrainPage({
               title="Watch how to do it"
             />
           ) : null}
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-400">
-            Mark complete from your coach&apos;s plan for now — athlete
-            self-complete is coming next.
-          </div>
+
+          {workout.completed ? (
+            <p className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-400">
+              You already completed this workout. Pick another session below or
+              check your history.
+            </p>
+          ) : inProgressSessionId ? (
+            <Link
+              href={`/athlete/workout/${inProgressSessionId}`}
+              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand px-6 text-base font-bold text-black"
+            >
+              <Play className="size-5 fill-current" />
+              CONTINUE WORKOUT
+            </Link>
+          ) : (
+            <form action={startWorkoutAction.bind(null, workout.id)}>
+              <button
+                type="submit"
+                className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand px-6 text-base font-bold text-black"
+              >
+                <Play className="size-5 fill-current" />
+                START WORKOUT
+              </button>
+            </form>
+          )}
         </section>
       ) : (
         <p className="rounded-2xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
@@ -102,21 +151,12 @@ export default async function AthleteTrainPage({
         </section>
       ) : null}
 
-      <section className="space-y-3">
-        <h2 className="font-heading text-xl font-bold">Recommended</h2>
-        {data.recommended.drills.map((drill) => (
-          <div
-            key={drill.id}
-            className="rounded-2xl border border-white/10 bg-zinc-900 p-4"
-          >
-            <p className="font-semibold">{drill.title}</p>
-            <p className="text-sm text-brand">
-              {drill.durationMin} min · {drill.focus}
-            </p>
-            <p className="mt-2 text-sm text-slate-400">{drill.howTo}</p>
-          </div>
-        ))}
-      </section>
+      <Link
+        href="/athlete/history"
+        className="block text-center text-sm text-slate-400 underline-offset-2 hover:underline"
+      >
+        Training history
+      </Link>
     </div>
   );
 }

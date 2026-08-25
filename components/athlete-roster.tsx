@@ -13,6 +13,10 @@ type Athlete = {
   sport: string;
   position: string | null;
   dateOfBirth: Date | string | null;
+  activeProgram?: string | null;
+  completionPercent?: number | null;
+  lastWorkoutTitle?: string | null;
+  lastActivityAt?: Date | string | null;
 };
 
 type AthleteRosterProps = {
@@ -64,6 +68,9 @@ export function AthleteRoster({ athletes }: AthleteRosterProps) {
                 ...athlete,
                 dateOfBirth: athlete.dateOfBirth
                   ? new Date(athlete.dateOfBirth)
+                  : null,
+                lastActivityAt: athlete.lastActivityAt
+                  ? new Date(athlete.lastActivityAt)
                   : null,
               }}
             />
