@@ -25,7 +25,7 @@ The app is **code-ready to launch**. Complete the ops steps below, then smoke-te
 
 | Variable | Purpose |
 | --- | --- |
-| `RESEND_API_KEY` | Pickup alerts, parent invites, **password reset emails** |
+| `RESEND_API_KEY` | Welcome email on signup, pickup alerts, parent invites, password reset, athlete invites |
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` (verify domain in Resend) |
 | `CLOUDINARY_URL` | **Phone video uploads** (easiest — one variable from cloudinary.com) |
 

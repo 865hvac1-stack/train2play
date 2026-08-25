@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 
 import { signIn } from "@/auth";
 import { getPostAuthRedirect } from "@/app/onboarding/actions";
+import { sendWelcomeEmail } from "@/lib/email";
+import { getAppUrl } from "@/lib/env";
 import { createUser, signupSchema } from "@/lib/users";
 
 export type AuthActionState = {
@@ -40,6 +42,8 @@ export async function signupAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  const accountType = parsed.data.accountType ?? "COACH";
+
   try {
     await createUser(parsed.data);
   } catch (error) {
@@ -49,6 +53,19 @@ export async function signupAction(
           ? error.message
           : "Unable to create account. Please try again.",
     };
+  }
+
+  // Non-blocking — signup still succeeds if email is not configured or send fails
+  try {
+    const homePath = accountType === "ATHLETE" ? "/athlete" : "/dashboard";
+    await sendWelcomeEmail({
+      to: parsed.data.email.toLowerCase(),
+      name: parsed.data.name,
+      accountType,
+      loginUrl: `${getAppUrl()}${homePath}`,
+    });
+  } catch {
+    // ignore
   }
 
   const result = await signIn("credentials", {

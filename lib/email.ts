@@ -226,6 +226,65 @@ export async function sendAthleteLoginInviteEmail(
   return { sent: true as const };
 }
 
+type WelcomeEmailInput = {
+  to: string;
+  name: string;
+  accountType: "COACH" | "ATHLETE";
+  loginUrl: string;
+};
+
+export async function sendWelcomeEmail(input: WelcomeEmailInput) {
+  if (!isEmailConfigured()) {
+    return {
+      sent: false as const,
+      reason: "Email is not configured. Add RESEND_API_KEY to your environment.",
+    };
+  }
+
+  const firstName = input.name.trim().split(/\s+/)[0] || "there";
+  const isAthlete = input.accountType === "ATHLETE";
+  const roleLabel = isAthlete ? "athlete" : "coach";
+  const ctaLabel = isAthlete ? "Open athlete home" : "Open coach portal";
+  const nextSteps = isAthlete
+    ? `<p>When your coach assigns a program, it will show up under <strong>Today's Training</strong>.</p>`
+    : `<p>Next: add your athletes, assign a training program, and invite them to log in on their phone.</p>`;
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const html = `
+    <div style="font-family: sans-serif; max-width: 560px; line-height: 1.5; color: #0f172a;">
+      <p>Hi ${firstName},</p>
+      <p>Welcome to <strong>${brand.name}</strong> — ${brand.tagline}</p>
+      <p>Your ${roleLabel} account is ready.</p>
+      ${nextSteps}
+      <p style="margin: 24px 0;">
+        <a href="${input.loginUrl}" style="background: #FF6600; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          ${ctaLabel}
+        </a>
+      </p>
+      <p style="color: #64748b; font-size: 14px;">
+        Or go to:<br />
+        <a href="${input.loginUrl}">${input.loginUrl}</a>
+      </p>
+    </div>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: getEmailFromAddress(),
+    to: input.to,
+    subject: `Welcome to ${brand.name}`,
+    html,
+  });
+
+  if (error) {
+    return {
+      sent: false as const,
+      reason: error.message ?? "Unable to send email",
+    };
+  }
+
+  return { sent: true as const };
+}
+
 export async function sendPasswordResetEmail(input: PasswordResetEmailInput) {
   if (!isEmailConfigured()) {
     return {
