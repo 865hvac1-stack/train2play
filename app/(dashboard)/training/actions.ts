@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { trainingPlanSchema, workoutSchema } from "@/lib/training";
+import { requireAthleteAccess } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
@@ -123,10 +124,9 @@ export async function createTrainingPlanAction(
   }
 
   if (parsed.data.athleteId) {
-    const athlete = await prisma.athlete.findFirst({
-      where: { id: parsed.data.athleteId, coachId: user.id },
-    });
-    if (!athlete) {
+    try {
+      await requireAthleteAccess(prisma, user.id, parsed.data.athleteId, "edit");
+    } catch {
       return { error: "Selected athlete was not found" };
     }
   }
@@ -363,10 +363,9 @@ export async function duplicateTrainingPlanAction(
   const athleteId = (formData.get("athleteId") as string) || null;
 
   if (athleteId) {
-    const athlete = await prisma.athlete.findFirst({
-      where: { id: athleteId, coachId: user.id },
-    });
-    if (!athlete) {
+    try {
+      await requireAthleteAccess(prisma, user.id, athleteId, "edit");
+    } catch {
       throw new Error("Athlete not found");
     }
   }

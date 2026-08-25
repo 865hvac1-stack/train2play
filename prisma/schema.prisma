@@ -93,6 +93,7 @@ model AthleteProfile {
   memberships     AthleteMembership[]
   guardianLinks   GuardianLink[]
   metricEntries   MetricEntry[]
+  coachConnections CoachAthleteConnection[]
 
   @@index([legacyAthleteId])
 }
@@ -140,6 +141,36 @@ model GuardianLink {
 
   @@unique([guardianUserId, athleteProfileId])
   @@index([athleteProfileId])
+}
+
+/**
+ * Many-to-many coach ↔ athlete development relationship.
+ * Athlete.coachId remains roster-originator for legacy training rows;
+ * authorization for connected coaches uses APPROVED rows here (+ AthleteMembership).
+ */
+model CoachAthleteConnection {
+  id               String         @id @default(cuid())
+  coachUserId      String
+  coachUser        User           @relation("CoachConnectionCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  /** PENDING | APPROVED | DECLINED | CANCELLED | REVOKED */
+  status           String         @default("PENDING")
+  /** EMAIL_INVITE | COACH_CODE | QR_CODE | ORGANIZATION | ADMIN */
+  source           String         @default("COACH_CODE")
+  requestedAt      DateTime       @default(now())
+  approvedAt       DateTime?
+  declinedAt       DateTime?
+  cancelledAt      DateTime?
+  /** Future guardian gate — not enforced yet */
+  guardianApprovalRequired Boolean @default(false)
+  guardianApprovedAt DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([coachUserId, status])
+  @@index([athleteProfileId, status])
+  @@index([coachUserId, athleteProfileId])
 }
 
 model MetricDefinition {
@@ -198,6 +229,9 @@ model User {
   lookingForPositions   String?
   minThrowingVelo       Float?
   onboardingCompletedAt DateTime?
+  /** Human-readable coach connection code (e.g. LESTER4821). Not a login secret. */
+  connectionCode        String?                  @unique
+  connectionCodeCreatedAt DateTime?
   createdAt             DateTime                 @default(now())
   updatedAt             DateTime                 @updatedAt
   athletes              Athlete[]
@@ -213,6 +247,7 @@ model User {
   metricEntriesEntered  MetricEntry[]            @relation("MetricEntryEnteredBy")
   athleteInvitesSent    AthleteInvite[]          @relation("AthleteInviteSender")
   workoutSessions       WorkoutSession[]         @relation("WorkoutSessionAthleteUser")
+  coachConnections      CoachAthleteConnection[] @relation("CoachConnectionCoach")
 }
 
 model PasswordResetToken {

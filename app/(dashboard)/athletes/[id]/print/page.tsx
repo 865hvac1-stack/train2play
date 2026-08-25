@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PrintToolbar } from "@/components/print-toolbar";
+import { requireAthleteAccess } from "@/lib/authz";
 import { brand } from "@/lib/brand";
 import { completionRate } from "@/lib/export";
 import { requireUser } from "@/lib/session";
@@ -17,8 +18,14 @@ export default async function AthletePrintPage({
   const { id } = await params;
   const query = await searchParams;
 
+  try {
+    await requireAthleteAccess(prisma, user.id, id, "view");
+  } catch {
+    notFound();
+  }
+
   const athlete = await prisma.athlete.findFirst({
-    where: { id, coachId: user.id },
+    where: { id },
     include: {
       coach: { select: { name: true } },
       trainingPlans: {

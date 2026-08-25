@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { requireAthleteAccess } from "@/lib/authz";
 import { brand } from "@/lib/brand";
 import {
   buildCsv,
@@ -19,8 +20,14 @@ export async function GET(
 
   const { id } = await params;
 
+  try {
+    await requireAthleteAccess(prisma, session.user.id, id, "view");
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+
   const athlete = await prisma.athlete.findFirst({
-    where: { id, coachId: session.user.id },
+    where: { id },
     include: {
       trainingPlans: {
         include: {

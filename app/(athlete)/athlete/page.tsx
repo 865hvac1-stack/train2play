@@ -85,12 +85,20 @@ export default async function AthleteHomePage() {
             <p className="mt-2 text-sm text-black/75">
               When your coach assigns a plan, it shows up here first.
             </p>
-            <Link
-              href="/athlete/train"
-              className="mt-5 inline-flex min-h-12 items-center justify-center rounded-2xl bg-black px-5 text-sm font-bold text-white"
-            >
-              Browse training
-            </Link>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <Link
+                href="/athlete/train"
+                className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-black px-5 text-sm font-bold text-white"
+              >
+                Browse training
+              </Link>
+              <Link
+                href="/athlete/connect"
+                className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-black/20 bg-black/10 px-5 text-sm font-bold text-black"
+              >
+                Connect with a coach
+              </Link>
+            </div>
           </>
         )}
       </section>

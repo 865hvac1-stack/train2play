@@ -11,6 +11,7 @@ import {
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { AthleteCard } from "@/components/athlete-card";
+import { CoachConnectionRequests } from "@/components/coach-connection-requests";
 import { SuggestedDrills } from "@/components/suggested-drills";
 import { TrainingPlanCard } from "@/components/training-plan-card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CONNECTION_STATUS } from "@/lib/coach-connections";
+import { getRosterAthletesForCoach } from "@/lib/player-profile-server";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
@@ -42,27 +45,20 @@ export default async function DashboardPage() {
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
   const [
-    athleteCount,
+    rosterAthletes,
     planCount,
-    recentAthletes,
     recentPlans,
-    sportsBreakdown,
     upcomingWorkouts,
     metricCount,
     goalCount,
     videoCount,
     overdueWorkouts,
-    athletesNeedingMetrics,
+    pendingConnections,
     coachProfile,
   ] = await Promise.all([
-    prisma.athlete.count({ where: { coachId: user.id } }),
+    getRosterAthletesForCoach(user.id),
     prisma.trainingPlan.count({
       where: { coachId: user.id, status: "ACTIVE" },
-    }),
-    prisma.athlete.findMany({
-      where: { coachId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 3,
     }),
     prisma.trainingPlan.findMany({
       where: { coachId: user.id },
@@ -72,13 +68,6 @@ export default async function DashboardPage() {
       },
       orderBy: { updatedAt: "desc" },
       take: 3,
-    }),
-    prisma.athlete.groupBy({
-      by: ["sport"],
-      where: { coachId: user.id },
-      _count: { sport: true },
-      orderBy: { _count: { sport: "desc" } },
-      take: 4,
     }),
     prisma.workout.findMany({
       where: {
@@ -102,10 +91,42 @@ export default async function DashboardPage() {
       take: 5,
     }),
     prisma.progressMetric.count({
-      where: { athlete: { coachId: user.id } },
+      where: {
+        OR: [
+          { athlete: { coachId: user.id } },
+          {
+            athlete: {
+              athleteProfile: {
+                coachConnections: {
+                  some: {
+                    coachUserId: user.id,
+                    status: CONNECTION_STATUS.APPROVED,
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
     }),
     prisma.progressGoal.count({
-      where: { athlete: { coachId: user.id } },
+      where: {
+        OR: [
+          { athlete: { coachId: user.id } },
+          {
+            athlete: {
+              athleteProfile: {
+                coachConnections: {
+                  some: {
+                    coachUserId: user.id,
+                    status: CONNECTION_STATUS.APPROVED,
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
     }),
     prisma.trainingVideo.count({
       where: { coachId: user.id },
@@ -117,25 +138,43 @@ export default async function DashboardPage() {
         trainingPlan: { coachId: user.id, status: "ACTIVE" },
       },
     }),
-    prisma.athlete.count({
+    prisma.coachAthleteConnection.findMany({
       where: {
-        coachId: user.id,
-        rosterStatus: "ROSTER",
-        OR: [
-          { progressMetrics: { none: {} } },
-          {
-            progressMetrics: {
-              every: { recordedAt: { lt: fourteenDaysAgo } },
-            },
-          },
-        ],
+        coachUserId: user.id,
+        status: CONNECTION_STATUS.PENDING,
       },
+      include: {
+        athleteProfile: {
+          select: {
+            firstName: true,
+            lastName: true,
+            primarySport: true,
+            sports: { where: { isPrimary: true }, take: 1 },
+          },
+        },
+      },
+      orderBy: { requestedAt: "desc" },
+      take: 20,
     }),
     prisma.user.findUnique({
       where: { id: user.id },
       select: { lookingForSport: true },
     }),
   ]);
+
+  const athleteCount = rosterAthletes.length;
+  const recentAthletes = rosterAthletes.slice(0, 3);
+  const sportsBreakdownMap = new Map<string, number>();
+  for (const a of rosterAthletes) {
+    sportsBreakdownMap.set(a.sport, (sportsBreakdownMap.get(a.sport) ?? 0) + 1);
+  }
+  const sportsBreakdown = Array.from(sportsBreakdownMap.entries())
+    .map(([sport, count]) => ({ sport, _count: { sport: count } }))
+    .sort((a, b) => b._count.sport - a._count.sport)
+    .slice(0, 4);
+  const athletesNeedingMetrics = rosterAthletes.filter(
+    (a) => !a.lastActivityAt || a.lastActivityAt < fourteenDaysAgo,
+  ).length;
 
   const attentionItems: { label: string; href: string }[] = [];
   if (overdueWorkouts > 0) {
@@ -210,6 +249,18 @@ export default async function DashboardPage() {
     >
       <div className="space-y-6">
         <OnboardingChecklist steps={onboardingSteps} />
+
+        <CoachConnectionRequests
+          requests={pendingConnections.map((c) => ({
+            id: c.id,
+            firstName: c.athleteProfile.firstName,
+            lastName: c.athleteProfile.lastName,
+            sport:
+              c.athleteProfile.sports[0]?.sport ??
+              c.athleteProfile.primarySport,
+            requestedAt: c.requestedAt,
+          }))}
+        />
 
         {attentionItems.length > 0 ? (
           <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 sm:p-5">

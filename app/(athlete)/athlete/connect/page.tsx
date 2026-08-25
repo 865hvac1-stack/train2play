@@ -1,13 +1,17 @@
 import Link from "next/link";
 
-import { SignOutButton } from "@/components/sign-out-button";
+import { AthleteConnectCoachForm } from "@/components/athlete-connect-coach-form";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
-import { brand } from "@/lib/brand";
 import { CONNECTION_STATUS } from "@/lib/coach-connections";
 import { prisma } from "@/lib/db";
 
-export default async function AthleteProfilePage() {
+export default async function AthleteConnectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
   const ctx = await requireAthleteContext();
+  const { code } = await searchParams;
 
   const connections = await prisma.coachAthleteConnection.findMany({
     where: {
@@ -35,39 +39,25 @@ export default async function AthleteProfilePage() {
     <div className="space-y-6">
       <div>
         <p className="text-xs font-bold tracking-[0.18em] text-brand uppercase">
-          Profile
+          Coaches
         </p>
         <h1 className="font-heading text-3xl font-bold tracking-tight">
-          {ctx.firstName} {ctx.lastName}
+          Connect with a coach
         </h1>
-        <p className="text-slate-400">
-          {[ctx.sport, ctx.position].filter(Boolean).join(" • ")}
+        <p className="mt-2 text-sm text-slate-400">
+          Enter the code your coach shared. They must approve before they can
+          assign training.
         </p>
       </div>
 
-      <section className="space-y-3 rounded-2xl border border-white/10 bg-zinc-900 p-5">
-        <p className="text-sm text-slate-300">
-          Your athlete profile is the center of Train2Play. Coaches participate
-          in your development — they do not own your account.
-        </p>
-        <p className="text-xs text-slate-500">
-          {brand.name} · {brand.tagline}
-        </p>
-      </section>
+      <AthleteConnectCoachForm initialCode={code ?? ""} />
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-heading text-xl font-bold">My coaches</h2>
-          <Link
-            href="/athlete/connect"
-            className="text-sm font-semibold text-brand underline-offset-2 hover:underline"
-          >
-            Connect
-          </Link>
-        </div>
+        <h2 className="font-heading text-xl font-bold">My coaches</h2>
         {connections.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-white/15 p-4 text-sm text-slate-400">
-            No coaches connected yet. You can use Train2Play on your own.
+            No coach connections yet. You can still use Train2Play on your own —
+            connecting a coach unlocks assigned training.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -78,7 +68,9 @@ export default async function AthleteProfilePage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-white">{c.coachUser.name}</p>
+                    <p className="font-semibold text-white">
+                      {c.coachUser.name}
+                    </p>
                     <p className="text-xs text-slate-400">
                       {[
                         c.coachUser.lookingForSport,
@@ -99,7 +91,12 @@ export default async function AthleteProfilePage() {
         )}
       </section>
 
-      <SignOutButton />
+      <Link
+        href="/athlete"
+        className="block text-center text-sm text-slate-400 underline-offset-2 hover:underline"
+      >
+        Back to home
+      </Link>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { annotationSchema, videoUrlSchema } from "@/lib/videos";
+import { requireAthleteAccess } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
@@ -33,10 +34,9 @@ export async function createVideoFromUrlAction(
   }
 
   if (parsed.data.athleteId) {
-    const athlete = await prisma.athlete.findFirst({
-      where: { id: parsed.data.athleteId, coachId: user.id },
-    });
-    if (!athlete) {
+    try {
+      await requireAthleteAccess(prisma, user.id, parsed.data.athleteId, "edit");
+    } catch {
       return { error: "Athlete not found" };
     }
   }
@@ -100,10 +100,9 @@ export async function createVideoFromUploadAction(
   }
 
   if (athleteId) {
-    const athlete = await prisma.athlete.findFirst({
-      where: { id: athleteId, coachId: user.id },
-    });
-    if (!athlete) {
+    try {
+      await requireAthleteAccess(prisma, user.id, athleteId, "edit");
+    } catch {
       return { error: "Athlete not found" };
     }
   }

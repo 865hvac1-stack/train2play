@@ -114,37 +114,115 @@ export async function getPickupPlayersForCoach(coachId: string) {
 }
 
 export async function getRosterAthletesForCoach(coachId: string) {
-  const athletes = await prisma.athlete.findMany({
-    where: { coachId, rosterStatus: "ROSTER" },
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    include: {
-      trainingPlans: {
-        where: { status: "ACTIVE" },
-        orderBy: { updatedAt: "desc" },
-        take: 1,
-        include: {
-          workouts: {
-            select: { completed: true, completedAt: true, title: true },
+  const [owned, connected] = await Promise.all([
+    prisma.athlete.findMany({
+      where: { coachId, rosterStatus: "ROSTER" },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      include: {
+        trainingPlans: {
+          where: { status: "ACTIVE" },
+          orderBy: { updatedAt: "desc" },
+          take: 1,
+          include: {
+            workouts: {
+              select: { completed: true, completedAt: true, title: true },
+            },
+          },
+        },
+        workoutSessions: {
+          where: { status: "COMPLETED" },
+          orderBy: { completedAt: "desc" },
+          take: 1,
+          select: {
+            completedAt: true,
+            workout: { select: { title: true } },
           },
         },
       },
-      workoutSessions: {
-        where: { status: "COMPLETED" },
-        orderBy: { completedAt: "desc" },
-        take: 1,
-        select: {
-          completedAt: true,
-          workout: { select: { title: true } },
+    }),
+    prisma.coachAthleteConnection.findMany({
+      where: {
+        coachUserId: coachId,
+        status: "APPROVED",
+      },
+      include: {
+        athleteProfile: {
+          include: {
+            legacyAthlete: {
+              include: {
+                trainingPlans: {
+                  where: { status: "ACTIVE" },
+                  orderBy: { updatedAt: "desc" },
+                  take: 1,
+                  include: {
+                    workouts: {
+                      select: {
+                        completed: true,
+                        completedAt: true,
+                        title: true,
+                      },
+                    },
+                  },
+                },
+                workoutSessions: {
+                  where: { status: "COMPLETED" },
+                  orderBy: { completedAt: "desc" },
+                  take: 1,
+                  select: {
+                    completedAt: true,
+                    workout: { select: { title: true } },
+                  },
+                },
+              },
+            },
+            sports: { where: { isPrimary: true }, take: 1 },
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
 
-  return athletes.map((athlete) => {
+  const byId = new Map<
+    string,
+    {
+      id: string;
+      firstName: string;
+      lastName: string;
+      sport: string;
+      position: string | null;
+      dateOfBirth: Date | null;
+      activeProgram: string | null;
+      completionPercent: number | null;
+      completedWorkouts: number;
+      totalWorkouts: number;
+      lastWorkoutTitle: string | null;
+      lastActivityAt: Date | null;
+    }
+  >();
+
+  function mapAthlete(athlete: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    sport: string;
+    position: string | null;
+    dateOfBirth: Date | null;
+    trainingPlans: {
+      title: string;
+      workouts: {
+        completed: boolean;
+        completedAt: Date | null;
+        title: string;
+      }[];
+    }[];
+    workoutSessions: {
+      completedAt: Date | null;
+      workout: { title: string };
+    }[];
+  }) {
     const plan = athlete.trainingPlans[0] ?? null;
     const total = plan?.workouts.length ?? 0;
-    const completed =
-      plan?.workouts.filter((w) => w.completed).length ?? 0;
+    const completed = plan?.workouts.filter((w) => w.completed).length ?? 0;
     const lastSession = athlete.workoutSessions[0] ?? null;
     const lastWorkoutFromPlan = plan?.workouts
       .filter((w) => w.completed && w.completedAt)
@@ -153,7 +231,7 @@ export async function getRosterAthletesForCoach(coachId: string) {
           (b.completedAt?.getTime() ?? 0) - (a.completedAt?.getTime() ?? 0),
       )[0];
 
-    return {
+    byId.set(athlete.id, {
       id: athlete.id,
       firstName: athlete.firstName,
       lastName: athlete.lastName,
@@ -169,7 +247,23 @@ export async function getRosterAthletesForCoach(coachId: string) {
         lastSession?.workout.title ?? lastWorkoutFromPlan?.title ?? null,
       lastActivityAt:
         lastSession?.completedAt ?? lastWorkoutFromPlan?.completedAt ?? null,
-    };
+    });
+  }
+
+  for (const athlete of owned) {
+    mapAthlete(athlete);
+  }
+
+  for (const connection of connected) {
+    const legacy = connection.athleteProfile.legacyAthlete;
+    if (legacy && legacy.rosterStatus === "ROSTER") {
+      mapAthlete(legacy);
+    }
+  }
+
+  return Array.from(byId.values()).sort((a, b) => {
+    const last = a.lastName.localeCompare(b.lastName);
+    return last !== 0 ? last : a.firstName.localeCompare(b.firstName);
   });
 }
 

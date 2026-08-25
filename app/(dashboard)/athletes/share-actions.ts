@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { generateShareToken, getDefaultShareLinkExpiry } from "@/lib/share";
+import { requireAthleteAccess } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
@@ -12,11 +13,9 @@ export async function createShareLinkAction(
 ) {
   const user = await requireUser();
 
-  const athlete = await prisma.athlete.findFirst({
-    where: { id: athleteId, coachId: user.id },
-  });
-
-  if (!athlete) {
+  try {
+    await requireAthleteAccess(prisma, user.id, athleteId, "edit");
+  } catch {
     throw new Error("Athlete not found");
   }
 
@@ -39,11 +38,16 @@ export async function createShareLinkAction(
 export async function revokeShareLinkAction(athleteId: string, linkId: string) {
   const user = await requireUser();
 
+  try {
+    await requireAthleteAccess(prisma, user.id, athleteId, "edit");
+  } catch {
+    throw new Error("Share link not found");
+  }
+
   const link = await prisma.parentShareLink.findFirst({
     where: {
       id: linkId,
       athleteId,
-      athlete: { coachId: user.id },
       revokedAt: null,
     },
   });

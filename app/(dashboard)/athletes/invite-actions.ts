@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createAthleteInvite } from "@/lib/athlete-invite";
+import { requireAthleteAccess } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { sendAthleteLoginInviteEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/env";
@@ -73,6 +74,12 @@ export async function inviteAthleteLoginAction(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { error: "Enter a valid email address" };
+  }
+
+  try {
+    await requireAthleteAccess(prisma, coach.id, athleteId, "edit");
+  } catch {
+    return { error: "Athlete not found" };
   }
 
   try {

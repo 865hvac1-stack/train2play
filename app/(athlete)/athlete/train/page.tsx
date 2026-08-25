@@ -111,10 +111,19 @@ export default async function AthleteTrainPage({
           )}
         </section>
       ) : (
-        <p className="rounded-2xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
-          No workouts assigned yet. Your coach will add a training plan and it
-          will show up here.
-        </p>
+        <div className="space-y-3">
+          <p className="rounded-2xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
+            No workouts assigned yet. Connect with a coach so they can assign a
+            program — or keep training on your own when self-guided programs
+            arrive.
+          </p>
+          <Link
+            href="/athlete/connect"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand px-5 text-sm font-bold text-black"
+          >
+            Connect with a coach
+          </Link>
+        </div>
       )}
 
       {data.activePlan && data.activePlan.workouts.length > 0 ? (

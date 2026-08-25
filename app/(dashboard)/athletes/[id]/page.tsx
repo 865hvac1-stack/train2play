@@ -27,6 +27,7 @@ import {
   formatMetricDate,
   formatMetricValue,
 } from "@/lib/progress";
+import { requireAthleteAccess } from "@/lib/authz";
 import { isEmailConfigured } from "@/lib/settings";
 import { requireUser } from "@/lib/session";
 import { getAthleteProfileComparisons } from "@/lib/player-profile-server";
@@ -53,8 +54,14 @@ export default async function AthleteDetailPage({
   const { id } = await params;
   const { invite } = await searchParams;
 
+  try {
+    await requireAthleteAccess(prisma, user.id, id, "view");
+  } catch {
+    notFound();
+  }
+
   const athlete = await prisma.athlete.findFirst({
-    where: { id, coachId: user.id },
+    where: { id },
     include: {
       coach: { select: { name: true } },
       athleteProfile: {

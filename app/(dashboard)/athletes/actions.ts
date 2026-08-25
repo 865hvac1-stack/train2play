@@ -7,6 +7,7 @@ import { issueAthleteInviteEmail } from "@/app/(dashboard)/athletes/invite-actio
 import { athleteSchema } from "@/lib/athletes";
 import { syncAthleteProfile } from "@/lib/athlete-profiles";
 import { requireAthleteAccess } from "@/lib/authz";
+import { ensureEmailInviteConnection } from "@/lib/coach-connections";
 import { prisma } from "@/lib/db";
 import { requireCoach, requireUser } from "@/lib/session";
 
@@ -58,6 +59,10 @@ export async function createAthleteAction(
   });
 
   await syncAthleteProfile(athlete);
+  await ensureEmailInviteConnection({
+    coachUserId: user.id,
+    athleteId: athlete.id,
+  });
 
   const inviteEmail = parsed.data.inviteEmail?.trim().toLowerCase();
 

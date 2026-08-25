@@ -33,6 +33,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { coachAccessibleAthleteWhere } from "@/lib/authz/coach-athletes";
 import { formatPlanStatus, PLAN_STATUSES } from "@/lib/training";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
@@ -84,7 +85,10 @@ export default async function TrainingPlanDetailPage({
   }
 
   const athletes = await prisma.athlete.findMany({
-    where: { coachId: user.id },
+    where: {
+      ...coachAccessibleAthleteWhere(user.id),
+      rosterStatus: "ROSTER",
+    },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     select: { id: true, firstName: true, lastName: true },
   });

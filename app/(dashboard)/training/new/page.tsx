@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { coachAccessibleAthleteWhere } from "@/lib/authz/coach-athletes";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
@@ -17,7 +18,10 @@ export default async function NewTrainingPlanPage() {
   const user = await requireUser();
 
   const athletes = await prisma.athlete.findMany({
-    where: { coachId: user.id },
+    where: {
+      ...coachAccessibleAthleteWhere(user.id),
+      rosterStatus: "ROSTER",
+    },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     select: { id: true, firstName: true, lastName: true },
   });

@@ -1,3 +1,4 @@
+import { CoachConnectionCodePanel } from "@/components/coach-connection-code-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
   PasswordSettingsForm,
@@ -11,9 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  connectionCodePath,
+  ensureCoachConnectionCode,
+} from "@/lib/coach-connections";
 import { isEmailConfigured } from "@/lib/settings";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { isCoachPortalRole } from "@/lib/roles";
 
 export default async function SettingsPage() {
   const sessionUser = await requireUser();
@@ -23,6 +29,10 @@ export default async function SettingsPage() {
   });
 
   const emailEnabled = isEmailConfigured();
+  const showCoachCode = isCoachPortalRole(user.role);
+  const codeInfo = showCoachCode
+    ? await ensureCoachConnectionCode(user.id)
+    : null;
 
   return (
     <DashboardShell
@@ -30,6 +40,23 @@ export default async function SettingsPage() {
       description="Manage your coach account and preferences."
     >
       <div className="mx-auto grid max-w-3xl gap-6">
+        {codeInfo ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>My Train2Play code</CardTitle>
+              <CardDescription>
+                Share this code so athletes can request to connect with you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CoachConnectionCodePanel
+                code={codeInfo.code}
+                connectPath={connectionCodePath(codeInfo.code)}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
+
         <ProfileSettingsForm defaultName={user.name} email={user.email} />
         <PickupAlertSettingsForm
           defaults={{

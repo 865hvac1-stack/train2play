@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { progressGoalSchema } from "@/lib/goals";
+import { requireAthleteAccess } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
@@ -11,21 +12,15 @@ export type GoalActionState = {
   success?: boolean;
 };
 
-async function getOwnedAthlete(athleteId: string, coachId: string) {
-  return prisma.athlete.findFirst({
-    where: { id: athleteId, coachId },
-  });
-}
-
 export async function createProgressGoalAction(
   athleteId: string,
   _prevState: GoalActionState,
   formData: FormData,
 ): Promise<GoalActionState> {
   const user = await requireUser();
-  const athlete = await getOwnedAthlete(athleteId, user.id);
-
-  if (!athlete) {
+  try {
+    await requireAthleteAccess(prisma, user.id, athleteId, "edit");
+  } catch {
     return { error: "Athlete not found" };
   }
 
@@ -62,11 +57,16 @@ export async function deleteProgressGoalAction(
   goalId: string,
 ) {
   const user = await requireUser();
+  try {
+    await requireAthleteAccess(prisma, user.id, athleteId, "edit");
+  } catch {
+    throw new Error("Goal not found");
+  }
 
   const goal = await prisma.progressGoal.findFirst({
     where: {
       id: goalId,
-      athlete: { id: athleteId, coachId: user.id },
+      athleteId,
     },
   });
 

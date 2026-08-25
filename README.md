@@ -106,6 +106,8 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 
 - Coach sign up and sign in with post-signup onboarding
 - Dashboard, athletes, training plans, calendar, reports, settings
+- Coach connection codes — athletes request to connect; coaches approve (see `docs/COACH-CONNECTION-CODES.md`)
+- Athlete self-signup + Connect with a coach flow
 - Video coaching — upload MP4, draw on frames, timestamped notes
 - Player profiles with velo vs system averages
 - Pickup players + zip-based matching + email alerts

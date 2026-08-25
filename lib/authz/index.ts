@@ -1,9 +1,14 @@
 import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { OrgRole } from "@/lib/generated/prisma/client";
+import { CONNECTION_STATUS } from "@/lib/coach-connections";
 
 type Db = Pick<
   PrismaClient,
-  "athlete" | "athleteMembership" | "organizationMembership" | "guardianLink"
+  | "athlete"
+  | "athleteMembership"
+  | "organizationMembership"
+  | "guardianLink"
+  | "coachAthleteConnection"
 >;
 
 export async function getAthleteAccess(db: Db, userId: string, athleteId: string) {
@@ -25,6 +30,14 @@ export async function getAthleteAccess(db: Db, userId: string, athleteId: string
             where: { guardianUserId: userId },
             select: { canViewProgress: true, canManageAccount: true },
           },
+          coachConnections: {
+            where: {
+              coachUserId: userId,
+              status: CONNECTION_STATUS.APPROVED,
+            },
+            select: { id: true },
+            take: 1,
+          },
         },
       },
     },
@@ -38,16 +51,20 @@ export async function getAthleteAccess(db: Db, userId: string, athleteId: string
   const profileMembership = athlete.athleteProfile?.memberships.some(
     (membership) => membership.coachUserId === userId,
   );
+  const approvedConnection =
+    (athlete.athleteProfile?.coachConnections.length ?? 0) > 0;
   const guardianLink = athlete.athleteProfile?.guardianLinks[0];
 
   const canView =
     isDirectCoach ||
     profileMembership === true ||
+    approvedConnection ||
     guardianLink?.canViewProgress === true;
 
   const canEdit =
     isDirectCoach ||
     profileMembership === true ||
+    approvedConnection ||
     guardianLink?.canManageAccount === true;
 
   return {
