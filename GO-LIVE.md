@@ -28,8 +28,19 @@ The app is **code-ready to launch**. Complete the ops steps below, then smoke-te
 | `RESEND_API_KEY` | Welcome email on signup, pickup alerts, parent invites, password reset, athlete invites |
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` (verify domain in Resend) |
 | `CLOUDINARY_URL` | **Phone video uploads** (easiest — one variable from cloudinary.com) |
-| `PLATFORM_ADMIN_EMAIL` | Your login — unlocks the Sport library master catalog |
-| `TRAINER_EMAILS` | `chase@train2play.com` (comma-separated) — trainer desk |
+| `PLATFORM_ADMIN_EMAIL` | Your login — unlocks the Platform Admin command center at `/admin` (comma-separated for more than one admin) |
+| `TRAINER_EMAILS` | `chase@train2play.com` (comma-separated) — Director portal at `/trainer` |
+
+Paste into Railway → your service → **Variables** → **Raw Editor**:
+
+```
+PLATFORM_ADMIN_EMAIL=865hvac1@gmail.com
+TRAINER_EMAILS=chase@train2play.com
+```
+
+Roles are applied at login, so **sign out and sign back in** after Railway
+redeploys. An existing session still carries the old role and will be sent back
+to `/dashboard` or `/trainer`.
 
 Optional (only if not using Cloudinary): `S3_BUCKET`, `S3_ENDPOINT`, `S3_PUBLIC_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_REGION`
 
