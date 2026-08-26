@@ -117,6 +117,7 @@ export async function loginAction(
       callbackUrl.startsWith("/teams") ||
       callbackUrl.startsWith("/library") ||
       callbackUrl.startsWith("/trainer") ||
+      callbackUrl.startsWith("/admin") ||
       callbackUrl.startsWith("/pickup-players") ||
       callbackUrl === "/onboarding";
 
