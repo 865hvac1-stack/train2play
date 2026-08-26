@@ -4,12 +4,17 @@ import {
   deleteCatalogDrillAction,
   updateCatalogDrillAudienceAction,
 } from "@/app/(dashboard)/trainer/drill-actions";
+import { CatalogDrillAudienceFields } from "@/components/catalog-drill-audience-fields";
 import { CatalogDrillForm } from "@/components/catalog-drill-form";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CATALOG_SPORTS, listCatalogDrills } from "@/lib/catalog-drills";
+import {
+  CATALOG_SPORTS,
+  listCatalogDrills,
+  listCatalogRecipientAthletes,
+} from "@/lib/catalog-drills";
 import { formatAgeBandLabel } from "@/lib/courses";
 import { requireLibraryEditor } from "@/lib/session";
 
@@ -20,16 +25,19 @@ export default async function TrainerDrillsPage({
 }) {
   await requireLibraryEditor();
   const { sport, ageBand, edit } = await searchParams;
-  const drills = await listCatalogDrills({
-    sport: sport || undefined,
-    ageBand: ageBand || undefined,
-  });
+  const [drills, athletes] = await Promise.all([
+    listCatalogDrills({
+      sport: sport || undefined,
+      ageBand: ageBand || undefined,
+    }),
+    listCatalogRecipientAthletes(sport || undefined),
+  ]);
   const editing = edit ? drills.find((row) => row.id === edit) : null;
 
   return (
     <DashboardShell
       title="Suggested drills"
-      description="Choose whether each drill goes to age-matched coaches, players, or both. New and recently edited drills appear first."
+      description="Send each drill to coaches, every player enrolled in the sport, selected players, or nobody yet."
     >
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
@@ -82,7 +90,12 @@ export default async function TrainerDrillsPage({
                       videoUrl: drill.videoUrl,
                       shareWithCoaches: drill.shareWithCoaches,
                       shareWithAthletes: drill.shareWithAthletes,
+                      athleteAudience: drill.athleteAudience,
+                      athleteProfileIds: drill.athleteRecipients.map(
+                        (recipient) => recipient.athleteProfileId,
+                      ),
                     }}
+                    athletes={athletes}
                   />
                 ) : (
                   <>
@@ -100,9 +113,11 @@ export default async function TrainerDrillsPage({
                       <Badge
                         variant={drill.shareWithAthletes ? "default" : "outline"}
                       >
-                        {drill.shareWithAthletes
-                          ? "Live for players"
-                          : "Not sent to players"}
+                        {drill.athleteAudience === "ALL_SPORT"
+                          ? `Live for all ${drill.sport} players`
+                          : drill.athleteAudience === "SELECTED"
+                            ? `Live for ${drill.athleteRecipients.length} selected`
+                            : "Not sent to players"}
                       </Badge>
                     </div>
                     <h2 className="mt-2 font-heading text-xl font-bold">
@@ -127,29 +142,15 @@ export default async function TrainerDrillsPage({
                       )}
                       className="mt-3 space-y-2 rounded-xl border border-brand/20 bg-orange-50/50 p-3"
                     >
-                      <p className="text-sm font-semibold text-slate-900">
-                        Push to {drill.sport}
-                      </p>
-                      <div className="flex flex-wrap gap-4">
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            name="shareWithCoaches"
-                            defaultChecked={drill.shareWithCoaches}
-                            className="size-4"
-                          />
-                          Coaches
-                        </label>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            name="shareWithAthletes"
-                            defaultChecked={drill.shareWithAthletes}
-                            className="size-4"
-                          />
-                          Players
-                        </label>
-                      </div>
+                      <CatalogDrillAudienceFields
+                        sport={drill.sport}
+                        athletes={athletes}
+                        defaultShareWithCoaches={drill.shareWithCoaches}
+                        defaultAthleteAudience={drill.athleteAudience}
+                        defaultAthleteProfileIds={drill.athleteRecipients.map(
+                          (recipient) => recipient.athleteProfileId,
+                        )}
+                      />
                       <Button type="submit" size="sm">
                         Update who receives it
                       </Button>
@@ -186,6 +187,7 @@ export default async function TrainerDrillsPage({
             receives it.
           </p>
           <CatalogDrillForm
+            athletes={athletes}
             defaults={{
               sport: sport || undefined,
               ageBand: ageBand || undefined,

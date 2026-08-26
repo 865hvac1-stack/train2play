@@ -27,6 +27,7 @@ async function main() {
   const multiSport = await getSuggestedDrillsForSports({
     sports: ["Baseball", "Basketball"],
     dateOfBirth: new Date("2014-01-01T00:00:00.000Z"),
+    athleteProfileId: "test-profile",
   });
   assert.ok(multiSport.drills.some((drill) => drill.sport === "Baseball"));
   assert.ok(multiSport.drills.some((drill) => drill.sport === "Basketball"));

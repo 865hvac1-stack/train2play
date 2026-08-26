@@ -97,6 +97,7 @@ model AthleteProfile {
   coachConnections CoachAthleteConnection[]
   videoReviews     VideoReview[]
   courseItemProgress CourseItemProgress[]
+  catalogDrillRecipients CatalogDrillAthleteRecipient[]
 
   @@index([legacyAthleteId])
 }
@@ -731,6 +732,9 @@ model CatalogDrill {
   videoStorageKey String?
   shareWithCoaches  Boolean @default(true)
   shareWithAthletes Boolean @default(true)
+  /** NONE | ALL_SPORT | SELECTED */
+  athleteAudience String @default("ALL_SPORT")
+  athleteRecipients CatalogDrillAthleteRecipient[]
   sortOrder    Int      @default(0)
   isActive     Boolean  @default(true)
   updatedById  String?
@@ -738,4 +742,17 @@ model CatalogDrill {
   updatedAt    DateTime @updatedAt
 
   @@index([sport, ageBand, isActive])
+}
+
+/** Named-player delivery for a suggested drill when athleteAudience = SELECTED. */
+model CatalogDrillAthleteRecipient {
+  id               String         @id @default(cuid())
+  catalogDrillId   String
+  catalogDrill     CatalogDrill   @relation(fields: [catalogDrillId], references: [id], onDelete: Cascade)
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([catalogDrillId, athleteProfileId])
+  @@index([athleteProfileId])
 }

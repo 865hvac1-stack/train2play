@@ -44,8 +44,51 @@ export async function listCatalogDrills(options: {
       ...(options.sport ? { sport: options.sport } : {}),
       ...(options.ageBand ? { ageBand: options.ageBand } : {}),
     },
+    include: {
+      athleteRecipients: { select: { athleteProfileId: true } },
+    },
     orderBy: [{ sport: "asc" }, { ageBand: "asc" }, { sortOrder: "asc" }],
   });
+}
+
+export async function listCatalogRecipientAthletes(sport?: string) {
+  const rows = await prisma.athleteProfile.findMany({
+    where: sport
+      ? {
+          OR: [
+            {
+              sports: {
+                some: { sport: { equals: sport, mode: "insensitive" } },
+              },
+            },
+            { primarySport: { equals: sport, mode: "insensitive" } },
+            {
+              legacyAthlete: {
+                is: { sport: { equals: sport, mode: "insensitive" } },
+              },
+            },
+          ],
+        }
+      : undefined,
+    include: {
+      sports: { select: { sport: true } },
+      legacyAthlete: { select: { sport: true } },
+    },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+  return rows.map((athlete) => ({
+    id: athlete.id,
+    name: `${athlete.firstName} ${athlete.lastName}`,
+    sports: [
+      ...new Set([
+        ...athlete.sports.map((item) => item.sport),
+        ...(athlete.primarySport ? [athlete.primarySport] : []),
+        ...(athlete.legacyAthlete?.sport
+          ? [athlete.legacyAthlete.sport]
+          : []),
+      ]),
+    ],
+  }));
 }
 
 function toDrill(row: {
@@ -78,6 +121,7 @@ export async function getSuggestedDrills(options: {
   ageBandId?: AgeBandId;
   limit?: number;
   audience?: "coaches" | "athletes";
+  athleteProfileId?: string;
 }) {
   await seedCatalogDrillsIfEmpty();
   const age =
@@ -97,7 +141,24 @@ export async function getSuggestedDrills(options: {
       ...(options.audience === "coaches"
         ? { shareWithCoaches: true }
         : options.audience === "athletes"
-          ? { shareWithAthletes: true }
+          ? {
+              shareWithAthletes: true,
+              OR: [
+                { athleteAudience: "ALL_SPORT" },
+                ...(options.athleteProfileId
+                  ? [
+                      {
+                        athleteAudience: "SELECTED",
+                        athleteRecipients: {
+                          some: {
+                            athleteProfileId: options.athleteProfileId,
+                          },
+                        },
+                      },
+                    ]
+                  : []),
+              ],
+            }
           : {}),
     },
     orderBy: [{ updatedAt: "desc" }, { sortOrder: "asc" }],
@@ -134,6 +195,7 @@ export async function getSuggestedDrills(options: {
 export async function getSuggestedDrillsForSports(options: {
   sports: string[];
   dateOfBirth?: Date | null;
+  athleteProfileId: string;
 }) {
   const sports = [...new Set(options.sports.map((sport) => sport.trim()).filter(Boolean))];
   const suggestions = await Promise.all(
@@ -143,6 +205,7 @@ export async function getSuggestedDrillsForSports(options: {
         dateOfBirth: options.dateOfBirth,
         limit: 2,
         audience: "athletes",
+        athleteProfileId: options.athleteProfileId,
       }),
     ),
   );

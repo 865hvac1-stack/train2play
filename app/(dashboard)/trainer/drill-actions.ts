@@ -31,6 +31,54 @@ const drillSchema = z.object({
   coachingCue: z.string().min(1, "Cue is required"),
 });
 
+async function resolveAthleteAudience(sport: string, formData: FormData) {
+  const requested = String(
+    formData.get("athleteAudience") ?? "ALL_SPORT",
+  ).toUpperCase();
+  const athleteAudience = ["NONE", "ALL_SPORT", "SELECTED"].includes(requested)
+    ? requested
+    : "ALL_SPORT";
+  if (athleteAudience !== "SELECTED") {
+    return { athleteAudience, athleteProfileIds: [] };
+  }
+
+  const requestedIds = [
+    ...new Set(
+      formData
+        .getAll("athleteProfileIds")
+        .map((value) => String(value))
+        .filter(Boolean),
+    ),
+  ];
+  if (requestedIds.length === 0) {
+    return { athleteAudience, athleteProfileIds: [] };
+  }
+
+  const eligible = await prisma.athleteProfile.findMany({
+    where: {
+      id: { in: requestedIds },
+      OR: [
+        {
+          sports: {
+            some: { sport: { equals: sport, mode: "insensitive" } },
+          },
+        },
+        { primarySport: { equals: sport, mode: "insensitive" } },
+        {
+          legacyAthlete: {
+            is: { sport: { equals: sport, mode: "insensitive" } },
+          },
+        },
+      ],
+    },
+    select: { id: true },
+  });
+  return {
+    athleteAudience,
+    athleteProfileIds: eligible.map((athlete) => athlete.id),
+  };
+}
+
 export async function createCatalogDrillAction(
   _prev: DrillActionState,
   formData: FormData,
@@ -57,6 +105,7 @@ export async function createCatalogDrillAction(
   }
   const video = await resolveOptionalInstructionVideo(formData);
   if (!video.ok) return { error: video.error };
+  const audience = await resolveAthleteAudience(parsed.data.sport, formData);
 
   const count = await prisma.catalogDrill.count({
     where: { sport: parsed.data.sport, ageBand: parsed.data.ageBand },
@@ -67,7 +116,16 @@ export async function createCatalogDrillAction(
       videoUrl: video.url,
       videoStorageKey: video.storageKey,
       shareWithCoaches: formData.get("shareWithCoaches") === "on",
-      shareWithAthletes: formData.get("shareWithAthletes") === "on",
+      shareWithAthletes: audience.athleteAudience !== "NONE",
+      athleteAudience: audience.athleteAudience,
+      athleteRecipients:
+        audience.athleteAudience === "SELECTED"
+          ? {
+              create: audience.athleteProfileIds.map((athleteProfileId) => ({
+                athleteProfileId,
+              })),
+            }
+          : undefined,
       sortOrder: count,
       updatedById: user.id,
     },
@@ -99,6 +157,7 @@ export async function updateCatalogDrillAction(
   }
   const video = await resolveOptionalInstructionVideo(formData);
   if (!video.ok) return { error: video.error };
+  const audience = await resolveAthleteAudience(parsed.data.sport, formData);
   await prisma.catalogDrill.update({
     where: { id: drillId },
     data: {
@@ -107,7 +166,17 @@ export async function updateCatalogDrillAction(
         ? { videoUrl: video.url, videoStorageKey: video.storageKey }
         : {}),
       shareWithCoaches: formData.get("shareWithCoaches") === "on",
-      shareWithAthletes: formData.get("shareWithAthletes") === "on",
+      shareWithAthletes: audience.athleteAudience !== "NONE",
+      athleteAudience: audience.athleteAudience,
+      athleteRecipients: {
+        deleteMany: {},
+        create:
+          audience.athleteAudience === "SELECTED"
+            ? audience.athleteProfileIds.map((athleteProfileId) => ({
+                athleteProfileId,
+              }))
+            : [],
+      },
     },
   });
   revalidateDrillSurfaces();
@@ -119,11 +188,27 @@ export async function updateCatalogDrillAudienceAction(
   formData: FormData,
 ) {
   await requireLibraryEditor();
+  const drill = await prisma.catalogDrill.findUnique({
+    where: { id: drillId },
+    select: { sport: true },
+  });
+  if (!drill) throw new Error("Drill not found");
+  const audience = await resolveAthleteAudience(drill.sport, formData);
   await prisma.catalogDrill.update({
     where: { id: drillId },
     data: {
       shareWithCoaches: formData.get("shareWithCoaches") === "on",
-      shareWithAthletes: formData.get("shareWithAthletes") === "on",
+      shareWithAthletes: audience.athleteAudience !== "NONE",
+      athleteAudience: audience.athleteAudience,
+      athleteRecipients: {
+        deleteMany: {},
+        create:
+          audience.athleteAudience === "SELECTED"
+            ? audience.athleteProfileIds.map((athleteProfileId) => ({
+                athleteProfileId,
+              }))
+            : [],
+      },
     },
   });
   revalidateDrillSurfaces();

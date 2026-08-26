@@ -7,6 +7,10 @@ import {
   updateCatalogDrillAction,
   type DrillActionState,
 } from "@/app/(dashboard)/trainer/drill-actions";
+import {
+  CatalogDrillAudienceFields,
+  type CatalogRecipientAthlete,
+} from "@/components/catalog-drill-audience-fields";
 import { InstructionVideoFields } from "@/components/instruction-video-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +22,11 @@ export function CatalogDrillForm({
   mode = "create",
   drillId,
   defaults,
+  athletes = [],
 }: {
   mode?: "create" | "edit";
   drillId?: string;
+  athletes?: CatalogRecipientAthlete[];
   defaults?: {
     sport?: string;
     ageBand?: string;
@@ -33,6 +39,8 @@ export function CatalogDrillForm({
     videoUrl?: string | null;
     shareWithCoaches?: boolean;
     shareWithAthletes?: boolean;
+    athleteAudience?: string;
+    athleteProfileIds?: string[];
   };
 }) {
   const action =
@@ -146,30 +154,16 @@ export function CatalogDrillForm({
         title="Suggested drill video (optional)"
         description="Record with either phone camera, choose from your gallery, or paste a video link."
       />
-      <div className="space-y-2 rounded-xl border border-brand/20 bg-orange-50/50 p-3">
-        <p className="text-sm font-semibold text-slate-900">Push this drill to</p>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            name="shareWithCoaches"
-            defaultChecked={defaults?.shareWithCoaches ?? true}
-            className="size-4"
-          />
-          Coaches set up under this sport
-        </label>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            name="shareWithAthletes"
-            defaultChecked={defaults?.shareWithAthletes ?? true}
-            className="size-4"
-          />
-          Players with this sport on their profile
-        </label>
-        <p className="text-xs text-slate-500">
-          Checked audiences receive it as soon as you save.
-        </p>
-      </div>
+      <CatalogDrillAudienceFields
+        sport={defaults?.sport ?? "this sport"}
+        athletes={athletes}
+        defaultShareWithCoaches={defaults?.shareWithCoaches ?? true}
+        defaultAthleteAudience={
+          defaults?.athleteAudience ??
+          (defaults?.shareWithAthletes === false ? "NONE" : "ALL_SPORT")
+        }
+        defaultAthleteProfileIds={defaults?.athleteProfileIds}
+      />
       {state.error ? (
         <p className="text-sm text-destructive">{state.error}</p>
       ) : null}

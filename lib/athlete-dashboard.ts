@@ -470,6 +470,7 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
   const recommended = await getSuggestedDrillsForSports({
     sports: ctx.sports,
     dateOfBirth: ctx.dateOfBirth,
+    athleteProfileId: ctx.profileId,
   });
 
   const exerciseCountHint = todaysWorkout?.exercises?.length
