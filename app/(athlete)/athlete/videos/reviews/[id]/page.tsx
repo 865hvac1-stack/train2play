@@ -151,7 +151,9 @@ export default async function AthleteVideoReviewDetailPage({
         </section>
       ) : (
         <p className="rounded-2xl border border-dashed border-white/15 p-4 text-sm text-slate-400">
-          Waiting for coach feedback.
+          {voiceReview
+            ? `${review.coachUser.name} talked you through this one — press play above to hear it.`
+            : "Waiting for coach feedback."}
         </p>
       )}
 
