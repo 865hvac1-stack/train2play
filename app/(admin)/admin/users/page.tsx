@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
 const ROLE_TABS = [
   ["ALL", "All"],
@@ -16,10 +17,10 @@ const ROLE_TABS = [
   ["PLATFORM_ADMIN", "Platform Admins"],
 ] as const;
 
-function roleWhere(role?: string) {
+function roleWhere(role?: string): Prisma.UserWhereInput {
   if (!role || role === "ALL") return {};
   if (role === "COACH") {
-    return { role: { in: ["COACH", "STAFF", "ORG_ADMIN"] as const } };
+    return { role: { in: ["COACH", "STAFF", "ORG_ADMIN"] } };
   }
   return { role: role as "ATHLETE" | "TRAINER" | "PARENT" | "PLATFORM_ADMIN" };
 }
@@ -49,6 +50,8 @@ export default async function AdminUsersPage({
   const search = query.search?.trim() ?? "";
   const page = Math.max(1, Number(query.page) || 1);
   const pageSize = 30;
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const statusWhere =
     query.status === "inactive"
       ? { isActive: false }
@@ -92,7 +95,7 @@ export default async function AdminUsersPage({
               },
             }
           : query.journey === "active"
-            ? { lastActiveAt: { gte: new Date(Date.now() - 30 * 86400000) } }
+            ? { lastActiveAt: { gte: thirtyDaysAgo } }
             : query.journey === "progress"
               ? {
                   athleteProfile: {
@@ -142,12 +145,12 @@ export default async function AdminUsersPage({
           ? {
               athletes: { some: {} },
               trainingPlans: {
-                none: { createdAt: { gte: new Date(Date.now() - 30 * 86400000) } },
+                none: { createdAt: { gte: thirtyDaysAgo } },
               },
             }
           : query.attention === "not-activated"
             ? {
-                createdAt: { gte: new Date(Date.now() - 30 * 86400000) },
+                createdAt: { gte: thirtyDaysAgo },
                 athleteProfile: {
                   is: {
                     OR: [
@@ -165,7 +168,7 @@ export default async function AdminUsersPage({
               }
             : {};
 
-  const where = {
+  const where: Prisma.UserWhereInput = {
     ...roleWhere(role),
     ...statusWhere,
     ...journeyWhere,

@@ -29,7 +29,8 @@ export default async function AdminSportDetail({
     },
   });
   if (!sport) notFound();
-  const since = new Date(Date.now() - 30 * 86400000);
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
   const [
     athletes,
     activeAthletes,
@@ -102,19 +103,23 @@ export default async function AdminSportDetail({
       />
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Athletes", athletes, Users],
-          ["Active athletes", `${activeRate}%`, Users],
-          ["Coaches", coaches, Users],
-          ["Directors", sport.directorAssignments.length, ShieldCheck],
-          ["Organizations", organizations, Building2],
-          ["Workouts · 30d", workouts, Dumbbell],
-          ["Videos · 30d", videos, Film],
-          ["PRs · 30d", prs, Trophy],
-        ].map(([label, value, Icon]) => (
-          <div key={String(label)} className="rounded-xl border bg-white p-4">
+          { label: "Athletes", value: athletes, icon: Users },
+          { label: "Active athletes", value: `${activeRate}%`, icon: Users },
+          { label: "Coaches", value: coaches, icon: Users },
+          {
+            label: "Directors",
+            value: sport.directorAssignments.length,
+            icon: ShieldCheck,
+          },
+          { label: "Organizations", value: organizations, icon: Building2 },
+          { label: "Workouts · 30d", value: workouts, icon: Dumbbell },
+          { label: "Videos · 30d", value: videos, icon: Film },
+          { label: "PRs · 30d", value: prs, icon: Trophy },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="rounded-xl border bg-white p-4">
             <Icon className="size-4 text-brand" />
-            <p className="font-heading mt-3 text-3xl font-bold">{String(value)}</p>
-            <p className="text-xs text-slate-500">{String(label)}</p>
+            <p className="font-heading mt-3 text-3xl font-bold">{value}</p>
+            <p className="text-xs text-slate-500">{label}</p>
           </div>
         ))}
       </div>

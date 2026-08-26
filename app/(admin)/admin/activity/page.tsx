@@ -31,6 +31,8 @@ export default async function AdminActivityPage({
   searchParams: Promise<{ type?: string; attention?: string }>;
 }) {
   const query = await searchParams;
+  const reviewCutoff = new Date();
+  reviewCutoff.setHours(reviewCutoff.getHours() - 48);
   const type = FILTERS.includes(query.type as (typeof FILTERS)[number])
     ? query.type!
     : "ALL";
@@ -45,7 +47,7 @@ export default async function AdminActivityPage({
       ? prisma.videoReview.findMany({
           where: {
             status: { in: ["AWAITING_REVIEW", "IN_REVIEW"] },
-            submittedAt: { lte: new Date(Date.now() - 48 * 3600000) },
+            submittedAt: { lte: reviewCutoff },
           },
           include: {
             athleteProfile: {

@@ -1,4 +1,4 @@
-import { Activity, BookOpen, Building2, Dumbbell, ShieldCheck, Users, Volleyball } from "lucide-react";
+import { Activity, BookOpen, Dumbbell, Users, Volleyball } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -86,15 +86,19 @@ export default async function DirectorDetailPage({
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Authorized sports", sportNames.length, Volleyball],
-          ["Athletes under programs", athletes, Users],
-          ["Connected coaches", coaches, Users],
-          ["Content published", director.courses.length + drills.length, BookOpen],
-        ].map(([label, value, Icon]) => (
-          <div key={String(label)} className="rounded-xl border bg-white p-4">
+          { label: "Authorized sports", value: sportNames.length, icon: Volleyball },
+          { label: "Athletes under programs", value: athletes, icon: Users },
+          { label: "Connected coaches", value: coaches, icon: Users },
+          {
+            label: "Content published",
+            value: director.courses.length + drills.length,
+            icon: BookOpen,
+          },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="rounded-xl border bg-white p-4">
             <Icon className="size-4 text-brand" />
-            <p className="font-heading mt-3 text-3xl font-bold">{String(value)}</p>
-            <p className="text-xs text-slate-500">{String(label)}</p>
+            <p className="font-heading mt-3 text-3xl font-bold">{value}</p>
+            <p className="text-xs text-slate-500">{label}</p>
           </div>
         ))}
       </div>

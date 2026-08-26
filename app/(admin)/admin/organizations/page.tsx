@@ -14,6 +14,8 @@ export default async function AdminOrganizationsPage({
 }) {
   const query = await searchParams;
   const search = query.search?.trim() ?? "";
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const organizations = await prisma.organization.findMany({
     where: {
       ...(query.status === "inactive"
@@ -66,7 +68,7 @@ export default async function AdminOrganizationsPage({
         where: {
           athleteId: { in: legacyIds },
           status: "COMPLETED",
-          completedAt: { gte: new Date(Date.now() - 30 * 86400000) },
+          completedAt: { gte: thirtyDaysAgo },
         },
         _count: { _all: true },
       })

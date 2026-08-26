@@ -41,6 +41,8 @@ export default async function OrganizationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const organization = await prisma.organization.findUnique({
     where: { id },
     include: {
@@ -59,17 +61,17 @@ export default async function OrganizationDetailPage({
                   workoutSessions: {
                     where: {
                       status: "COMPLETED",
-                      completedAt: { gte: new Date(Date.now() - 30 * 86400000) },
+                      completedAt: { gte: thirtyDaysAgo },
                     },
                   },
                   trainingPlans: { where: { status: "ACTIVE" } },
                 },
               },
               metricEntries: {
-                where: { recordedAt: { gte: new Date(Date.now() - 30 * 86400000) } },
+                where: { recordedAt: { gte: thirtyDaysAgo } },
               },
               videoReviews: {
-                where: { submittedAt: { gte: new Date(Date.now() - 30 * 86400000) } },
+                where: { submittedAt: { gte: thirtyDaysAgo } },
               },
               courseItemProgress: {
                 where: { completedAt: { not: null } },

@@ -43,7 +43,9 @@ function AdminLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="space-y-1">
-      {ADMIN_NAV.map(({ href, label, icon: Icon, exact }) => {
+      {ADMIN_NAV.map((item) => {
+        const { href, label, icon: Icon } = item;
+        const exact = "exact" in item && item.exact;
         const active = exact
           ? pathname === href
           : pathname === href || pathname.startsWith(`${href}/`);

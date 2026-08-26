@@ -8,6 +8,8 @@ import { countAthletesForSport, countCoachesForSport } from "@/lib/admin-analyti
 import { prisma } from "@/lib/db";
 
 export default async function AdminDirectorsPage() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const directors = await prisma.user.findMany({
     where: { role: "TRAINER" },
     include: {
@@ -39,7 +41,7 @@ export default async function AdminDirectorsPage() {
       const recentPlans = await prisma.trainingPlan.count({
         where: {
           coachId: director.id,
-          createdAt: { gte: new Date(Date.now() - 30 * 86400000) },
+          createdAt: { gte: thirtyDaysAgo },
         },
       });
       return {

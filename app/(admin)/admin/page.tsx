@@ -616,21 +616,33 @@ export default async function AdminCommandCenter({
         <SectionHeading eyebrow="Shortcuts" title="Quick actions" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            ["/admin/organizations/new", "Add organization", Building2],
-            ["/admin/directors/new", "Add director", ShieldCheck],
-            ["/admin/content", "Add platform content", Dumbbell],
-            ["/admin/metrics/new", "Add metric", Trophy],
-            ["/admin/search", "Search platform", Search],
-          ].map(([href, label, Icon]) => (
+            {
+              href: "/admin/organizations/new",
+              label: "Add organization",
+              icon: Building2,
+            },
+            {
+              href: "/admin/directors/new",
+              label: "Add director",
+              icon: ShieldCheck,
+            },
+            {
+              href: "/admin/content",
+              label: "Add platform content",
+              icon: Dumbbell,
+            },
+            { href: "/admin/metrics/new", label: "Add metric", icon: Trophy },
+            { href: "/admin/search", label: "Search platform", icon: Search },
+          ].map(({ href, label, icon: Icon }) => (
             <Button
-              key={String(href)}
+              key={href}
               variant="outline"
               className="h-auto justify-start p-4"
               nativeButton={false}
               render={
-                <Link href={String(href)}>
+                <Link href={href}>
                   <Icon className="size-4 text-brand" />
-                  {String(label)}
+                  {label}
                 </Link>
               }
             />
