@@ -13,7 +13,9 @@ import {
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getBaseballProgramHealth } from "@/lib/director-dashboard";
+import { CATALOG_SPORTS } from "@/lib/catalog-drills";
+import { prisma } from "@/lib/db";
+import { getSportProgramHealth } from "@/lib/director-dashboard";
 import { requireLibraryEditor } from "@/lib/session";
 
 function HealthCard({
@@ -64,11 +66,13 @@ function RateBar({
   count,
   total,
   rate,
+  sport,
 }: {
   label: string;
   count: number;
   total: number;
   rate: number;
+  sport: string;
 }) {
   return (
     <div>
@@ -76,7 +80,7 @@ function RateBar({
         <div>
           <p className="font-semibold text-slate-950">{label}</p>
           <p className="text-xs text-slate-500">
-            {count} of {total} Baseball athletes
+            {count} of {total} {sport} athletes
           </p>
         </div>
         <p className="font-heading text-2xl font-bold text-brand">{rate}%</p>
@@ -91,20 +95,36 @@ function RateBar({
   );
 }
 
-export default async function DirectorHomePage() {
+export default async function DirectorHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sport?: string }>;
+}) {
   const user = await requireLibraryEditor();
-  const health = await getBaseballProgramHealth();
+  const [{ sport: requestedSport }, director] = await Promise.all([
+    searchParams,
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { lookingForSport: true },
+    }),
+  ]);
+  const sport =
+    CATALOG_SPORTS.find((item) => item === requestedSport) ??
+    CATALOG_SPORTS.find((item) => item === director?.lookingForSport) ??
+    "Baseball";
+  const sportQuery = `sport=${encodeURIComponent(sport)}`;
+  const health = await getSportProgramHealth(sport);
   const { totals } = health;
 
   return (
     <DashboardShell
-      title="Baseball program command center"
+      title={`${sport} program command center`}
       description="Program-wide enrollment, coach activation, athlete engagement, and content controls."
       action={
         <Button
           nativeButton={false}
           render={
-            <Link href="/trainer/drills?sport=Baseball">
+            <Link href={`/trainer/drills?${sportQuery}`}>
               <Plus className="size-4" />
               Suggested drill
             </Link>
@@ -112,11 +132,23 @@ export default async function DirectorHomePage() {
         />
       }
     >
+      <div className="mx-auto w-full max-w-[1440px]">
+      <nav className="mb-4 flex gap-2 overflow-x-auto pb-1" aria-label="Director sport">
+        {CATALOG_SPORTS.map((item) => (
+          <Button
+            key={item}
+            size="sm"
+            variant={item === sport ? "default" : "outline"}
+            nativeButton={false}
+            render={<Link href={`/trainer?sport=${encodeURIComponent(item)}`}>{item}</Link>}
+          />
+        ))}
+      </nav>
       <section className="overflow-hidden rounded-3xl bg-zinc-950 p-5 text-white sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-bold tracking-[0.2em] text-brand uppercase">
-              Director view · Baseball
+              Director view · {sport}
             </p>
             <h2 className="font-heading mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
               The health of the whole program, in one place.
@@ -132,7 +164,7 @@ export default async function DirectorHomePage() {
               variant="outline"
               nativeButton={false}
               className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-              render={<Link href="/library?sport=Baseball">Content library</Link>}
+              render={<Link href={`/library?${sportQuery}`}>Content library</Link>}
             />
             <Button
               nativeButton={false}
@@ -144,9 +176,9 @@ export default async function DirectorHomePage() {
 
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <HealthCard
-          label="Baseball enrollment"
+          label={`${sport} enrollment`}
           value={String(totals.athletes)}
-          detail="Every athlete with Baseball selected on their profile"
+          detail={`Every athlete with ${sport} selected on their profile`}
           icon={Users}
           accent
         />
@@ -159,7 +191,7 @@ export default async function DirectorHomePage() {
         <HealthCard
           label="Video reach"
           value={`${totals.videoViewRate}%`}
-          detail={`${totals.videoViewers} players started a published Baseball video`}
+          detail={`${totals.videoViewers} players started a published ${sport} video`}
           icon={Film}
         />
         <HealthCard
@@ -177,7 +209,7 @@ export default async function DirectorHomePage() {
         <HealthCard
           label="Training output"
           value={String(totals.completedWorkouts)}
-          detail="Baseball workouts completed in the last 30 days"
+          detail={`${sport} workouts completed in the last 30 days`}
           icon={Dumbbell}
         />
       </section>
@@ -197,33 +229,37 @@ export default async function DirectorHomePage() {
           </div>
           <div className="mt-6 space-y-6">
             <RateBar
-              label="Enrolled in Baseball"
+              label={`Enrolled in ${sport}`}
               count={totals.athletes}
               total={totals.athletes}
               rate={totals.athletes > 0 ? 100 : 0}
+              sport={sport}
             />
             <RateBar
               label="Active this month"
               count={totals.activeAthletes}
               total={totals.athletes}
               rate={totals.activeAthleteRate}
+              sport={sport}
             />
             <RateBar
               label="Watched program video"
               count={totals.videoViewers}
               total={totals.athletes}
               rate={totals.videoViewRate}
+              sport={sport}
             />
             <RateBar
               label="Completed a course"
               count={totals.courseCompleters}
               total={totals.athletes}
               rate={totals.courseCompletionRate}
+              sport={sport}
             />
           </div>
           <p className="mt-6 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-500">
             Video and course engagement begins recording with this release.
-            Percentages use all athletes who selected Baseball, including
+            Percentages use all athletes who selected {sport}, including
             multi-sport athletes.
           </p>
         </section>
@@ -242,7 +278,7 @@ export default async function DirectorHomePage() {
               size="sm"
               variant="outline"
               nativeButton={false}
-              render={<Link href="/library?sport=Baseball">Manage all</Link>}
+              render={<Link href={`/library?${sportQuery}`}>Manage all</Link>}
             />
           </div>
           {health.courseHealth.length > 0 ? (
@@ -296,7 +332,7 @@ export default async function DirectorHomePage() {
           ) : (
             <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-6 text-center">
               <BookOpen className="mx-auto size-6 text-brand" />
-              <p className="mt-2 font-semibold">No Baseball courses published</p>
+              <p className="mt-2 font-semibold">No {sport} courses published</p>
               <p className="mt-1 text-sm text-slate-500">
                 Build and publish the first course to begin measuring reach.
               </p>
@@ -312,7 +348,7 @@ export default async function DirectorHomePage() {
               Player scorecards
             </p>
             <h2 className="font-heading mt-1 text-2xl font-bold">
-              Every Baseball athlete
+              Every {sport} athlete
             </h2>
           </div>
           <Badge variant="secondary">{totals.athletes} enrolled</Badge>
@@ -388,7 +424,7 @@ export default async function DirectorHomePage() {
           </div>
         ) : (
           <p className="mt-4 rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
-            Players appear here as soon as Baseball is selected on their
+            Players appear here as soon as {sport} is selected on their
             profile.
           </p>
         )}
@@ -401,7 +437,7 @@ export default async function DirectorHomePage() {
               Program controls
             </p>
             <h2 className="font-heading mt-1 text-2xl font-bold">
-              Suggested Baseball drills
+              Suggested {sport} drills
             </h2>
             <p className="mt-1 text-sm text-slate-600">
               These recommendations feed the player and coach experiences. Edit
@@ -412,7 +448,7 @@ export default async function DirectorHomePage() {
             variant="outline"
             nativeButton={false}
             render={
-              <Link href="/trainer/drills?sport=Baseball">
+              <Link href={`/trainer/drills?${sportQuery}`}>
                 Add or reorder drills
               </Link>
             }
@@ -438,7 +474,7 @@ export default async function DirectorHomePage() {
                   nativeButton={false}
                   render={
                     <Link
-                      href={`/trainer/drills?sport=Baseball&edit=${drill.id}`}
+                      href={`/trainer/drills?${sportQuery}&edit=${drill.id}`}
                     >
                       Edit
                     </Link>
@@ -459,6 +495,7 @@ export default async function DirectorHomePage() {
           minute: "2-digit",
         }).format(health.generatedAt)}
       </p>
+      </div>
     </DashboardShell>
   );
 }

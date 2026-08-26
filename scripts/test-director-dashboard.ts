@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import { prisma } from "../lib/db";
-import { getBaseballProgramHealth } from "../lib/director-dashboard";
+import { getSportProgramHealth } from "../lib/director-dashboard";
 
 async function main() {
 const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -76,7 +76,7 @@ try {
     },
   });
 
-  const health = await getBaseballProgramHealth();
+  const health = await getSportProgramHealth("Baseball");
   const athleteRow = health.athletes.find((row) => row.id === athlete.id);
   const courseRow = health.courseHealth.find((row) => row.id === course.id);
 

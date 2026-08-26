@@ -2,9 +2,7 @@ import { listCatalogDrills } from "@/lib/catalog-drills";
 import { prisma } from "@/lib/db";
 import { ageBandFromAge, ageFromDateOfBirth } from "@/lib/drills";
 
-const BASEBALL = "Baseball";
-
-export async function getBaseballProgramHealth() {
+export async function getSportProgramHealth(sport: string) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -14,17 +12,17 @@ export async function getBaseballProgramHealth() {
         {
           sports: {
             some: {
-              sport: { equals: BASEBALL, mode: "insensitive" },
+              sport: { equals: sport, mode: "insensitive" },
             },
           },
         },
         {
-          primarySport: { equals: BASEBALL, mode: "insensitive" },
+          primarySport: { equals: sport, mode: "insensitive" },
         },
         {
           legacyAthlete: {
             is: {
-              sport: { equals: BASEBALL, mode: "insensitive" },
+              sport: { equals: sport, mode: "insensitive" },
             },
           },
         },
@@ -87,7 +85,7 @@ export async function getBaseballProgramHealth() {
           origin: "PLATFORM",
           published: true,
           shareWithAthletes: true,
-          sport: { equals: BASEBALL, mode: "insensitive" },
+          sport: { equals: sport, mode: "insensitive" },
         },
         include: {
           items: {
@@ -105,7 +103,7 @@ export async function getBaseballProgramHealth() {
                   origin: "PLATFORM",
                   published: true,
                   shareWithAthletes: true,
-                  sport: { equals: BASEBALL, mode: "insensitive" },
+                  sport: { equals: sport, mode: "insensitive" },
                 },
               },
             },
@@ -143,13 +141,13 @@ export async function getBaseballProgramHealth() {
               createdAt: { gte: thirtyDaysAgo },
               course: {
                 coachId: { in: [...connectedCoachIds] },
-                sport: { equals: BASEBALL, mode: "insensitive" },
+                sport: { equals: sport, mode: "insensitive" },
               },
             },
             select: { course: { select: { coachId: true } } },
           })
         : Promise.resolve([]),
-      listCatalogDrills({ sport: BASEBALL }),
+      listCatalogDrills({ sport }),
     ]);
 
   const itemToCourse = new Map<string, string>();
@@ -269,7 +267,7 @@ export async function getBaseballProgramHealth() {
           : [
               {
                 id: `fallback-${athlete.id}`,
-                name: athlete.primarySport ?? BASEBALL,
+                name: athlete.primarySport ?? sport,
                 primary: true,
               },
             ];

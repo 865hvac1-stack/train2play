@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
@@ -73,9 +73,11 @@ function NavLink({
   exact?: boolean;
 }) {
   const pathname = usePathname();
+  const pathOnly = href.split("?")[0]!;
   const isActive = exact
-    ? pathname === href
-    : pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+    ? pathname === pathOnly
+    : pathname === pathOnly ||
+      (pathOnly !== "/dashboard" && pathname.startsWith(pathOnly));
 
   return (
     <Link
@@ -106,13 +108,21 @@ function NavLinks({
   variant?: "coach" | "trainer";
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const communityOpenDefault = pathname.startsWith("/pickup-players");
   const [communityOpen, setCommunityOpen] = useState(communityOpenDefault);
 
   if (variant === "trainer") {
+    const sport = searchParams.get("sport");
+    const directorNav = trainerNav.map((item) => ({
+      ...item,
+      href: sport
+        ? `${item.href}?sport=${encodeURIComponent(sport)}`
+        : item.href,
+    }));
     return (
       <nav className="flex flex-col gap-1">
-        {trainerNav.map((item) => (
+        {directorNav.map((item) => (
           <NavLink key={item.href} {...item} onNavigate={onNavigate} dark={dark} />
         ))}
       </nav>
