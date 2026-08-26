@@ -61,7 +61,7 @@ export default async function TrainerHomePage() {
     <DashboardShell
       title="Baseball trainer dashboard"
       description="See every athlete who selected Baseball and manage the exact recommendations they receive."
-      actions={
+      action={
         <Button
           nativeButton={false}
           render={<Link href="/library/new">New library course</Link>}
