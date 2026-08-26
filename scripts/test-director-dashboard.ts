@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { prisma } from "../lib/db";
 import { getBaseballProgramHealth } from "../lib/director-dashboard";
 
+async function main() {
 const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let coachId: string | null = null;
 let athleteProfileId: string | null = null;
@@ -105,3 +106,9 @@ try {
   }
   await prisma.$disconnect();
 }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
