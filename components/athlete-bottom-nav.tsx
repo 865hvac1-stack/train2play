@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/athlete", label: "Home", icon: Home, exact: true },
-  { href: "/athlete/train", label: "Train", icon: Dumbbell },
+  { href: "/athlete/train", label: "My plan", icon: Dumbbell },
   { href: "/athlete/progress", label: "Progress", icon: ChartNoAxesCombined },
   { href: "/athlete/videos", label: "Videos", icon: Video },
   { href: "/athlete/profile", label: "Profile", icon: UserRound },
