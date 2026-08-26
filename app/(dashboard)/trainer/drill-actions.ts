@@ -240,6 +240,7 @@ export async function pushCatalogDrillAction(drillId: string) {
   const result = await pushDrillToSavedAudience({
     drillId,
     pushedByUserId: user.id,
+    resetViewed: true,
   });
   revalidateDrillSurfaces();
   revalidatePath(`/trainer/drills/${drillId}`);

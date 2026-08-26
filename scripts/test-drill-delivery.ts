@@ -185,6 +185,30 @@ async function main() {
     assert.equal(summary.coachSentPlayers, 1);
     assert.equal(summary.viewedPlayers, 1);
 
+    await pushDrillToSavedAudience({
+      drillId: drill.id,
+      pushedByUserId: director.id,
+    });
+    const afterSave = await getDrillDeliveryReport(drill.id);
+    assert.ok(
+      afterSave!.players.find((player) => player.id === coachPlayer.id)
+        ?.viewedAt,
+      "saving a drill must not erase who already opened it",
+    );
+
+    await pushDrillToSavedAudience({
+      drillId: drill.id,
+      pushedByUserId: director.id,
+      resetViewed: true,
+    });
+    const afterResend = await getDrillDeliveryReport(drill.id);
+    assert.equal(
+      afterResend!.players.find((player) => player.id === coachPlayer.id)
+        ?.viewedAt,
+      null,
+      "a deliberate re-send should ask for a fresh open",
+    );
+
     await prisma.catalogDrill.update({
       where: { id: drill.id },
       data: { athleteAudience: "NONE", shareWithAthletes: false },

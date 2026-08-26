@@ -31,46 +31,50 @@ export async function resolveDrillAudienceAthleteIds(drill: {
   return rows.map((row) => row.id);
 }
 
-/** Write one send row per player, keeping the newest send time per sender. */
+/**
+ * Write one send row per player. `resetViewed` belongs to a deliberate re-send;
+ * saving a drill must not erase who already opened it.
+ */
 export async function pushDrillToAthletes(options: {
   drillId: string;
   athleteProfileIds: string[];
   pushedByUserId: string;
   source: DrillPushSource;
   note?: string | null;
+  resetViewed?: boolean;
 }) {
   const athleteProfileIds = [...new Set(options.athleteProfileIds)].filter(
     Boolean,
   );
   if (athleteProfileIds.length === 0) return { sent: 0 };
 
-  const now = new Date();
-  await prisma.$transaction(
-    athleteProfileIds.map((athleteProfileId) =>
-      prisma.catalogDrillPush.upsert({
-        where: {
-          catalogDrillId_athleteProfileId_pushedByUserId: {
-            catalogDrillId: options.drillId,
-            athleteProfileId,
-            pushedByUserId: options.pushedByUserId,
-          },
-        },
-        create: {
-          catalogDrillId: options.drillId,
-          athleteProfileId,
-          pushedByUserId: options.pushedByUserId,
-          source: options.source,
-          note: options.note ?? null,
-        },
-        update: {
-          createdAt: now,
-          firstViewedAt: null,
-          source: options.source,
-          ...(options.note ? { note: options.note } : {}),
-        },
-      }),
-    ),
-  );
+  await prisma.catalogDrillPush.createMany({
+    data: athleteProfileIds.map((athleteProfileId) => ({
+      catalogDrillId: options.drillId,
+      athleteProfileId,
+      pushedByUserId: options.pushedByUserId,
+      source: options.source,
+      note: options.note ?? null,
+    })),
+    skipDuplicates: true,
+  });
+
+  if (options.resetViewed) {
+    await prisma.catalogDrillPush.updateMany({
+      where: {
+        catalogDrillId: options.drillId,
+        pushedByUserId: options.pushedByUserId,
+        athleteProfileId: { in: athleteProfileIds },
+      },
+      data: {
+        createdAt: new Date(),
+        firstViewedAt: null,
+        source: options.source,
+        ...(options.note ? { note: options.note } : {}),
+      },
+    });
+  }
+
   return { sent: athleteProfileIds.length };
 }
 
@@ -78,6 +82,7 @@ export async function pushDrillToAthletes(options: {
 export async function pushDrillToSavedAudience(options: {
   drillId: string;
   pushedByUserId: string;
+  resetViewed?: boolean;
 }) {
   const drill = await prisma.catalogDrill.findUnique({
     where: { id: options.drillId },
@@ -95,6 +100,7 @@ export async function pushDrillToSavedAudience(options: {
     athleteProfileIds,
     pushedByUserId: options.pushedByUserId,
     source: "DIRECTOR",
+    resetViewed: options.resetViewed,
   });
 }
 
@@ -129,6 +135,16 @@ export async function listSportCoaches(sport: string) {
     select: { id: true, name: true, email: true },
     orderBy: { name: "asc" },
   });
+}
+
+/** Newest send for one player, so "opened" tracks the latest send only. */
+function latestPush<T extends { athleteProfileId: string; createdAt: Date }>(
+  pushes: T[],
+  athleteProfileId: string,
+) {
+  return pushes
+    .filter((push) => push.athleteProfileId === athleteProfileId)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 }
 
 export type DrillDeliveryCounts = {
@@ -193,11 +209,11 @@ export async function getDrillDeliveryCounts(
       audiencePlayers,
       sentPlayers: new Set(drillPushes.map((push) => push.athleteProfileId))
         .size,
-      viewedPlayers: new Set(
-        drillPushes
-          .filter((push) => push.firstViewedAt)
-          .map((push) => push.athleteProfileId),
-      ).size,
+      viewedPlayers: [
+        ...new Set(drillPushes.map((push) => push.athleteProfileId)),
+      ].filter((athleteProfileId) =>
+        latestPush(drillPushes, athleteProfileId)?.firstViewedAt,
+      ).length,
       coachSentPlayers: new Set(
         drillPushes
           .filter((push) => push.source === "COACH")
@@ -262,10 +278,7 @@ export async function getDrillDeliveryReport(drillId: string) {
         coachName: push.pushedBy.name,
         sentAt: push.createdAt,
       }));
-    const viewedAt = pushes
-      .map((push) => push.firstViewedAt)
-      .filter((value): value is Date => Boolean(value))
-      .sort((a, b) => a.getTime() - b.getTime())[0];
+    const viewedAt = latestPush(pushes, athlete.id)?.firstViewedAt ?? null;
     return {
       id: athlete.id,
       name: fullName(athlete),

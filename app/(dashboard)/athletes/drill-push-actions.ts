@@ -31,6 +31,7 @@ export async function sendSuggestedDrillToAthleteAction(
     athleteProfileIds: [athleteProfileId],
     pushedByUserId: user.id,
     source: "COACH",
+    resetViewed: true,
   });
 
   revalidatePath("/dashboard");
