@@ -29,6 +29,9 @@ export function CatalogDrillAudienceFields({
     ? defaultAthleteAudience
     : "ALL_SPORT";
   const [athleteAudience, setAthleteAudience] = useState(normalizedAudience);
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    defaultAthleteProfileIds,
+  );
   const eligibleAthletes = athletes.filter((athlete) =>
     athlete.sports.some(
       (athleteSport) =>
@@ -83,37 +86,54 @@ export function CatalogDrillAudienceFields({
             onChange={() => setAthleteAudience("NONE")}
           />
           No players yet
+          <span className="text-xs text-slate-500">
+            — save as a draft for coaches only
+          </span>
         </label>
       </div>
 
       {athleteAudience === "SELECTED" ? (
-        <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-orange-200 bg-white p-2">
-          {eligibleAthletes.length > 0 ? (
-            eligibleAthletes.map((athlete) => (
-              <label
-                key={athlete.id}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-orange-50"
-              >
-                <input
-                  type="checkbox"
-                  name="athleteProfileIds"
-                  value={athlete.id}
-                  defaultChecked={defaultAthleteProfileIds.includes(athlete.id)}
-                  className="size-4"
-                />
-                {athlete.name}
-              </label>
-            ))
-          ) : (
-            <p className="p-2 text-xs text-slate-500">
-              No players have {sport} on their profile yet.
-            </p>
-          )}
-        </div>
+        <>
+          <p className="text-xs font-medium text-slate-600">
+            {selectedIds.length} of {eligibleAthletes.length} selected
+          </p>
+          <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-orange-200 bg-white p-2">
+            {eligibleAthletes.length > 0 ? (
+              eligibleAthletes.map((athlete) => (
+                <label
+                  key={athlete.id}
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-orange-50"
+                >
+                  <input
+                    type="checkbox"
+                    name="athleteProfileIds"
+                    value={athlete.id}
+                    checked={selectedIds.includes(athlete.id)}
+                    onChange={(event) => {
+                      setSelectedIds((current) =>
+                        event.target.checked
+                          ? [...current, athlete.id]
+                          : current.filter((id) => id !== athlete.id),
+                      );
+                    }}
+                    className="size-4"
+                  />
+                  {athlete.name}
+                </label>
+              ))
+            ) : (
+              <p className="p-2 text-xs text-slate-500">
+                No players have {sport} on their profile yet.
+              </p>
+            )}
+          </div>
+        </>
       ) : null}
 
       <p className="text-xs text-slate-500">
-        Saving sends the drill to this audience right away.
+        {athleteAudience === "NONE"
+          ? "Saving keeps this off player home screens until you pick an audience."
+          : "Saving sends the drill to this audience right away."}
       </p>
     </fieldset>
   );
