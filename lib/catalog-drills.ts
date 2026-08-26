@@ -51,25 +51,28 @@ export async function listCatalogDrills(options: {
   });
 }
 
+/** Match athletes who play a sport through profile sports, primary sport, or legacy roster. */
+export function athleteSportWhere(sport: string) {
+  return {
+    OR: [
+      {
+        sports: {
+          some: { sport: { equals: sport, mode: "insensitive" as const } },
+        },
+      },
+      { primarySport: { equals: sport, mode: "insensitive" as const } },
+      {
+        legacyAthlete: {
+          is: { sport: { equals: sport, mode: "insensitive" as const } },
+        },
+      },
+    ],
+  };
+}
+
 export async function listCatalogRecipientAthletes(sport?: string) {
   const rows = await prisma.athleteProfile.findMany({
-    where: sport
-      ? {
-          OR: [
-            {
-              sports: {
-                some: { sport: { equals: sport, mode: "insensitive" } },
-              },
-            },
-            { primarySport: { equals: sport, mode: "insensitive" } },
-            {
-              legacyAthlete: {
-                is: { sport: { equals: sport, mode: "insensitive" } },
-              },
-            },
-          ],
-        }
-      : undefined,
+    where: sport ? athleteSportWhere(sport) : undefined,
     include: {
       sports: { select: { sport: true } },
       legacyAthlete: { select: { sport: true } },
@@ -91,17 +94,20 @@ export async function listCatalogRecipientAthletes(sport?: string) {
   }));
 }
 
-function toDrill(row: {
-  id: string;
-  title: string;
-  focus: string;
-  durationMin: number;
-  equipment: string;
-  howTo: string;
-  coachingCue: string;
-  videoUrl?: string | null;
-  sport?: string;
-}): Drill {
+function toDrill(
+  row: {
+    id: string;
+    title: string;
+    focus: string;
+    durationMin: number;
+    equipment: string;
+    howTo: string;
+    coachingCue: string;
+    videoUrl?: string | null;
+    sport?: string;
+  },
+  sent?: { byName: string | null; at: Date | null },
+): Drill {
   return {
     id: row.id,
     title: row.title,
@@ -112,7 +118,69 @@ function toDrill(row: {
     coachingCue: row.coachingCue,
     videoUrl: row.videoUrl,
     sport: row.sport,
+    sentByName: sent?.byName ?? null,
+    sentAt: sent?.at ?? null,
   };
+}
+
+/**
+ * Drills a director or coach sent straight to this athlete. Age band is a
+ * relevance hint for browsing, so it must never hide a targeted send.
+ */
+async function getDirectSendsForAthlete(options: {
+  sport: string;
+  athleteProfileId: string;
+  limit: number;
+}) {
+  const [pushes, selected] = await Promise.all([
+    prisma.catalogDrillPush.findMany({
+      where: {
+        athleteProfileId: options.athleteProfileId,
+        catalogDrill: {
+          isActive: true,
+          sport: { equals: options.sport, mode: "insensitive" },
+        },
+      },
+      include: {
+        catalogDrill: true,
+        pushedBy: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: options.limit,
+    }),
+    prisma.catalogDrill.findMany({
+      where: {
+        isActive: true,
+        sport: { equals: options.sport, mode: "insensitive" },
+        shareWithAthletes: true,
+        athleteAudience: "SELECTED",
+        athleteRecipients: {
+          some: { athleteProfileId: options.athleteProfileId },
+        },
+      },
+      orderBy: [{ updatedAt: "desc" }, { sortOrder: "asc" }],
+      take: options.limit,
+    }),
+  ]);
+
+  const drills: Drill[] = [];
+  const seen = new Set<string>();
+  for (const push of pushes) {
+    if (seen.has(push.catalogDrillId)) continue;
+    seen.add(push.catalogDrillId);
+    drills.push(
+      toDrill(push.catalogDrill, {
+        byName: push.pushedBy?.name ?? null,
+        at: push.createdAt,
+      }),
+    );
+  }
+  for (const drill of selected) {
+    if (seen.has(drill.id)) continue;
+    seen.add(drill.id);
+    drills.push(toDrill(drill));
+  }
+  return drills.slice(0, options.limit);
 }
 
 export async function getSuggestedDrills(options: {
@@ -133,42 +201,40 @@ export async function getSuggestedDrills(options: {
       ageBandFromAge(age)
     : ageBandFromAge(age);
 
-  const rows = await prisma.catalogDrill.findMany({
-    where: {
-      isActive: true,
-      ageBand: band.id,
-      sport: { equals: options.sport, mode: "insensitive" },
-      ...(options.audience === "coaches"
-        ? { shareWithCoaches: true }
-        : options.audience === "athletes"
-          ? {
-              shareWithAthletes: true,
-              OR: [
-                { athleteAudience: "ALL_SPORT" },
-                ...(options.athleteProfileId
-                  ? [
-                      {
-                        athleteAudience: "SELECTED",
-                        athleteRecipients: {
-                          some: {
-                            athleteProfileId: options.athleteProfileId,
-                          },
-                        },
-                      },
-                    ]
-                  : []),
-              ],
-            }
-          : {}),
-    },
-    orderBy: [{ updatedAt: "desc" }, { sortOrder: "asc" }],
-    take: options.limit ?? 3,
-  });
+  const limit = options.limit ?? 3;
+  const directSends =
+    options.audience === "athletes" && options.athleteProfileId
+      ? await getDirectSendsForAthlete({
+          sport: options.sport,
+          athleteProfileId: options.athleteProfileId,
+          limit,
+        })
+      : [];
 
-  if (rows.length > 0) {
+  const rows =
+    directSends.length >= limit
+      ? []
+      : await prisma.catalogDrill.findMany({
+          where: {
+            isActive: true,
+            ageBand: band.id,
+            sport: { equals: options.sport, mode: "insensitive" },
+            id: { notIn: directSends.map((drill) => drill.id) },
+            ...(options.audience === "coaches"
+              ? { shareWithCoaches: true }
+              : options.audience === "athletes"
+                ? { shareWithAthletes: true, athleteAudience: "ALL_SPORT" }
+                : {}),
+          },
+          orderBy: [{ updatedAt: "desc" }, { sortOrder: "asc" }],
+          take: limit - directSends.length,
+        });
+
+  const drills = [...directSends, ...rows.map((row) => toDrill(row))];
+  if (drills.length > 0) {
     return {
       band,
-      drills: rows.map(toDrill),
+      drills,
       sportLabel: options.sport.trim() || "Multi-sport",
     };
   }

@@ -16,6 +16,9 @@ export type Drill = {
   coachingCue: string;
   videoUrl?: string | null;
   sport?: string;
+  /** Set when a director or coach sent this drill straight to the athlete. */
+  sentByName?: string | null;
+  sentAt?: Date | null;
 };
 
 export type AgeBand = {

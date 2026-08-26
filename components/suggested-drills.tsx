@@ -1,7 +1,9 @@
 import { Clock3, Dumbbell, Lightbulb } from "lucide-react";
 
+import { sendSuggestedDrillToAthleteAction } from "@/app/(dashboard)/athletes/drill-push-actions";
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getSuggestedDrills, type AgeBandId } from "@/lib/catalog-drills";
+import { prisma } from "@/lib/db";
 
 type SuggestedDrillsProps = {
   sport: string;
@@ -17,6 +20,8 @@ type SuggestedDrillsProps = {
   ageBandId?: AgeBandId;
   athleteFirstName?: string;
   compact?: boolean;
+  /** When set, the coach can push a drill straight to this player. */
+  sendTo?: { athleteProfileId: string; athleteFirstName: string };
 };
 
 export async function SuggestedDrills({
@@ -25,6 +30,7 @@ export async function SuggestedDrills({
   ageBandId,
   athleteFirstName,
   compact = false,
+  sendTo,
 }: SuggestedDrillsProps) {
   const { band, drills, sportLabel } = await getSuggestedDrills({
     sport,
@@ -35,6 +41,19 @@ export async function SuggestedDrills({
   });
 
   if (drills.length === 0) return null;
+
+  const alreadySent = sendTo
+    ? await prisma.catalogDrillPush.findMany({
+        where: {
+          athleteProfileId: sendTo.athleteProfileId,
+          catalogDrillId: { in: drills.map((drill) => drill.id) },
+        },
+        select: { catalogDrillId: true, createdAt: true },
+      })
+    : [];
+  const sentAtByDrill = new Map(
+    alreadySent.map((push) => [push.catalogDrillId, push.createdAt]),
+  );
 
   const who = athleteFirstName ? `${athleteFirstName}'s` : "Suggested";
 
@@ -95,6 +114,32 @@ export async function SuggestedDrills({
                 title={`${drill.title} demo`}
                 className="mt-3"
               />
+            ) : null}
+            {sendTo ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                <form
+                  action={sendSuggestedDrillToAthleteAction.bind(
+                    null,
+                    drill.id,
+                    sendTo.athleteProfileId,
+                  )}
+                >
+                  <Button type="submit" size="sm" variant="outline">
+                    {sentAtByDrill.has(drill.id)
+                      ? `Send to ${sendTo.athleteFirstName} again`
+                      : `Send to ${sendTo.athleteFirstName}`}
+                  </Button>
+                </form>
+                {sentAtByDrill.get(drill.id) ? (
+                  <span className="text-muted-foreground text-xs">
+                    Sent{" "}
+                    {sentAtByDrill.get(drill.id)!.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                ) : null}
+              </div>
             ) : null}
           </div>
         ))}

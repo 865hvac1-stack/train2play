@@ -98,6 +98,7 @@ model AthleteProfile {
   videoReviews     VideoReview[]
   courseItemProgress CourseItemProgress[]
   catalogDrillRecipients CatalogDrillAthleteRecipient[]
+  catalogDrillPushes CatalogDrillPush[]
 
   @@index([legacyAthleteId])
 }
@@ -252,6 +253,7 @@ model User {
   athleteInvitesSent    AthleteInvite[]          @relation("AthleteInviteSender")
   workoutSessions       WorkoutSession[]         @relation("WorkoutSessionAthleteUser")
   coachConnections      CoachAthleteConnection[] @relation("CoachConnectionCoach")
+  catalogDrillPushes    CatalogDrillPush[]       @relation("CatalogDrillPushSender")
   videoReviewsAsCoach   VideoReview[]            @relation("VideoReviewCoach")
   videoReviewsUploaded  VideoReview[]            @relation("VideoReviewUploadedBy")
   voiceReviewsRecorded  VoiceReview[]            @relation("VoiceReviewCoach")
@@ -735,6 +737,7 @@ model CatalogDrill {
   /** NONE | ALL_SPORT | SELECTED */
   athleteAudience String @default("ALL_SPORT")
   athleteRecipients CatalogDrillAthleteRecipient[]
+  pushes       CatalogDrillPush[]
   sortOrder    Int      @default(0)
   isActive     Boolean  @default(true)
   updatedById  String?
@@ -755,4 +758,26 @@ model CatalogDrillAthleteRecipient {
 
   @@unique([catalogDrillId, athleteProfileId])
   @@index([athleteProfileId])
+}
+
+/** One real send of a suggested drill to one player, by the director or by a coach. */
+model CatalogDrillPush {
+  id               String         @id @default(cuid())
+  catalogDrillId   String
+  catalogDrill     CatalogDrill   @relation(fields: [catalogDrillId], references: [id], onDelete: Cascade)
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  /** DIRECTOR | COACH */
+  source           String         @default("DIRECTOR")
+  pushedByUserId   String
+  pushedBy         User           @relation("CatalogDrillPushSender", fields: [pushedByUserId], references: [id], onDelete: Cascade)
+  note             String?
+  firstViewedAt    DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([catalogDrillId, athleteProfileId, pushedByUserId])
+  @@index([catalogDrillId, source])
+  @@index([athleteProfileId])
+  @@index([pushedByUserId])
 }

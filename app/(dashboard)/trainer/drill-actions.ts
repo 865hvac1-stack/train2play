@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { AGE_BANDS } from "@/lib/drills";
+import { pushDrillToSavedAudience } from "@/lib/catalog-drill-delivery";
 import { CATALOG_SPORTS } from "@/lib/catalog-drills";
 import { prisma } from "@/lib/db";
 import { resolveOptionalInstructionVideo } from "@/lib/instruction-video-upload";
@@ -110,7 +111,7 @@ export async function createCatalogDrillAction(
   const count = await prisma.catalogDrill.count({
     where: { sport: parsed.data.sport, ageBand: parsed.data.ageBand },
   });
-  await prisma.catalogDrill.create({
+  const created = await prisma.catalogDrill.create({
     data: {
       ...parsed.data,
       videoUrl: video.url,
@@ -129,11 +130,14 @@ export async function createCatalogDrillAction(
       sortOrder: count,
       updatedById: user.id,
     },
+    select: { id: true },
+  });
+  const sent = await pushDrillToSavedAudience({
+    drillId: created.id,
+    pushedByUserId: user.id,
   });
   revalidateDrillSurfaces();
-  redirect(
-    `/trainer/drills?sport=${encodeURIComponent(parsed.data.sport)}&ageBand=${parsed.data.ageBand}`,
-  );
+  redirect(`/trainer/drills/${created.id}?sent=${sent.sent}`);
 }
 
 export async function updateCatalogDrillAction(
@@ -141,7 +145,7 @@ export async function updateCatalogDrillAction(
   _prev: DrillActionState,
   formData: FormData,
 ): Promise<DrillActionState> {
-  await requireLibraryEditor();
+  const user = await requireLibraryEditor();
   const parsed = drillSchema.safeParse({
     sport: formData.get("sport"),
     ageBand: formData.get("ageBand"),
@@ -179,15 +183,25 @@ export async function updateCatalogDrillAction(
       },
     },
   });
+  const sent = await pushDrillToSavedAudience({
+    drillId,
+    pushedByUserId: user.id,
+  });
   revalidateDrillSurfaces();
-  return { success: "Drill saved." };
+  revalidatePath(`/trainer/drills/${drillId}`);
+  return {
+    success:
+      sent.sent > 0
+        ? `Drill saved and sent to ${sent.sent} player${sent.sent === 1 ? "" : "s"}.`
+        : "Drill saved. No players are set to receive it yet.",
+  };
 }
 
 export async function updateCatalogDrillAudienceAction(
   drillId: string,
   formData: FormData,
 ) {
-  await requireLibraryEditor();
+  const user = await requireLibraryEditor();
   const drill = await prisma.catalogDrill.findUnique({
     where: { id: drillId },
     select: { sport: true },
@@ -211,7 +225,25 @@ export async function updateCatalogDrillAudienceAction(
       },
     },
   });
+  const sent = await pushDrillToSavedAudience({
+    drillId,
+    pushedByUserId: user.id,
+  });
   revalidateDrillSurfaces();
+  revalidatePath(`/trainer/drills/${drillId}`);
+  redirect(`/trainer/drills/${drillId}?sent=${sent.sent}`);
+}
+
+/** Director "send now": deliver the drill to everyone the saved audience covers. */
+export async function pushCatalogDrillAction(drillId: string) {
+  const user = await requireLibraryEditor();
+  const result = await pushDrillToSavedAudience({
+    drillId,
+    pushedByUserId: user.id,
+  });
+  revalidateDrillSurfaces();
+  revalidatePath(`/trainer/drills/${drillId}`);
+  redirect(`/trainer/drills/${drillId}?sent=${result.sent}`);
 }
 
 export async function deleteCatalogDrillAction(drillId: string) {

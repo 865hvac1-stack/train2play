@@ -263,6 +263,14 @@ export default async function AthleteDetailPage({
             sport={athlete.sport}
             dateOfBirth={athlete.dateOfBirth}
             athleteFirstName={athlete.firstName}
+            sendTo={
+              athleteRecord.athleteProfile
+                ? {
+                    athleteProfileId: athleteRecord.athleteProfile.id,
+                    athleteFirstName: athlete.firstName,
+                  }
+                : undefined
+            }
           />
 
           <Card>

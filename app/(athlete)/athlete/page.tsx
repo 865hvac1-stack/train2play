@@ -15,6 +15,7 @@ import {
   requireAthleteContext,
 } from "@/lib/athlete-dashboard";
 import { NotificationFeed } from "@/components/notification-feed";
+import { SuggestedDrillSeenBeacon } from "@/components/suggested-drill-seen-beacon";
 import { formatMetricValue } from "@/lib/progress";
 import { cn } from "@/lib/utils";
 
@@ -273,17 +274,29 @@ export default async function AthleteHomePage() {
           <Sparkles className="size-4 text-brand" />
           <h2 className="font-heading text-xl font-bold">Recommended for you</h2>
         </div>
+        <SuggestedDrillSeenBeacon
+          drillIds={data.recommended.drills
+            .filter((drill) => drill.sentByName)
+            .map((drill) => drill.id)}
+        />
         <div className="space-y-3">
           {data.recommended.drills.map((drill) => (
             <div
               key={drill.id}
               className="rounded-2xl border border-white/10 bg-zinc-900 p-4"
             >
-              {drill.sport ? (
-                <p className="mb-1 text-[10px] font-bold tracking-[0.14em] text-slate-500 uppercase">
-                  {drill.sport}
-                </p>
-              ) : null}
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                {drill.sport ? (
+                  <p className="text-[10px] font-bold tracking-[0.14em] text-slate-500 uppercase">
+                    {drill.sport}
+                  </p>
+                ) : null}
+                {drill.sentByName ? (
+                  <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-brand uppercase">
+                    Sent by {drill.sentByName}
+                  </span>
+                ) : null}
+              </div>
               <p className="font-semibold text-white">{drill.title}</p>
               <p className="mt-0.5 text-sm text-brand">
                 {drill.focus} · {drill.durationMin} min

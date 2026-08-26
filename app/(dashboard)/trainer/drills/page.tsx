@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import {
   deleteCatalogDrillAction,
+  pushCatalogDrillAction,
   updateCatalogDrillAudienceAction,
 } from "@/app/(dashboard)/trainer/drill-actions";
 import { CatalogDrillAudienceFields } from "@/components/catalog-drill-audience-fields";
@@ -10,6 +11,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getDrillDeliveryCounts } from "@/lib/catalog-drill-delivery";
 import {
   CATALOG_SPORTS,
   listCatalogDrills,
@@ -33,11 +35,12 @@ export default async function TrainerDrillsPage({
     listCatalogRecipientAthletes(sport || undefined),
   ]);
   const editing = edit ? drills.find((row) => row.id === edit) : null;
+  const deliveryCounts = await getDrillDeliveryCounts(drills);
 
   return (
     <DashboardShell
       title="Suggested drills"
-      description="Send each drill to coaches, every player enrolled in the sport, selected players, or nobody yet."
+      description="Send each drill to coaches, every player enrolled in the sport, selected players, or nobody yet. Saving delivers it right away."
     >
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
@@ -152,10 +155,54 @@ export default async function TrainerDrillsPage({
                         )}
                       />
                       <Button type="submit" size="sm">
-                        Update who receives it
+                        Save and send
                       </Button>
                     </form>
+                    <dl className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-4">
+                      <div>
+                        <dt className="text-xs text-slate-500">In audience</dt>
+                        <dd className="font-semibold text-slate-900">
+                          {deliveryCounts.get(drill.id)?.audiencePlayers ?? 0}{" "}
+                          players
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-500">Sent</dt>
+                        <dd className="font-semibold text-slate-900">
+                          {deliveryCounts.get(drill.id)?.sentPlayers ?? 0}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-500">Opened it</dt>
+                        <dd className="font-semibold text-slate-900">
+                          {deliveryCounts.get(drill.id)?.viewedPlayers ?? 0}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-500">
+                          Coach hand-offs
+                        </dt>
+                        <dd className="font-semibold text-slate-900">
+                          {deliveryCounts.get(drill.id)?.coachSentPlayers ?? 0}
+                        </dd>
+                      </div>
+                    </dl>
                     <div className="mt-3 flex flex-wrap gap-2">
+                      <form action={pushCatalogDrillAction.bind(null, drill.id)}>
+                        <Button type="submit" size="sm">
+                          Send now
+                        </Button>
+                      </form>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        nativeButton={false}
+                        render={
+                          <Link href={`/trainer/drills/${drill.id}`}>
+                            Who has it
+                          </Link>
+                        }
+                      />
                       <Button
                         size="sm"
                         variant="outline"
