@@ -35,6 +35,47 @@ async function main() {
     4,
     "athletes should receive two recommendations per selected sport",
   );
+  const audienceDrill = await prisma.catalogDrill.create({
+    data: {
+      sport: "Basketball",
+      ageBand: "11-13",
+      title: `Audience test ${Date.now()}`,
+      focus: "Publishing",
+      durationMin: 5,
+      equipment: "Ball",
+      howTo: "Test audience delivery.",
+      coachingCue: "Only selected audiences should see this.",
+      shareWithCoaches: false,
+      shareWithAthletes: true,
+      sortOrder: 9999,
+    },
+  });
+  try {
+    const coachSuggestions = await getSuggestedDrills({
+      sport: "Basketball",
+      ageBandId: "11-13",
+      limit: 100,
+      audience: "coaches",
+    });
+    const athleteSuggestions = await getSuggestedDrills({
+      sport: "Basketball",
+      ageBandId: "11-13",
+      limit: 100,
+      audience: "athletes",
+    });
+    assert.equal(
+      coachSuggestions.drills.some((drill) => drill.id === audienceDrill.id),
+      false,
+      "coach-disabled drill must not reach coaches",
+    );
+    assert.equal(
+      athleteSuggestions.drills.some((drill) => drill.id === audienceDrill.id),
+      true,
+      "athlete-enabled drill should reach players",
+    );
+  } finally {
+    await prisma.catalogDrill.delete({ where: { id: audienceDrill.id } });
+  }
   console.log(
     `catalog-drill checks passed (inserted=${seeded.inserted}, total=${count})`,
   );
