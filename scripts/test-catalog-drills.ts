@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { createPrismaClient } from "../lib/db";
 import {
   getSuggestedDrills,
+  getSuggestedDrillsForSports,
   seedCatalogDrillsIfEmpty,
 } from "../lib/catalog-drills";
 
@@ -23,6 +24,17 @@ async function main() {
   });
   assert.ok(basketball.drills.length > 0);
   assert.equal(basketball.band.id, "11-13");
+  const multiSport = await getSuggestedDrillsForSports({
+    sports: ["Baseball", "Basketball"],
+    dateOfBirth: new Date("2014-01-01T00:00:00.000Z"),
+  });
+  assert.ok(multiSport.drills.some((drill) => drill.sport === "Baseball"));
+  assert.ok(multiSport.drills.some((drill) => drill.sport === "Basketball"));
+  assert.equal(
+    multiSport.drills.length,
+    4,
+    "athletes should receive two recommendations per selected sport",
+  );
   console.log(
     `catalog-drill checks passed (inserted=${seeded.inserted}, total=${count})`,
   );
