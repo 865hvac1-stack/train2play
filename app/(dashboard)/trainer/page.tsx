@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Activity,
+  AlertTriangle,
   BookOpen,
   CheckCircle2,
   CircleGauge,
@@ -61,6 +62,42 @@ function HealthCard({
   );
 }
 
+function AttentionCard({
+  title,
+  detail,
+  href,
+  action,
+  icon: Icon,
+}: {
+  title: string;
+  detail: string;
+  href: string;
+  action: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-amber-100 p-2 text-amber-800">
+          <Icon className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold tracking-[0.14em] text-amber-900 uppercase">
+            {title}
+          </p>
+          <p className="mt-1 text-sm text-slate-700">{detail}</p>
+          <Link
+            href={href}
+            className="mt-3 inline-flex text-xs font-bold tracking-wide text-brand uppercase hover:underline"
+          >
+            {action} →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RateBar({
   label,
   count,
@@ -98,10 +135,10 @@ function RateBar({
 export default async function DirectorHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ sport?: string }>;
+  searchParams: Promise<{ sport?: string; attention?: string }>;
 }) {
   const user = await requireLibraryEditor();
-  const [{ sport: requestedSport }, director] = await Promise.all([
+  const [{ sport: requestedSport, attention }, director] = await Promise.all([
     searchParams,
     prisma.user.findUnique({
       where: { id: user.id },
@@ -115,6 +152,63 @@ export default async function DirectorHomePage({
   const sportQuery = `sport=${encodeURIComponent(sport)}`;
   const health = await getSportProgramHealth(sport);
   const { totals } = health;
+  const attentionHref = (filter: string, anchor: string) =>
+    `/trainer?${sportQuery}&attention=${filter}#${anchor}`;
+  const attentionCards = [
+    health.attention.athletesNotTraining > 0
+      ? {
+          title: "Athletes not training",
+          detail: `${health.attention.athletesNotTraining} athlete${health.attention.athletesNotTraining === 1 ? " hasn't" : "s haven't"} completed training in 14+ days`,
+          href: attentionHref("no-training", "player-scorecards"),
+          action: "View athletes",
+          icon: Activity,
+        }
+      : null,
+    health.attention.athletesWithoutCoaches > 0
+      ? {
+          title: "Athletes without coaches",
+          detail: `${health.attention.athletesWithoutCoaches} athlete${health.attention.athletesWithoutCoaches === 1 ? " isn't" : "s aren't"} connected to a coach`,
+          href: attentionHref("no-coach", "player-scorecards"),
+          action: "View athletes",
+          icon: Users,
+        }
+      : null,
+    health.attention.waitingVideoReviews > 0
+      ? {
+          title: "Video reviews waiting",
+          detail: `${health.attention.waitingVideoReviews} athlete video${health.attention.waitingVideoReviews === 1 ? " is" : "s are"} awaiting coach review`,
+          href: attentionHref("reviews", "attention-details"),
+          action: "View reviews",
+          icon: Film,
+        }
+      : null,
+    health.attention.inactiveCoaches > 0
+      ? {
+          title: "Inactive coaches",
+          detail: `${health.attention.inactiveCoaches} coach${health.attention.inactiveCoaches === 1 ? " hasn't" : "es haven't"} assigned training in 30 days`,
+          href: attentionHref("inactive-coaches", "attention-details"),
+          action: "View coaches",
+          icon: CircleGauge,
+        }
+      : null,
+    health.attention.incompleteCourses > 0
+      ? {
+          title: "Incomplete courses",
+          detail: `${health.attention.incompleteCourses} athlete${health.attention.incompleteCourses === 1 ? " started" : "s started"} a course but haven't completed it`,
+          href: attentionHref("incomplete-courses", "player-scorecards"),
+          action: "View athletes",
+          icon: BookOpen,
+        }
+      : null,
+  ].filter((card): card is NonNullable<typeof card> => card !== null);
+  const filteredAthletes =
+    attention === "no-training"
+      ? health.athletes.filter((athlete) => athlete.needsTraining)
+      : attention === "no-coach"
+        ? health.athletes.filter((athlete) => athlete.coachCount === 0)
+        : attention === "incomplete-courses"
+          ? health.athletes.filter((athlete) => athlete.incompleteCourse)
+          : health.athletes;
 
   return (
     <DashboardShell
@@ -173,6 +267,120 @@ export default async function DirectorHomePage({
           </div>
         </div>
       </section>
+
+      {attentionCards.length > 0 ? (
+        <section className="mt-5">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-amber-700" />
+            <div>
+              <p className="text-xs font-bold tracking-[0.16em] text-amber-800 uppercase">
+                Needs attention
+              </p>
+              <p className="text-sm text-slate-600">
+                Real operational issues requiring Director action.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {attentionCards.map((card) => (
+              <AttentionCard key={card.title} {...card} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {attention === "reviews" && health.waitingVideoReviews.length > 0 ? (
+        <section
+          id="attention-details"
+          className="mt-5 scroll-mt-24 rounded-2xl border border-amber-300 bg-white p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold tracking-[0.16em] text-amber-800 uppercase">
+                Waiting review queue
+              </p>
+              <h2 className="font-heading mt-1 text-2xl font-bold">
+                {sport} videos awaiting coaches
+              </h2>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={`/trainer?${sportQuery}`}>Clear view</Link>}
+            />
+          </div>
+          <div className="mt-4 divide-y divide-slate-100">
+            {health.waitingVideoReviews.map((review) => (
+              <div
+                key={review.id}
+                className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="font-semibold text-slate-950">{review.title}</p>
+                  <p className="text-xs text-slate-500">
+                    {review.athleteProfile.firstName}{" "}
+                    {review.athleteProfile.lastName} · {review.category}
+                  </p>
+                </div>
+                <div className="text-xs text-slate-500 sm:text-right">
+                  <p>Coach: {review.coachUser.name}</p>
+                  <p>
+                    Waiting since{" "}
+                    {new Intl.DateTimeFormat("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    }).format(review.submittedAt)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {attention === "inactive-coaches" && health.inactiveCoaches.length > 0 ? (
+        <section
+          id="attention-details"
+          className="mt-5 scroll-mt-24 rounded-2xl border border-amber-300 bg-white p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold tracking-[0.16em] text-amber-800 uppercase">
+                Coach follow-up
+              </p>
+              <h2 className="font-heading mt-1 text-2xl font-bold">
+                No assignments in 30 days
+              </h2>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={`/trainer?${sportQuery}`}>Clear view</Link>}
+            />
+          </div>
+          <div className="mt-4 divide-y divide-slate-100">
+            {health.inactiveCoaches.map((coach) => (
+              <div
+                key={coach.id}
+                className="flex items-center justify-between gap-3 py-3"
+              >
+                <p className="font-semibold text-slate-950">{coach.name}</p>
+                <p className="text-xs text-slate-500">
+                  {coach.lastAssignedAt
+                    ? `Last assigned ${new Intl.DateTimeFormat("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }).format(coach.lastAssignedAt)}`
+                    : "No training assigned yet"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <HealthCard
@@ -341,19 +549,43 @@ export default async function DirectorHomePage({
         </section>
       </div>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+      <section
+        id="player-scorecards"
+        className="mt-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold tracking-[0.16em] text-brand uppercase">
               Player scorecards
             </p>
             <h2 className="font-heading mt-1 text-2xl font-bold">
-              Every {sport} athlete
+              {attention === "no-training"
+                ? "Athletes not training"
+                : attention === "no-coach"
+                  ? "Athletes without coaches"
+                  : attention === "incomplete-courses"
+                    ? "Athletes with incomplete courses"
+                    : `Every ${sport} athlete`}
             </h2>
           </div>
-          <Badge variant="secondary">{totals.athletes} enrolled</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">
+              {filteredAthletes.length}{" "}
+              {attention ? "need attention" : "enrolled"}
+            </Badge>
+            {["no-training", "no-coach", "incomplete-courses"].includes(
+              attention ?? "",
+            ) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={`/trainer?${sportQuery}`}>Clear filter</Link>}
+              />
+            ) : null}
+          </div>
         </div>
-        {health.athletes.length > 0 ? (
+        {filteredAthletes.length > 0 ? (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
@@ -367,7 +599,7 @@ export default async function DirectorHomePage({
                 </tr>
               </thead>
               <tbody>
-                {health.athletes.map((athlete) => (
+                {filteredAthletes.map((athlete) => (
                   <tr key={athlete.id} className="border-b border-slate-100">
                     <td className="px-3 py-4">
                       <p className="font-semibold text-slate-950">

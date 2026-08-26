@@ -5,6 +5,8 @@ import { ageBandFromAge, ageFromDateOfBirth } from "@/lib/drills";
 export async function getSportProgramHealth(sport: string) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
   const athletes = await prisma.athleteProfile.findMany({
     where: {
@@ -73,12 +75,22 @@ export async function getSportProgramHealth(sport: string) {
             id: { in: [...relatedUserIds] },
             role: { in: ["COACH", "STAFF", "ORG_ADMIN"] },
           },
-          select: { id: true },
+          select: { id: true, name: true },
         })
       : [];
   const connectedCoachIds = new Set(coachUsers.map((coach) => coach.id));
 
-  const [courses, progress, workoutSessions, recentVideos, recentCourseVideos, drills] =
+  const [
+    courses,
+    progress,
+    workoutSessions,
+    recentVideos,
+    recentCourseVideos,
+    recentTrainingPlans,
+    allTrainingPlans,
+    waitingVideoReviews,
+    drills,
+  ] =
     await Promise.all([
       prisma.course.findMany({
         where: {
@@ -122,7 +134,7 @@ export async function getSportProgramHealth(sport: string) {
               status: "COMPLETED",
               completedAt: { gte: thirtyDaysAgo },
             },
-            select: { athleteId: true },
+            select: { athleteId: true, completedAt: true },
           })
         : Promise.resolve([]),
       connectedCoachIds.size > 0
@@ -147,6 +159,40 @@ export async function getSportProgramHealth(sport: string) {
             select: { course: { select: { coachId: true } } },
           })
         : Promise.resolve([]),
+      connectedCoachIds.size > 0
+        ? prisma.trainingPlan.findMany({
+            where: {
+              coachId: { in: [...connectedCoachIds] },
+              createdAt: { gte: thirtyDaysAgo },
+            },
+            select: { coachId: true },
+            distinct: ["coachId"],
+          })
+        : Promise.resolve([]),
+      connectedCoachIds.size > 0
+        ? prisma.trainingPlan.findMany({
+            where: { coachId: { in: [...connectedCoachIds] } },
+            select: { coachId: true, createdAt: true },
+            orderBy: { createdAt: "desc" },
+          })
+        : Promise.resolve([]),
+      prisma.videoReview.findMany({
+        where: {
+          sport: { equals: sport, mode: "insensitive" },
+          status: "AWAITING_REVIEW",
+        },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          submittedAt: true,
+          athleteProfile: {
+            select: { firstName: true, lastName: true },
+          },
+          coachUser: { select: { name: true } },
+        },
+        orderBy: { submittedAt: "asc" },
+      }),
       listCatalogDrills({ sport }),
     ]);
 
@@ -173,20 +219,31 @@ export async function getSportProgramHealth(sport: string) {
   );
   const completedCourseAthleteIds = new Set<string>();
   const completedCourseKeys = new Set<string>();
+  const incompleteCourseAthleteIds = new Set<string>();
   const startedCourseAthleteIds = new Set(
     progress.map((row) => row.athleteProfileId),
   );
 
   for (const athleteId of athleteProfileIds) {
     for (const course of courses) {
-      if (
+      const started = course.items.some((item) =>
+        progress.some(
+          (row) =>
+            row.athleteProfileId === athleteId &&
+            row.courseItemId === item.id &&
+            (row.viewedAt || row.completedAt),
+        ),
+      );
+      const completed =
         course.items.length > 0 &&
         course.items.every((item) =>
           completedItems.has(`${athleteId}:${item.id}`),
-        )
-      ) {
+        );
+      if (completed) {
         completedCourseAthleteIds.add(athleteId);
         completedCourseKeys.add(`${athleteId}:${course.id}`);
+      } else if (started) {
+        incompleteCourseAthleteIds.add(athleteId);
       }
     }
   }
@@ -194,12 +251,36 @@ export async function getSportProgramHealth(sport: string) {
   const activeLegacyAthleteIds = new Set(
     workoutSessions.map((session) => session.athleteId),
   );
+  const recentlyTrainingLegacyAthleteIds = new Set(
+    workoutSessions
+      .filter(
+        (session) =>
+          session.completedAt && session.completedAt >= fourteenDaysAgo,
+      )
+      .map((session) => session.athleteId),
+  );
   const contributingCoachIds = new Set([
     ...recentVideos.map((video) => video.coachId),
     ...recentCourseVideos.map((item) => item.course.coachId),
   ]);
   const percent = (count: number, total: number) =>
     total > 0 ? Math.round((count / total) * 100) : 0;
+  const recentlyAssigningCoachIds = new Set(
+    recentTrainingPlans.map((plan) => plan.coachId),
+  );
+  const lastAssignmentByCoach = new Map<string, Date>();
+  for (const plan of allTrainingPlans) {
+    if (!lastAssignmentByCoach.has(plan.coachId)) {
+      lastAssignmentByCoach.set(plan.coachId, plan.createdAt);
+    }
+  }
+  const inactiveCoaches = coachUsers
+    .filter((coach) => !recentlyAssigningCoachIds.has(coach.id))
+    .map((coach) => ({
+      id: coach.id,
+      name: coach.name,
+      lastAssignedAt: lastAssignmentByCoach.get(coach.id) ?? null,
+    }));
 
   const courseHealth = courses.map((course) => {
     const courseItemIds = new Set(course.items.map((item) => item.id));
@@ -228,6 +309,56 @@ export async function getSportProgramHealth(sport: string) {
     };
   });
 
+  const athleteRows = athletes.map((athlete) => {
+    const dateOfBirth =
+      athlete.dateOfBirth ?? athlete.legacyAthlete?.dateOfBirth ?? null;
+    const sports =
+      athlete.sports.length > 0
+        ? athlete.sports.map((sport) => ({
+            id: sport.id,
+            name: sport.sport,
+            primary: sport.isPrimary,
+          }))
+        : [
+            {
+              id: `fallback-${athlete.id}`,
+              name: athlete.primarySport ?? sport,
+              primary: true,
+            },
+          ];
+    const coachCount = new Set(
+      [
+        ...(athlete.legacyAthlete?.coachId
+          ? [athlete.legacyAthlete.coachId]
+          : []),
+        ...athlete.coachConnections.map((row) => row.coachUserId),
+        ...athlete.memberships.flatMap((row) =>
+          row.coachUserId ? [row.coachUserId] : [],
+        ),
+      ].filter((coachId) => connectedCoachIds.has(coachId)),
+    ).size;
+    const needsTraining =
+      athlete.createdAt <= fourteenDaysAgo &&
+      (!athlete.legacyAthlete?.id ||
+        !recentlyTrainingLegacyAthleteIds.has(athlete.legacyAthlete.id));
+    return {
+      id: athlete.id,
+      firstName: athlete.firstName,
+      lastName: athlete.lastName,
+      ageBand: ageBandFromAge(ageFromDateOfBirth(dateOfBirth)).label,
+      sports,
+      coachCount,
+      needsTraining,
+      watchedVideo: watchedAthleteIds.has(athlete.id),
+      startedCourse: startedCourseAthleteIds.has(athlete.id),
+      incompleteCourse: incompleteCourseAthleteIds.has(athlete.id),
+      completedCourse: completedCourseAthleteIds.has(athlete.id),
+      activeThisMonth: athlete.legacyAthlete?.id
+        ? activeLegacyAthleteIds.has(athlete.legacyAthlete.id)
+        : false,
+    };
+  });
+
   return {
     generatedAt: new Date(),
     totals: {
@@ -252,49 +383,20 @@ export async function getSportProgramHealth(sport: string) {
       publishedVideos: videoItemIds.size,
       suggestedDrills: drills.length,
     },
+    attention: {
+      athletesNotTraining: athleteRows.filter((athlete) => athlete.needsTraining)
+        .length,
+      athletesWithoutCoaches: athleteRows.filter(
+        (athlete) => athlete.coachCount === 0,
+      ).length,
+      waitingVideoReviews: waitingVideoReviews.length,
+      inactiveCoaches: inactiveCoaches.length,
+      incompleteCourses: incompleteCourseAthleteIds.size,
+    },
+    waitingVideoReviews,
+    inactiveCoaches,
     courseHealth,
     drills,
-    athletes: athletes.map((athlete) => {
-      const dateOfBirth =
-        athlete.dateOfBirth ?? athlete.legacyAthlete?.dateOfBirth ?? null;
-      const sports =
-        athlete.sports.length > 0
-          ? athlete.sports.map((sport) => ({
-              id: sport.id,
-              name: sport.sport,
-              primary: sport.isPrimary,
-            }))
-          : [
-              {
-                id: `fallback-${athlete.id}`,
-                name: athlete.primarySport ?? sport,
-                primary: true,
-              },
-            ];
-      return {
-        id: athlete.id,
-        firstName: athlete.firstName,
-        lastName: athlete.lastName,
-        ageBand: ageBandFromAge(ageFromDateOfBirth(dateOfBirth)).label,
-        sports,
-        coachCount: new Set(
-          [
-            ...(athlete.legacyAthlete?.coachId
-              ? [athlete.legacyAthlete.coachId]
-              : []),
-            ...athlete.coachConnections.map((row) => row.coachUserId),
-            ...athlete.memberships.flatMap((row) =>
-              row.coachUserId ? [row.coachUserId] : [],
-            ),
-          ].filter((coachId) => connectedCoachIds.has(coachId)),
-        ).size,
-        watchedVideo: watchedAthleteIds.has(athlete.id),
-        startedCourse: startedCourseAthleteIds.has(athlete.id),
-        completedCourse: completedCourseAthleteIds.has(athlete.id),
-        activeThisMonth: athlete.legacyAthlete?.id
-          ? activeLegacyAthleteIds.has(athlete.legacyAthlete.id)
-          : false,
-      };
-    }),
+    athletes: athleteRows,
   };
 }
