@@ -48,6 +48,7 @@ export async function createLibraryCourseAction(
 
   revalidatePath("/library");
   revalidatePath("/courses");
+  revalidatePath("/trainer");
   redirect(`/courses/${course.id}`);
 }
 
@@ -77,6 +78,7 @@ export async function updateLibrarySharingAction(
   revalidatePath("/library");
   revalidatePath("/courses");
   revalidatePath(`/courses/${courseId}`);
+  revalidatePath("/trainer");
   return {};
 }
 

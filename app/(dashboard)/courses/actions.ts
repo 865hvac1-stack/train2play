@@ -8,14 +8,30 @@ import { courseItemSchema, courseSchema } from "@/lib/courses";
 import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
+import { isLibraryEditor } from "@/lib/roles";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
-import { requireUser } from "@/lib/session";
+import { requireCoach } from "@/lib/session";
 
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 export type CourseActionState = {
   error?: string;
 };
+
+async function findEditableCourse(
+  courseId: string,
+  user: { id: string; role?: string | null },
+) {
+  return prisma.course.findFirst({
+    where: {
+      id: courseId,
+      OR: [
+        { coachId: user.id },
+        ...(isLibraryEditor(user.role) ? [{ origin: "PLATFORM" }] : []),
+      ],
+    },
+  });
+}
 
 async function resolveOptionalVideo(formData: FormData): Promise<
   | { ok: true; url: string | null; storageKey: string | null }
@@ -99,7 +115,7 @@ export async function createCourseAction(
   _prev: CourseActionState,
   formData: FormData,
 ): Promise<CourseActionState> {
-  const user = await requireUser();
+  const user = await requireCoach();
 
   const parsed = courseSchema.safeParse({
     title: formData.get("title"),
@@ -133,11 +149,9 @@ export async function updateCourseAction(
   _prev: CourseActionState,
   formData: FormData,
 ): Promise<CourseActionState> {
-  const user = await requireUser();
+  const user = await requireCoach();
 
-  const existing = await prisma.course.findFirst({
-    where: { id: courseId, coachId: user.id },
-  });
+  const existing = await findEditableCourse(courseId, user);
   if (!existing) return { error: "Course not found" };
 
   const parsed = courseSchema.safeParse({
@@ -165,19 +179,20 @@ export async function updateCourseAction(
 
   revalidatePath("/courses");
   revalidatePath(`/courses/${courseId}`);
+  revalidatePath("/trainer");
   redirect(`/courses/${courseId}`);
 }
 
 export async function deleteCourseAction(courseId: string) {
-  const user = await requireUser();
-  const existing = await prisma.course.findFirst({
-    where: { id: courseId, coachId: user.id },
-  });
+  const user = await requireCoach();
+  const existing = await findEditableCourse(courseId, user);
   if (!existing) throw new Error("Course not found");
 
   await prisma.course.delete({ where: { id: courseId } });
   revalidatePath("/courses");
-  redirect("/courses");
+  revalidatePath("/library");
+  revalidatePath("/trainer");
+  redirect(existing.origin === "PLATFORM" ? "/library" : "/courses");
 }
 
 export async function createCourseItemAction(
@@ -185,11 +200,9 @@ export async function createCourseItemAction(
   _prev: CourseActionState,
   formData: FormData,
 ): Promise<CourseActionState> {
-  const user = await requireUser();
+  const user = await requireCoach();
 
-  const course = await prisma.course.findFirst({
-    where: { id: courseId, coachId: user.id },
-  });
+  const course = await findEditableCourse(courseId, user);
   if (!course) return { error: "Course not found" };
 
   const parsed = courseItemSchema.safeParse({
@@ -232,6 +245,7 @@ export async function createCourseItemAction(
 
   revalidatePath(`/courses/${courseId}`);
   revalidatePath("/courses");
+  revalidatePath("/trainer");
   redirect(`/courses/${courseId}`);
 }
 
@@ -241,13 +255,12 @@ export async function updateCourseItemAction(
   _prev: CourseActionState,
   formData: FormData,
 ): Promise<CourseActionState> {
-  const user = await requireUser();
+  const user = await requireCoach();
 
+  const course = await findEditableCourse(courseId, user);
+  if (!course) return { error: "Course not found" };
   const item = await prisma.courseItem.findFirst({
-    where: {
-      id: itemId,
-      course: { id: courseId, coachId: user.id },
-    },
+    where: { id: itemId, courseId },
   });
   if (!item) return { error: "Item not found" };
 
@@ -295,29 +308,28 @@ export async function updateCourseItemAction(
   });
 
   revalidatePath(`/courses/${courseId}`);
+  revalidatePath("/trainer");
   redirect(`/courses/${courseId}`);
 }
 
 export async function deleteCourseItemAction(courseId: string, itemId: string) {
-  const user = await requireUser();
+  const user = await requireCoach();
+  const course = await findEditableCourse(courseId, user);
+  if (!course) throw new Error("Course not found");
   const item = await prisma.courseItem.findFirst({
-    where: {
-      id: itemId,
-      course: { id: courseId, coachId: user.id },
-    },
+    where: { id: itemId, courseId },
   });
   if (!item) throw new Error("Item not found");
 
   await prisma.courseItem.delete({ where: { id: itemId } });
   revalidatePath(`/courses/${courseId}`);
   revalidatePath("/courses");
+  revalidatePath("/trainer");
 }
 
 export async function importStarterDrillsAction(courseId: string) {
-  const user = await requireUser();
-  const course = await prisma.course.findFirst({
-    where: { id: courseId, coachId: user.id },
-  });
+  const user = await requireCoach();
+  const course = await findEditableCourse(courseId, user);
   if (!course) throw new Error("Course not found");
 
   const catalog = await listCatalogDrillsForSport(course.sport);
@@ -344,5 +356,6 @@ export async function importStarterDrillsAction(courseId: string) {
 
   revalidatePath(`/courses/${courseId}`);
   revalidatePath("/courses");
+  revalidatePath("/trainer");
   redirect(`/courses/${courseId}`);
 }

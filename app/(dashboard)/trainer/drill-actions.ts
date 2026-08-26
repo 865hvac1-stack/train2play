@@ -58,6 +58,7 @@ export async function createCatalogDrillAction(
     },
   });
   revalidatePath("/trainer/drills");
+  revalidatePath("/trainer");
   redirect(
     `/trainer/drills?sport=${encodeURIComponent(parsed.data.sport)}&ageBand=${parsed.data.ageBand}`,
   );
@@ -87,6 +88,7 @@ export async function updateCatalogDrillAction(
     data: parsed.data,
   });
   revalidatePath("/trainer/drills");
+  revalidatePath("/trainer");
   return { success: "Drill saved." };
 }
 
@@ -97,4 +99,5 @@ export async function deleteCatalogDrillAction(drillId: string) {
     data: { isActive: false },
   });
   revalidatePath("/trainer/drills");
+  revalidatePath("/trainer");
 }
