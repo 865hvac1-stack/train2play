@@ -12,6 +12,14 @@ import { z } from "zod";
 
 export type DrillActionState = { error?: string; success?: string };
 
+function revalidateDrillSurfaces() {
+  revalidatePath("/trainer/drills");
+  revalidatePath("/trainer");
+  revalidatePath("/athlete");
+  revalidatePath("/dashboard");
+  revalidatePath("/athletes");
+}
+
 const drillSchema = z.object({
   sport: z.string().min(1),
   ageBand: z.string().min(1),
@@ -62,8 +70,7 @@ export async function createCatalogDrillAction(
       updatedById: user.id,
     },
   });
-  revalidatePath("/trainer/drills");
-  revalidatePath("/trainer");
+  revalidateDrillSurfaces();
   redirect(
     `/trainer/drills?sport=${encodeURIComponent(parsed.data.sport)}&ageBand=${parsed.data.ageBand}`,
   );
@@ -99,8 +106,7 @@ export async function updateCatalogDrillAction(
         : {}),
     },
   });
-  revalidatePath("/trainer/drills");
-  revalidatePath("/trainer");
+  revalidateDrillSurfaces();
   return { success: "Drill saved." };
 }
 
@@ -110,6 +116,5 @@ export async function deleteCatalogDrillAction(drillId: string) {
     where: { id: drillId },
     data: { isActive: false },
   });
-  revalidatePath("/trainer/drills");
-  revalidatePath("/trainer");
+  revalidateDrillSurfaces();
 }
