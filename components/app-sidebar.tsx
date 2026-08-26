@@ -36,9 +36,9 @@ import { cn } from "@/lib/utils";
 const primaryNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/athletes", label: "Athletes", icon: Users },
-  { href: "/training", label: "Training", icon: ClipboardList },
-  { href: "/courses", label: "Courses", icon: BookOpen },
-  { href: "/library", label: "Sport library", icon: Library },
+  { href: "/training", label: "Plans & workouts", icon: ClipboardList },
+  { href: "/courses", label: "My courses", icon: BookOpen },
+  { href: "/library", label: "Program library", icon: Library },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/videos", label: "Videos", icon: Video },
   { href: "/reports", label: "Progress", icon: BarChart3 },
@@ -170,18 +170,39 @@ function NavLinks({
 }
 
 export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer" }) {
+  const director = variant === "trainer";
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-zinc-950 md:flex md:flex-col">
-      <div className="flex h-16 items-center border-b border-white/10 px-6">
-        <BrandLogo subtitle={brand.portalLabel} variant="dark" />
+    <aside
+      className={cn(
+        "hidden w-64 shrink-0 border-r md:flex md:flex-col",
+        director
+          ? "border-orange-200 bg-orange-50/80"
+          : "border-white/10 bg-zinc-950",
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-16 items-center border-b px-6",
+          director ? "border-orange-200" : "border-white/10",
+        )}
+      >
+        <BrandLogo
+          subtitle={director ? "Director command center" : brand.portalLabel}
+          variant={director ? "light" : "dark"}
+        />
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto p-4">
         <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.18em] text-brand uppercase">
           {variant === "trainer" ? "Director portal" : "Coach portal"}
         </p>
-        <NavLinks dark variant={variant} />
+        <NavLinks dark={!director} variant={variant} />
       </div>
-      <div className="border-t border-white/10 p-4">
+      <div
+        className={cn(
+          "border-t p-4",
+          director ? "border-orange-200" : "border-white/10",
+        )}
+      >
         <p className="px-3 text-xs text-slate-500">
           Train · Track · Develop · Perform
         </p>
@@ -191,6 +212,7 @@ export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer
 }
 
 export function MobileNav({ variant = "coach" }: { variant?: "coach" | "trainer" }) {
+  const director = variant === "trainer";
   return (
     <Sheet>
       <SheetTrigger
@@ -201,14 +223,30 @@ export function MobileNav({ variant = "coach" }: { variant?: "coach" | "trainer"
           </Button>
         }
       />
-      <SheetContent side="left" className="w-72 border-black/10 bg-black p-0 text-white">
-        <SheetHeader className="border-b border-white/10 px-6 py-4">
+      <SheetContent
+        side="left"
+        className={cn(
+          "w-72 p-0",
+          director
+            ? "border-orange-200 bg-orange-50 text-slate-950"
+            : "border-black/10 bg-black text-white",
+        )}
+      >
+        <SheetHeader
+          className={cn(
+            "border-b px-6 py-4",
+            director ? "border-orange-200" : "border-white/10",
+          )}
+        >
           <SheetTitle>
-            <BrandLogo variant="dark" subtitle={brand.portalLabel} />
+            <BrandLogo
+              variant={director ? "light" : "dark"}
+              subtitle={director ? "Director command center" : brand.portalLabel}
+            />
           </SheetTitle>
         </SheetHeader>
         <div className="p-4">
-          <NavLinks dark variant={variant} />
+          <NavLinks dark={!director} variant={variant} />
         </div>
       </SheetContent>
     </Sheet>
