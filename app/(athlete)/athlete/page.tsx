@@ -32,7 +32,9 @@ export default async function AthleteHomePage() {
   const ctx = await requireAthleteContext();
   const data = await getAthleteDashboardData(ctx);
 
-  const sportLine = [ctx.sport, ctx.position].filter(Boolean).join(" • ");
+  const sportLine = [ctx.sports.join(" · "), ctx.position]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <div className="space-y-6">
@@ -47,6 +49,21 @@ export default async function AthleteHomePage() {
       </section>
 
       <NotificationFeed userId={ctx.userId} variant="athlete" />
+
+      <Link
+        href="/athlete/library"
+        className="block rounded-2xl border border-white/10 bg-zinc-900 p-5 transition hover:border-brand/40"
+      >
+        <p className="text-xs font-bold tracking-[0.16em] text-brand uppercase">
+          Train2Play library
+        </p>
+        <h2 className="font-heading mt-1 text-2xl font-bold">
+          Courses for {ctx.sports.join(" & ") || ctx.sport}
+        </h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Drills and teaching videos pushed out for the sports you play.
+        </p>
+      </Link>
 
       {/* TODAY'S TRAINING — primary */}
       <section className="relative overflow-hidden rounded-3xl border border-brand/40 bg-gradient-to-br from-brand via-brand to-[#c44f00] p-5 text-black shadow-[0_20px_50px_-24px_rgba(255,102,0,0.8)] sm:p-6">

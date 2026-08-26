@@ -19,12 +19,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LibrarySharingForm, AddLibraryCourseButton } from "@/components/library-sharing-form";
 import {
   formatAgeBandLabel,
   formatCourseItemType,
 } from "@/lib/courses";
-import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { isPlatformAdmin } from "@/lib/roles";
+import { requireCoach } from "@/lib/session";
+import { COURSE_ORIGIN } from "@/lib/sport-library";
 
 export default async function CourseDetailPage({
   params,
@@ -33,22 +36,38 @@ export default async function CourseDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ edit?: string; item?: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireCoach();
+  const admin = isPlatformAdmin(user.role);
   const { id } = await params;
   const { edit, item: editItemId } = await searchParams;
 
-  const course = await prisma.course.findFirst({
+  const includeItems = {
+    items: { orderBy: [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }] },
+  };
+  const owned = await prisma.course.findFirst({
     where: { id, coachId: user.id },
-    include: {
-      items: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-    },
+    include: includeItems,
   });
+  const platform = owned
+    ? null
+    : await prisma.course.findFirst({
+        where: {
+          id,
+          origin: COURSE_ORIGIN.PLATFORM,
+          ...(admin ? {} : { published: true, shareWithCoaches: true }),
+        },
+        include: includeItems,
+      });
 
+  const course = owned ?? platform;
   if (!course) {
     notFound();
   }
-
-  const editingCourse = edit === "1";
+  const canEdit =
+    Boolean(owned) ||
+    (admin && course.origin === COURSE_ORIGIN.PLATFORM);
+  const isPlatform = course.origin === COURSE_ORIGIN.PLATFORM;
+  const editingCourse = canEdit && edit === "1";
   const editingItem = editItemId
     ? course.items.find((i) => i.id === editItemId)
     : null;
@@ -59,22 +78,26 @@ export default async function CourseDetailPage({
       description={`${course.sport} · ${formatAgeBandLabel(course.ageBand)}`}
       action={
         <div className="flex flex-wrap gap-2">
+          {canEdit ? (
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={
+                <Link href={editingCourse ? `/courses/${course.id}` : `/courses/${course.id}?edit=1`}>
+                  <Pencil className="size-3.5" />
+                  {editingCourse ? "Done" : "Edit course"}
+                </Link>
+              }
+            />
+          ) : (
+            <AddLibraryCourseButton courseId={course.id} />
+          )}
           <Button
             variant="outline"
             size="sm"
             nativeButton={false}
-            render={
-              <Link href={editingCourse ? `/courses/${course.id}` : `/courses/${course.id}?edit=1`}>
-                <Pencil className="size-3.5" />
-                {editingCourse ? "Done" : "Edit course"}
-              </Link>
-            }
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={<Link href="/courses">All courses</Link>}
+            render={<Link href={isPlatform ? "/library" : "/courses"}>Back</Link>}
           />
         </div>
       }
@@ -103,11 +126,12 @@ export default async function CourseDetailPage({
           ) : (
             <Card className="border-brand/15 bg-white/90">
               <CardHeader>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">{course.sport}</Badge>
-                  <Badge variant="outline">{formatAgeBandLabel(course.ageBand)}</Badge>
-                  {!course.published ? <Badge variant="outline">Draft</Badge> : null}
-                </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary">{course.sport}</Badge>
+                    <Badge variant="outline">{formatAgeBandLabel(course.ageBand)}</Badge>
+                    {isPlatform ? <Badge>Train2Play library</Badge> : null}
+                    {!course.published ? <Badge variant="outline">Draft</Badge> : null}
+                  </div>
                 <CardTitle className="font-heading text-2xl">{course.title}</CardTitle>
                 {course.description ? (
                   <CardDescription className="text-base">
@@ -116,17 +140,23 @@ export default async function CourseDetailPage({
                 ) : null}
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
-                <form action={importStarterDrillsAction.bind(null, course.id)}>
-                  <Button type="submit" variant="outline" size="sm">
-                    Import Train2Play starter drills
-                  </Button>
-                </form>
-                <form action={deleteCourseAction.bind(null, course.id)}>
-                  <Button type="submit" variant="destructive" size="sm">
-                    <Trash2 className="size-3.5" />
-                    Delete course
-                  </Button>
-                </form>
+                {canEdit ? (
+                  <>
+                    <form action={importStarterDrillsAction.bind(null, course.id)}>
+                      <Button type="submit" variant="outline" size="sm">
+                        Import Train2Play starter drills
+                      </Button>
+                    </form>
+                    <form action={deleteCourseAction.bind(null, course.id)}>
+                      <Button type="submit" variant="destructive" size="sm">
+                        <Trash2 className="size-3.5" />
+                        Delete course
+                      </Button>
+                    </form>
+                  </>
+                ) : (
+                  <AddLibraryCourseButton courseId={course.id} />
+                )}
               </CardContent>
             </Card>
           )}
@@ -181,6 +211,7 @@ export default async function CourseDetailPage({
                               <p className="text-sm text-brand">{item.focus}</p>
                             ) : null}
                           </div>
+                          {canEdit ? (
                           <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
@@ -204,6 +235,7 @@ export default async function CourseDetailPage({
                               </Button>
                             </form>
                           </div>
+                          ) : null}
                         </div>
                         {item.body ? (
                           <p className="text-sm leading-relaxed text-slate-600">
@@ -245,17 +277,34 @@ export default async function CourseDetailPage({
         </div>
 
         <div className="space-y-6">
+          {admin && isPlatform ? (
+            <Card className="border-brand/20 bg-white/90">
+              <CardHeader>
+                <CardTitle className="font-heading">Publishing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LibrarySharingForm
+                  courseId={course.id}
+                  shareWithCoaches={course.shareWithCoaches}
+                  shareWithAthletes={course.shareWithAthletes}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+          {canEdit ? (
           <Card className="border-brand/20 bg-white/90">
             <CardHeader>
               <CardTitle className="font-heading">Add drill / tip</CardTitle>
               <CardDescription>
-                Build out your full sport library over time.
+                Upload a teaching video or write a drill. Then publish this
+                course to coaches and athletes in {course.sport}.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <CourseItemForm courseId={course.id} />
             </CardContent>
           </Card>
+          ) : null}
         </div>
       </div>
     </DashboardShell>

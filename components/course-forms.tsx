@@ -10,6 +10,7 @@ import {
   updateCourseItemAction,
   type CourseActionState,
 } from "@/app/(dashboard)/courses/actions";
+import { createLibraryCourseAction } from "@/app/(dashboard)/library/actions";
 import { InstructionVideoFields } from "@/components/instruction-video-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,21 +42,27 @@ export function CourseForm({
   mode = "create",
   courseId,
   defaults,
+  library = false,
 }: {
   mode?: "create" | "edit";
   courseId?: string;
+  library?: boolean;
   defaults?: {
     title?: string;
     sport?: string;
     description?: string | null;
     ageBand?: string | null;
     published?: boolean;
+    shareWithCoaches?: boolean;
+    shareWithAthletes?: boolean;
   };
 }) {
   const action =
     mode === "edit" && courseId
       ? updateCourseAction.bind(null, courseId)
-      : createCourseAction;
+      : library
+        ? createLibraryCourseAction
+        : createCourseAction;
   const [state, formAction] = useActionState(action, initialState);
 
   return (
@@ -120,16 +127,32 @@ export function CourseForm({
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          name="published"
-          value="true"
-          defaultChecked={defaults?.published ?? true}
-          className="size-4 rounded border-slate-300"
-        />
-        Published in my library
-      </label>
+      {library ? (
+        <div className="space-y-2 rounded-xl border border-brand/20 bg-orange-50/50 p-3">
+          <p className="text-sm font-semibold text-slate-900">
+            Publish after you add videos
+          </p>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="shareWithCoaches" className="size-4" />
+            Also publish to coaches in this sport now
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="shareWithAthletes" className="size-4" />
+            Also publish to athletes who play this sport now
+          </label>
+        </div>
+      ) : (
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="published"
+            value="true"
+            defaultChecked={defaults?.published ?? true}
+            className="size-4 rounded border-slate-300"
+          />
+          Published in my library
+        </label>
+      )}
 
       {state.error ? (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -137,7 +160,15 @@ export function CourseForm({
         </p>
       ) : null}
 
-      <SubmitButton label={mode === "edit" ? "Save course" : "Create course"} />
+      <SubmitButton
+        label={
+          library
+            ? "Create library course"
+            : mode === "edit"
+              ? "Save course"
+              : "Create course"
+        }
+      />
     </form>
   );
 }

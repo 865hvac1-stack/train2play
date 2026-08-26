@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getDefaultOrganization } from "@/lib/organizations";
+import { replaceAthleteSports } from "@/lib/athlete-sports";
 
 type AthleteRecord = {
   id: string;
@@ -12,8 +13,12 @@ type AthleteRecord = {
 };
 
 /** Creates or updates AthleteProfile + membership for a legacy Athlete row. */
-export async function syncAthleteProfile(athlete: AthleteRecord) {
+export async function syncAthleteProfile(
+  athlete: AthleteRecord,
+  extraSports: string[] = [],
+) {
   const organization = await getDefaultOrganization();
+  const sports = [...new Set([athlete.sport, ...extraSports.filter(Boolean)])];
 
   const existing = await prisma.athleteProfile.findUnique({
     where: { legacyAthleteId: athlete.id },
@@ -29,11 +34,11 @@ export async function syncAthleteProfile(athlete: AthleteRecord) {
         primarySport: athlete.sport,
         legacyAthleteId: athlete.id,
         sports: {
-          create: {
-            sport: athlete.sport,
-            position: athlete.position,
-            isPrimary: true,
-          },
+          create: sports.map((sport) => ({
+            sport,
+            position: sport === athlete.sport ? athlete.position : null,
+            isPrimary: sport === athlete.sport,
+          })),
         },
       },
     }));
@@ -49,23 +54,12 @@ export async function syncAthleteProfile(athlete: AthleteRecord) {
       },
     });
 
-    await prisma.athleteSport.upsert({
-      where: {
-        athleteProfileId_sport: {
-          athleteProfileId: profile.id,
-          sport: athlete.sport,
-        },
-      },
-      update: {
-        position: athlete.position,
-        isPrimary: true,
-      },
-      create: {
-        athleteProfileId: profile.id,
-        sport: athlete.sport,
-        position: athlete.position,
-        isPrimary: true,
-      },
+    await replaceAthleteSports({
+      athleteProfileId: profile.id,
+      sports,
+      primarySport: athlete.sport,
+      position: athlete.position,
+      legacyAthleteId: athlete.id,
     });
   }
 

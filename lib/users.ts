@@ -15,24 +15,34 @@ export const signupSchema = z
       .regex(/[A-Za-z]/, "Password must include a letter")
       .regex(/[0-9]/, "Password must include a number"),
     accountType: z.enum(["COACH", "ATHLETE"]).default("COACH"),
+    sports: z.array(z.string()).optional(),
     sport: z.string().optional(),
     position: z.string().optional(),
     dateOfBirth: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.accountType === "ATHLETE") {
-      if (!data.sport || data.sport.trim() === "") {
+      const sports = [...new Set((data.sports ?? []).filter(Boolean))];
+      if (sports.length === 0 && data.sport?.trim()) {
+        sports.push(data.sport.trim());
+      }
+      if (sports.length === 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Select your sport",
-          path: ["sport"],
+          message: "Select at least one sport",
+          path: ["sports"],
         });
-      } else if (!SPORTS.includes(data.sport as (typeof SPORTS)[number])) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Select a valid sport",
-          path: ["sport"],
-        });
+        return;
+      }
+      for (const sport of sports) {
+        if (!SPORTS.includes(sport as (typeof SPORTS)[number])) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Select a valid sport",
+            path: ["sports"],
+          });
+          return;
+        }
       }
     }
   });
@@ -61,7 +71,18 @@ export async function createUser(input: SignupInput) {
 
   if (accountType === "ATHLETE") {
     const { firstName, lastName } = splitDisplayName(displayName);
-    const sport = data.sport!.trim();
+    const listed = [
+      ...new Set(
+        (data.sports ?? [])
+          .map((value) => value.trim())
+          .filter(Boolean),
+      ),
+    ];
+    const sport =
+      (data.sport?.trim() && listed.includes(data.sport.trim())
+        ? data.sport.trim()
+        : listed[0]!) ;
+    const sports = [sport, ...listed.filter((item) => item !== sport)];
     const position = data.position?.trim() || null;
     const dateOfBirth = data.dateOfBirth
       ? new Date(`${data.dateOfBirth}T12:00:00`)
@@ -88,11 +109,11 @@ export async function createUser(input: SignupInput) {
             : null,
         primarySport: sport,
         sports: {
-          create: {
-            sport,
-            position,
-            isPrimary: true,
-          },
+          create: sports.map((item, index) => ({
+            sport: item,
+            position: index === 0 ? position : null,
+            isPrimary: index === 0,
+          })),
         },
       },
     });

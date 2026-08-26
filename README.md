@@ -66,6 +66,7 @@ Train2Play is ready for **Railway** or **Render** with PostgreSQL and optional c
 | `RESEND_API_KEY` | Pickup alert + parent invite emails |
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` |
 | `CLOUDINARY_URL` | Phone video uploads (easiest — one value from cloudinary.com) |
+| `PLATFORM_ADMIN_EMAIL` | Your email — unlocks the master Sport library |
 | `SEED_DEMO` | Leave unset or `false` in production |
 
 ### 5. Phone video uploads (Cloudinary)

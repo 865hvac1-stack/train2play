@@ -17,6 +17,7 @@ export type AthleteContext = {
   firstName: string;
   lastName: string;
   sport: string;
+  sports: string[];
   position: string | null;
   dateOfBirth: Date | null;
   avatarUrl: string | null;
@@ -29,7 +30,7 @@ export async function getAthleteContext(): Promise<AthleteContext | null> {
   const profile = await prisma.athleteProfile.findUnique({
     where: { userId: user.id },
     include: {
-      sports: { where: { isPrimary: true }, take: 1 },
+      sports: { orderBy: [{ isPrimary: "desc" }, { sport: "asc" }] },
       legacyAthlete: {
         select: {
           id: true,
@@ -45,13 +46,15 @@ export async function getAthleteContext(): Promise<AthleteContext | null> {
     return null;
   }
 
+  const sports = profile.sports.map((row) => row.sport);
+  const primaryRow = profile.sports.find((row) => row.isPrimary) ?? profile.sports[0];
   const primarySport =
-    profile.sports[0]?.sport ||
+    primaryRow?.sport ||
     profile.primarySport ||
     profile.legacyAthlete?.sport ||
     "Multi-sport";
   const position =
-    profile.sports[0]?.position || profile.legacyAthlete?.position || null;
+    primaryRow?.position || profile.legacyAthlete?.position || null;
 
   return {
     userId: user.id,
@@ -61,6 +64,7 @@ export async function getAthleteContext(): Promise<AthleteContext | null> {
     firstName: profile.firstName,
     lastName: profile.lastName,
     sport: primarySport,
+    sports: sports.length > 0 ? sports : [primarySport],
     position,
     dateOfBirth: profile.dateOfBirth ?? profile.legacyAthlete?.dateOfBirth ?? null,
     avatarUrl: profile.avatarUrl,

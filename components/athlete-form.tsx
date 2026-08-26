@@ -7,7 +7,7 @@ import {
   createAthleteAction,
   type AthleteActionState,
 } from "@/app/(dashboard)/athletes/actions";
-import { SPORTS } from "@/lib/athletes";
+import { SportPicker } from "@/components/sport-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,34 +56,15 @@ export function AthleteForm() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="sport">Sport</Label>
-          <select
-            id="sport"
-            name="sport"
-            required
-            defaultValue=""
-            className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <option value="" disabled>
-              Select a sport
-            </option>
-            {SPORTS.map((sport) => (
-              <option key={sport} value={sport}>
-                {sport}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="position">Position</Label>
-          <Input
-            id="position"
-            name="position"
-            placeholder="Point guard, pitcher, etc."
-          />
-        </div>
+      <SportPicker />
+
+      <div className="space-y-2">
+        <Label htmlFor="position">Primary position</Label>
+        <Input
+          id="position"
+          name="position"
+          placeholder="Point guard, pitcher, etc."
+        />
       </div>
 
       <div className="space-y-2">

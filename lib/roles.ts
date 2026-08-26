@@ -22,6 +22,10 @@ export function isParentRole(role: string | null | undefined): boolean {
   return role === "PARENT";
 }
 
+export function isPlatformAdmin(role: string | null | undefined): boolean {
+  return role === "PLATFORM_ADMIN";
+}
+
 /** Post-auth home path by role (onboarding handled separately for coaches). */
 export function getRoleHomePath(role: string | null | undefined): string {
   if (isAthleteRole(role)) return "/athlete";

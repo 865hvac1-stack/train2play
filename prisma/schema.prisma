@@ -656,12 +656,22 @@ model Course {
   description String?
   ageBand     String?
   published   Boolean      @default(true)
+  /** COACH = private coach library. PLATFORM = Train2Play master sport catalog. */
+  origin      String       @default("COACH")
+  shareWithCoaches  Boolean @default(false)
+  shareWithAthletes Boolean @default(false)
+  /** If this row was copied from a platform course, that source id. */
+  sourceCourseId String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   items       CourseItem[]
 
   @@index([coachId])
   @@index([coachId, sport])
+  @@index([origin, sport])
+  @@index([shareWithCoaches, sport])
+  @@index([shareWithAthletes, sport])
+  @@index([coachId, sourceCourseId])
 }
 
 model CourseItem {

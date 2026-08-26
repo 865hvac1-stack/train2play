@@ -45,6 +45,7 @@ export default async function AthleteVideoUploadPage() {
 
       <AthleteVideoUploadForm
         defaultSport={ctx.sport}
+        sports={ctx.sports}
         coaches={connections.map((c) => ({
           id: c.coachUser.id,
           name: c.coachUser.name,

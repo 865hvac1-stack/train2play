@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { issueAthleteInviteEmail } from "@/app/(dashboard)/athletes/invite-actions";
-import { athleteSchema } from "@/lib/athletes";
+import { athleteSchema, parseSportsFromFormData } from "@/lib/athletes";
 import { syncAthleteProfile } from "@/lib/athlete-profiles";
 import { requireAthleteAccess } from "@/lib/authz";
 import { ensureEmailInviteConnection } from "@/lib/coach-connections";
@@ -27,10 +27,13 @@ export async function createAthleteAction(
 
   const inviteEmailRaw = String(formData.get("inviteEmail") ?? "").trim();
 
+  const { sports, primarySport } = parseSportsFromFormData(formData);
+
   const parsed = athleteSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
-    sport: formData.get("sport"),
+    sport: primarySport,
+    sports,
     position: formData.get("position") || undefined,
     dateOfBirth: formData.get("dateOfBirth") || undefined,
     notes: formData.get("notes") || undefined,
@@ -58,7 +61,7 @@ export async function createAthleteAction(
     },
   });
 
-  await syncAthleteProfile(athlete);
+  await syncAthleteProfile(athlete, parsed.data.sports);
   await ensureEmailInviteConnection({
     coachUserId: user.id,
     athleteId: athlete.id,

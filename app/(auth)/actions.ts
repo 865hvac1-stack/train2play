@@ -33,7 +33,8 @@ export async function signupAction(
     email: formData.get("email"),
     password: formData.get("password"),
     accountType: formData.get("accountType") || "COACH",
-    sport: formData.get("sport") || undefined,
+    sports: formData.getAll("sports"),
+    sport: formData.get("primarySport") || formData.get("sport") || undefined,
     position: formData.get("position") || undefined,
     dateOfBirth: formData.get("dateOfBirth") || undefined,
   });

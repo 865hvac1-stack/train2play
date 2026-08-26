@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AthleteSportsForm } from "@/components/athlete-sports-form";
 import { SignOutButton } from "@/components/sign-out-button";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
 import { brand } from "@/lib/brand";
@@ -41,9 +42,25 @@ export default async function AthleteProfilePage() {
           {ctx.firstName} {ctx.lastName}
         </h1>
         <p className="text-slate-400">
-          {[ctx.sport, ctx.position].filter(Boolean).join(" • ")}
+          {ctx.sports.join(" · ")}
+          {ctx.position ? ` • ${ctx.position}` : ""}
         </p>
       </div>
+
+      <section className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900 p-5">
+        <div>
+          <h2 className="font-heading text-xl font-bold">My sports</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Multi-sport athletes see the matching Train2Play courses for every
+            sport they play.
+          </p>
+        </div>
+        <AthleteSportsForm
+          sports={ctx.sports}
+          primarySport={ctx.sport}
+          position={ctx.position}
+        />
+      </section>
 
       <section className="space-y-3 rounded-2xl border border-white/10 bg-zinc-900 p-5">
         <p className="text-sm text-slate-300">

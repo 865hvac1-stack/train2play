@@ -67,6 +67,7 @@ export default async function AthleteDetailPage({
       athleteProfile: {
         include: {
           user: { select: { email: true, id: true } },
+          sports: { orderBy: [{ isPrimary: "desc" }, { sport: "asc" }] },
         },
       },
       trainingPlans: {
@@ -221,7 +222,14 @@ export default async function AthleteDetailPage({
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{athlete.sport}</Badge>
+                {(athlete.athleteProfile?.sports.length
+                  ? athlete.athleteProfile.sports.map((row) => row.sport)
+                  : [athlete.sport]
+                ).map((sport) => (
+                  <Badge key={sport} variant="secondary">
+                    {sport}
+                  </Badge>
+                ))}
                 {athlete.position ? (
                   <Badge variant="outline">{athlete.position}</Badge>
                 ) : null}

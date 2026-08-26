@@ -44,12 +44,16 @@ function copyFileToInput(file: File, target: HTMLInputElement | null) {
 
 export function AthleteVideoUploadForm({
   defaultSport,
+  sports,
   coaches,
 }: {
   defaultSport: string;
+  sports?: string[];
   coaches: CoachOption[];
 }) {
-  const [sport, setSport] = useState(defaultSport || "Basketball");
+  const sportOptions =
+    sports && sports.length > 0 ? sports : [defaultSport || "Basketball"];
+  const [sport, setSport] = useState(defaultSport || sportOptions[0] || "Basketball");
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const formFileRef = useRef<HTMLInputElement>(null);
@@ -188,14 +192,20 @@ export function AthleteVideoUploadForm({
           <Label htmlFor="sport" className="text-slate-300">
             Sport
           </Label>
-          <Input
+          <select
             id="sport"
             name="sport"
             required
             value={sport}
             onChange={(e) => setSport(e.target.value)}
-            className="min-h-12 border-white/15 bg-black text-white"
-          />
+            className="flex min-h-12 w-full rounded-lg border border-white/15 bg-black px-3 text-white"
+          >
+            {sportOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="category" className="text-slate-300">

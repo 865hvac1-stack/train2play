@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SPORTS } from "@/lib/athletes";
+import { SportPicker } from "@/components/sport-picker";
 import { cn } from "@/lib/utils";
 
 const initialState: AuthActionState = {};
@@ -182,27 +182,9 @@ export function SignupForm() {
               <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Athlete profile
               </p>
+              <SportPicker />
               <div className="space-y-2">
-                <Label htmlFor="sport">Sport</Label>
-                <select
-                  id="sport"
-                  name="sport"
-                  required
-                  defaultValue=""
-                  className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  <option value="" disabled>
-                    Select a sport
-                  </option>
-                  {SPORTS.map((sport) => (
-                    <option key={sport} value={sport}>
-                      {sport}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="position">Position (optional)</Label>
+                <Label htmlFor="position">Primary position (optional)</Label>
                 <Input
                   id="position"
                   name="position"
