@@ -40,7 +40,8 @@ export function isLibraryEditor(role: string | null | undefined): boolean {
 export function getRoleHomePath(role: string | null | undefined): string {
   if (isAthleteRole(role)) return "/athlete";
   if (isParentRole(role)) return "/view";
-  if (isTrainer(role) || isPlatformAdmin(role)) return "/trainer";
+  if (isPlatformAdmin(role)) return "/admin";
+  if (isTrainer(role)) return "/trainer";
   return "/dashboard";
 }
 
@@ -54,7 +55,10 @@ export function getLoginLandingPath(options: {
   if (isParentRole(options.role)) {
     return "/login?error=parent-coming-soon";
   }
-  if (isTrainer(options.role) || isPlatformAdmin(options.role)) {
+  if (isPlatformAdmin(options.role)) {
+    return "/admin";
+  }
+  if (isTrainer(options.role)) {
     return "/trainer";
   }
   return options.onboardingCompletedAt ? "/dashboard" : "/onboarding";

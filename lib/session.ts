@@ -22,7 +22,36 @@ export async function requireUser() {
     redirect("/login");
   }
 
-  return session.user;
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      lastActiveAt: true,
+    },
+  });
+  if (!dbUser?.isActive) {
+    redirect("/login?error=account-inactive");
+  }
+
+  const heartbeatCutoff = new Date(Date.now() - 15 * 60 * 1000);
+  if (!dbUser.lastActiveAt || dbUser.lastActiveAt < heartbeatCutoff) {
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: { lastActiveAt: new Date() },
+    });
+  }
+
+  return {
+    ...session.user,
+    id: dbUser.id,
+    name: dbUser.name,
+    email: dbUser.email,
+    role: dbUser.role,
+  };
 }
 
 /** Coach Portal only — athletes/parents are redirected to their home. */

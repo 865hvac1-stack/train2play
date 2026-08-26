@@ -2,7 +2,12 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 
 import { authConfig } from "@/auth.config";
-import { getLoginLandingPath, isAthleteRole, isCoachPortalRole } from "@/lib/roles";
+import {
+  getLoginLandingPath,
+  isAthleteRole,
+  isCoachPortalRole,
+  isPlatformAdmin,
+} from "@/lib/roles";
 
 const { auth } = NextAuth(authConfig);
 
@@ -28,6 +33,7 @@ export default auth((req) => {
   // Must not match coach "/athletes*" — only the athlete portal "/athlete" and "/athlete/..."
   const isAthleteArea =
     pathname === "/athlete" || pathname.startsWith("/athlete/");
+  const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const isCoachArea =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/athletes") ||
@@ -43,7 +49,7 @@ export default auth((req) => {
     pathname.startsWith("/trainer") ||
     isOnboardingPage;
 
-  const isProtected = isCoachArea || isAthleteArea;
+  const isProtected = isCoachArea || isAthleteArea || isAdminArea;
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -60,8 +66,10 @@ export default auth((req) => {
     // Send coaches to /dashboard; layout will bounce incomplete onboarding.
     const dest = isAthleteRole(role)
       ? "/athlete"
-      : role === "TRAINER" || role === "PLATFORM_ADMIN"
-        ? "/trainer"
+      : role === "PLATFORM_ADMIN"
+        ? "/admin"
+        : role === "TRAINER"
+          ? "/trainer"
         : isCoachPortalRole(role)
           ? "/dashboard"
           : landing;
@@ -74,6 +82,12 @@ export default auth((req) => {
 
   if (isLoggedIn && isCoachArea && isAthleteRole(role)) {
     return NextResponse.redirect(new URL("/athlete", req.nextUrl.origin));
+  }
+
+  if (isLoggedIn && isAdminArea && !isPlatformAdmin(role)) {
+    return NextResponse.redirect(
+      new URL(role === "TRAINER" ? "/trainer" : "/dashboard", req.nextUrl.origin),
+    );
   }
 
   return NextResponse.next();
@@ -94,6 +108,7 @@ export const config = {
     "/teams/:path*",
     "/library/:path*",
     "/trainer/:path*",
+    "/admin/:path*",
     "/onboarding",
     "/login",
     "/signup",

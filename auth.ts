@@ -32,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: parsed.data.email.toLowerCase() },
         });
 
-        if (!user) {
+        if (!user || !user.isActive) {
           return null;
         }
 
