@@ -15,6 +15,7 @@ export type Drill = {
   howTo: string;
   coachingCue: string;
   videoUrl?: string | null;
+  sport?: string;
 };
 
 export type AgeBand = {

@@ -57,6 +57,7 @@ function toDrill(row: {
   howTo: string;
   coachingCue: string;
   videoUrl?: string | null;
+  sport?: string;
 }): Drill {
   return {
     id: row.id,
@@ -67,6 +68,7 @@ function toDrill(row: {
     howTo: row.howTo,
     coachingCue: row.coachingCue,
     videoUrl: row.videoUrl,
+    sport: row.sport,
   };
 }
 
@@ -92,7 +94,7 @@ export async function getSuggestedDrills(options: {
       ageBand: band.id,
       sport: { equals: options.sport, mode: "insensitive" },
     },
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ updatedAt: "desc" }, { sortOrder: "asc" }],
     take: options.limit ?? 3,
   });
 
@@ -105,6 +107,34 @@ export async function getSuggestedDrills(options: {
   }
 
   return getBuiltInSuggestedDrills(options);
+}
+
+/** Suggestions for every sport on an athlete profile, two per sport. */
+export async function getSuggestedDrillsForSports(options: {
+  sports: string[];
+  dateOfBirth?: Date | null;
+}) {
+  const sports = [...new Set(options.sports.map((sport) => sport.trim()).filter(Boolean))];
+  const suggestions = await Promise.all(
+    sports.map((sport) =>
+      getSuggestedDrills({
+        sport,
+        dateOfBirth: options.dateOfBirth,
+        limit: 2,
+      }),
+    ),
+  );
+  const first = suggestions[0];
+  return {
+    band: first?.band ?? ageBandFromAge(ageFromDateOfBirth(options.dateOfBirth)),
+    sportLabel: sports.join(" & ") || "Multi-sport",
+    drills: suggestions.flatMap((result, index) =>
+      result.drills.map((drill) => ({
+        ...drill,
+        sport: drill.sport ?? sports[index],
+      })),
+    ),
+  };
 }
 
 export async function listCatalogDrillsForSport(sport: string) {

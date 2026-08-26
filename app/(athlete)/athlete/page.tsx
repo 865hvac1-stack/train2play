@@ -279,6 +279,11 @@ export default async function AthleteHomePage() {
               key={drill.id}
               className="rounded-2xl border border-white/10 bg-zinc-900 p-4"
             >
+              {drill.sport ? (
+                <p className="mb-1 text-[10px] font-bold tracking-[0.14em] text-slate-500 uppercase">
+                  {drill.sport}
+                </p>
+              ) : null}
               <p className="font-semibold text-white">{drill.title}</p>
               <p className="mt-0.5 text-sm text-brand">
                 {drill.focus} · {drill.durationMin} min

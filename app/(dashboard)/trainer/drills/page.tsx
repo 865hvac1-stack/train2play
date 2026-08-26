@@ -26,7 +26,7 @@ export default async function TrainerDrillsPage({
   return (
     <DashboardShell
       title="Suggested drills"
-      description="These are the age-banded drills coaches and athletes see. Change a drill here and it updates everywhere."
+      description="These publish immediately to every age-matched athlete who selected the sport. New and recently edited drills appear first."
     >
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
@@ -129,7 +129,8 @@ export default async function TrainerDrillsPage({
         <div className="rounded-xl border border-brand/20 bg-white p-4">
           <h2 className="font-heading text-lg font-bold">Add a drill</h2>
           <p className="mb-3 text-sm text-slate-600">
-            Keep it specific to one sport and age band.
+            Keep it specific to one sport and age band. Saving pushes it live
+            immediately.
           </p>
           <CatalogDrillForm
             defaults={{
