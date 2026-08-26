@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-import { deleteCatalogDrillAction } from "@/app/(dashboard)/trainer/drill-actions";
+import {
+  deleteCatalogDrillAction,
+  updateCatalogDrillAudienceAction,
+} from "@/app/(dashboard)/trainer/drill-actions";
 import { CatalogDrillForm } from "@/components/catalog-drill-form";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
@@ -26,7 +29,7 @@ export default async function TrainerDrillsPage({
   return (
     <DashboardShell
       title="Suggested drills"
-      description="These publish immediately to every age-matched athlete who selected the sport. New and recently edited drills appear first."
+      description="Choose whether each drill goes to age-matched coaches, players, or both. New and recently edited drills appear first."
     >
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
@@ -77,6 +80,8 @@ export default async function TrainerDrillsPage({
                       howTo: drill.howTo,
                       coachingCue: drill.coachingCue,
                       videoUrl: drill.videoUrl,
+                      shareWithCoaches: drill.shareWithCoaches,
+                      shareWithAthletes: drill.shareWithAthletes,
                     }}
                   />
                 ) : (
@@ -85,6 +90,20 @@ export default async function TrainerDrillsPage({
                       <Badge>{drill.sport}</Badge>
                       <Badge variant="outline">{formatAgeBandLabel(drill.ageBand)}</Badge>
                       <Badge variant="secondary">{drill.durationMin} min</Badge>
+                      <Badge
+                        variant={drill.shareWithCoaches ? "default" : "outline"}
+                      >
+                        {drill.shareWithCoaches
+                          ? "Live for coaches"
+                          : "Not sent to coaches"}
+                      </Badge>
+                      <Badge
+                        variant={drill.shareWithAthletes ? "default" : "outline"}
+                      >
+                        {drill.shareWithAthletes
+                          ? "Live for players"
+                          : "Not sent to players"}
+                      </Badge>
                     </div>
                     <h2 className="mt-2 font-heading text-xl font-bold">
                       {drill.title}
@@ -101,6 +120,40 @@ export default async function TrainerDrillsPage({
                         className="mt-3"
                       />
                     ) : null}
+                    <form
+                      action={updateCatalogDrillAudienceAction.bind(
+                        null,
+                        drill.id,
+                      )}
+                      className="mt-3 space-y-2 rounded-xl border border-brand/20 bg-orange-50/50 p-3"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">
+                        Push to {drill.sport}
+                      </p>
+                      <div className="flex flex-wrap gap-4">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            name="shareWithCoaches"
+                            defaultChecked={drill.shareWithCoaches}
+                            className="size-4"
+                          />
+                          Coaches
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            name="shareWithAthletes"
+                            defaultChecked={drill.shareWithAthletes}
+                            className="size-4"
+                          />
+                          Players
+                        </label>
+                      </div>
+                      <Button type="submit" size="sm">
+                        Update who receives it
+                      </Button>
+                    </form>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
                         size="sm"
@@ -129,8 +182,8 @@ export default async function TrainerDrillsPage({
         <div className="rounded-xl border border-brand/20 bg-white p-4">
           <h2 className="font-heading text-lg font-bold">Add a drill</h2>
           <p className="mb-3 text-sm text-slate-600">
-            Keep it specific to one sport and age band. Saving pushes it live
-            immediately.
+            Keep it specific to one sport and age band, then choose exactly who
+            receives it.
           </p>
           <CatalogDrillForm
             defaults={{

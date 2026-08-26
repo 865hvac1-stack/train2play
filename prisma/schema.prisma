@@ -729,6 +729,8 @@ model CatalogDrill {
   coachingCue  String
   videoUrl      String?
   videoStorageKey String?
+  shareWithCoaches  Boolean @default(true)
+  shareWithAthletes Boolean @default(true)
   sortOrder    Int      @default(0)
   isActive     Boolean  @default(true)
   updatedById  String?

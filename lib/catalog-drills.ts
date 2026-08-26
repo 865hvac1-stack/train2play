@@ -77,6 +77,7 @@ export async function getSuggestedDrills(options: {
   dateOfBirth?: Date | null;
   ageBandId?: AgeBandId;
   limit?: number;
+  audience?: "coaches" | "athletes";
 }) {
   await seedCatalogDrillsIfEmpty();
   const age =
@@ -93,6 +94,11 @@ export async function getSuggestedDrills(options: {
       isActive: true,
       ageBand: band.id,
       sport: { equals: options.sport, mode: "insensitive" },
+      ...(options.audience === "coaches"
+        ? { shareWithCoaches: true }
+        : options.audience === "athletes"
+          ? { shareWithAthletes: true }
+          : {}),
     },
     orderBy: [{ updatedAt: "desc" }, { sortOrder: "asc" }],
     take: options.limit ?? 3,
@@ -102,6 +108,21 @@ export async function getSuggestedDrills(options: {
     return {
       band,
       drills: rows.map(toDrill),
+      sportLabel: options.sport.trim() || "Multi-sport",
+    };
+  }
+
+  const catalogCount = await prisma.catalogDrill.count({
+    where: {
+      isActive: true,
+      ageBand: band.id,
+      sport: { equals: options.sport, mode: "insensitive" },
+    },
+  });
+  if (catalogCount > 0 && options.audience) {
+    return {
+      band,
+      drills: [],
       sportLabel: options.sport.trim() || "Multi-sport",
     };
   }
@@ -121,6 +142,7 @@ export async function getSuggestedDrillsForSports(options: {
         sport,
         dateOfBirth: options.dateOfBirth,
         limit: 2,
+        audience: "athletes",
       }),
     ),
   );
@@ -143,6 +165,7 @@ export async function listCatalogDrillsForSport(sport: string) {
     where: {
       isActive: true,
       sport: { equals: sport, mode: "insensitive" },
+      shareWithCoaches: true,
     },
     orderBy: [{ ageBand: "asc" }, { sortOrder: "asc" }],
   });

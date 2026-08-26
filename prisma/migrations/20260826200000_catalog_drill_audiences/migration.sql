@@ -1,0 +1,3 @@
+ALTER TABLE "CatalogDrill"
+ADD COLUMN "shareWithCoaches" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "shareWithAthletes" BOOLEAN NOT NULL DEFAULT true;

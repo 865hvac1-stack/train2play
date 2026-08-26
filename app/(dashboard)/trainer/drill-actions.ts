@@ -66,6 +66,8 @@ export async function createCatalogDrillAction(
       ...parsed.data,
       videoUrl: video.url,
       videoStorageKey: video.storageKey,
+      shareWithCoaches: formData.get("shareWithCoaches") === "on",
+      shareWithAthletes: formData.get("shareWithAthletes") === "on",
       sortOrder: count,
       updatedById: user.id,
     },
@@ -104,10 +106,27 @@ export async function updateCatalogDrillAction(
       ...(video.url
         ? { videoUrl: video.url, videoStorageKey: video.storageKey }
         : {}),
+      shareWithCoaches: formData.get("shareWithCoaches") === "on",
+      shareWithAthletes: formData.get("shareWithAthletes") === "on",
     },
   });
   revalidateDrillSurfaces();
   return { success: "Drill saved." };
+}
+
+export async function updateCatalogDrillAudienceAction(
+  drillId: string,
+  formData: FormData,
+) {
+  await requireLibraryEditor();
+  await prisma.catalogDrill.update({
+    where: { id: drillId },
+    data: {
+      shareWithCoaches: formData.get("shareWithCoaches") === "on",
+      shareWithAthletes: formData.get("shareWithAthletes") === "on",
+    },
+  });
+  revalidateDrillSurfaces();
 }
 
 export async function deleteCatalogDrillAction(drillId: string) {

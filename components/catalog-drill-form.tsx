@@ -31,6 +31,8 @@ export function CatalogDrillForm({
     howTo?: string;
     coachingCue?: string;
     videoUrl?: string | null;
+    shareWithCoaches?: boolean;
+    shareWithAthletes?: boolean;
   };
 }) {
   const action =
@@ -144,6 +146,30 @@ export function CatalogDrillForm({
         title="Suggested drill video (optional)"
         description="Record with either phone camera, choose from your gallery, or paste a video link."
       />
+      <div className="space-y-2 rounded-xl border border-brand/20 bg-orange-50/50 p-3">
+        <p className="text-sm font-semibold text-slate-900">Push this drill to</p>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="shareWithCoaches"
+            defaultChecked={defaults?.shareWithCoaches ?? true}
+            className="size-4"
+          />
+          Coaches set up under this sport
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="shareWithAthletes"
+            defaultChecked={defaults?.shareWithAthletes ?? true}
+            className="size-4"
+          />
+          Players with this sport on their profile
+        </label>
+        <p className="text-xs text-slate-500">
+          Checked audiences receive it as soon as you save.
+        </p>
+      </div>
       {state.error ? (
         <p className="text-sm text-destructive">{state.error}</p>
       ) : null}

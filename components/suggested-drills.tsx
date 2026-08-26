@@ -31,6 +31,7 @@ export async function SuggestedDrills({
     dateOfBirth,
     ageBandId,
     limit: compact ? 2 : 3,
+    audience: "coaches",
   });
 
   if (drills.length === 0) return null;
