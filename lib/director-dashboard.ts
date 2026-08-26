@@ -134,7 +134,13 @@ export async function getSportProgramHealth(sport: string) {
               status: "COMPLETED",
               completedAt: { gte: thirtyDaysAgo },
             },
-            select: { athleteId: true, completedAt: true },
+            select: {
+              id: true,
+              athleteId: true,
+              completedAt: true,
+              athlete: { select: { firstName: true, lastName: true } },
+              workout: { select: { title: true } },
+            },
           })
         : Promise.resolve([]),
       connectedCoachIds.size > 0
@@ -281,6 +287,12 @@ export async function getSportProgramHealth(sport: string) {
       name: coach.name,
       lastAssignedAt: lastAssignmentByCoach.get(coach.id) ?? null,
     }));
+  const coaches = coachUsers.map((coach) => ({
+    id: coach.id,
+    name: coach.name,
+    contributedVideo: contributingCoachIds.has(coach.id),
+    assignedTraining: recentlyAssigningCoachIds.has(coach.id),
+  }));
 
   const courseHealth = courses.map((course) => {
     const courseItemIds = new Set(course.items.map((item) => item.id));
@@ -395,6 +407,13 @@ export async function getSportProgramHealth(sport: string) {
     },
     waitingVideoReviews,
     inactiveCoaches,
+    coaches,
+    recentWorkouts: workoutSessions
+      .filter((session) => session.completedAt)
+      .sort(
+        (a, b) =>
+          b.completedAt!.getTime() - a.completedAt!.getTime(),
+      ),
     courseHealth,
     drills,
     athletes: athleteRows,
