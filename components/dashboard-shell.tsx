@@ -35,7 +35,7 @@ export async function DashboardShell({
         description={description}
         action={action}
       />
-      <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">
+      <main className="safe-area-px min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">
         {children}
       </main>
     </>

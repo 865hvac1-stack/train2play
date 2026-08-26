@@ -25,7 +25,7 @@ export function AthleteBottomNav() {
 
   return (
     <nav className="safe-area-pb fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-zinc-950/95 backdrop-blur-md md:hidden">
-      <ul className="mx-auto grid max-w-lg grid-cols-5 gap-0 px-1 py-1.5">
+      <ul className="safe-area-px mx-auto grid max-w-lg grid-cols-5 gap-0 px-1 pt-1.5">
         {items.map(({ href, label, icon: Icon, exact }) => {
           const active = exact
             ? pathname === href

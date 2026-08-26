@@ -135,9 +135,22 @@
   }
   html {
     @apply font-sans overflow-x-hidden;
+    /* `clip` leaves no scroll container behind, so nothing can be panned
+       sideways on a phone. Browsers without it keep the hidden fallback. */
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+    /* Stop iOS from inflating text and pushing layouts past the viewport. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+    /* No sideways rubber-banding or swipe-to-navigate drift. */
+    overscroll-behavior-x: none;
   }
   img,
   video,
@@ -147,9 +160,34 @@
   video {
     height: auto;
   }
+  /* Long emails, share links, and codes wrap instead of widening the page. */
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  span,
+  a,
+  li,
+  td,
+  th,
+  label {
+    overflow-wrap: anywhere;
+  }
 }
 
 @layer utilities {
+  /* The viewport is rendered edge to edge, so panels keep clear of the
+     notch, the rounded corners, and the home indicator themselves. */
+  .safe-area-pb {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.375rem);
+  }
+
+  .safe-area-px {
+    padding-left: max(env(safe-area-inset-left, 0px), 0px);
+    padding-right: max(env(safe-area-inset-right, 0px), 0px);
+  }
+
   .t2p-page-gradient {
     @apply bg-gradient-to-b from-slate-50 via-white to-brand-light;
   }
@@ -196,6 +234,19 @@
     background-image:
       radial-gradient(ellipse 70% 40% at 100% 0%, rgba(255, 102, 0, 0.12), transparent 55%),
       radial-gradient(ellipse 50% 30% at 0% 100%, rgba(0, 0, 0, 0.04), transparent 50%);
+  }
+}
+
+/*
+ * Unlayered on purpose: it has to win over Tailwind's text-sm/text-xs
+ * utilities. iOS Safari zooms the whole page when a focused field renders
+ * under 16px, and the zoomed page then pans left and right.
+ */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 

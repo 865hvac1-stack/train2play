@@ -18,6 +18,8 @@ import { SynchronizedVoiceReviewPlayer } from "@/components/synchronized-voice-r
 import { VideoAnnotator } from "@/components/video-annotator";
 import { Button } from "@/components/ui/button";
 import {
+  describeMicrophoneError,
+  findMicrophoneBlocker,
   pickSupportedAudioMimeType,
   type VoiceTimelineEvent,
   type VoiceTimelineEventInput,
@@ -203,14 +205,9 @@ export function VoiceReviewWorkspace({
     setMessage(null);
     setActionState({});
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.mediaDevices?.getUserMedia ||
-      typeof MediaRecorder === "undefined"
-    ) {
-      setMessage(
-        "Voice recording is not supported in this browser. Use current Chrome, Edge, Safari, iPhone Safari, or Android Chrome.",
-      );
+    const blocker = findMicrophoneBlocker();
+    if (blocker) {
+      setMessage(blocker);
       return;
     }
 
@@ -282,16 +279,15 @@ export function VoiceReviewWorkspace({
           playbackRate: currentVideoStateRef.current.playbackRate,
         });
       }
-      recorder.start(1000);
+      // Safari's MP4 recorder only produces a playable file as a single blob,
+      // so timeslicing is limited to the WebM path.
+      if (recorder.mimeType.includes("webm")) recorder.start(1000);
+      else recorder.start();
       setPhase("recording");
     } catch (error) {
       setPhase("idle");
-      const name = error instanceof DOMException ? error.name : "";
-      setMessage(
-        name === "NotAllowedError"
-          ? "Microphone permission was denied. Allow microphone access in your browser settings and try again."
-          : "Could not start the microphone. Check your browser permissions and try again.",
-      );
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      setMessage(describeMicrophoneError(error));
     }
   }
 

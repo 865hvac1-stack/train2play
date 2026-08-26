@@ -48,3 +48,52 @@ export function pickSupportedAudioMimeType() {
   ];
   return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? "";
 }
+
+/**
+ * Reasons a browser refuses to record before we ever reach getUserMedia.
+ * Returning the specific one keeps coaches from guessing at phone settings.
+ */
+export function findMicrophoneBlocker(): string | null {
+  if (typeof window === "undefined") return null;
+
+  if (!window.isSecureContext) {
+    return "Voice recording needs a secure https connection. Open train2play.com directly in Safari or Chrome.";
+  }
+
+  if (
+    !navigator.mediaDevices?.getUserMedia ||
+    typeof MediaRecorder === "undefined"
+  ) {
+    return "This browser cannot record audio. Open the review in Safari on iPhone, or Chrome on Android or desktop — in-app browsers inside Instagram, Facebook, or Gmail block the microphone.";
+  }
+
+  const policy = (
+    document as Document & {
+      permissionsPolicy?: { allowsFeature: (name: string) => boolean };
+      featurePolicy?: { allowsFeature: (name: string) => boolean };
+    }
+  ).permissionsPolicy;
+
+  if (policy && !policy.allowsFeature("microphone")) {
+    return "This page is blocking microphone access. Reload the page — if it keeps failing, the site needs a redeploy of its microphone permission policy.";
+  }
+
+  return null;
+}
+
+export function describeMicrophoneError(error: unknown) {
+  const name = error instanceof DOMException ? error.name : "";
+  switch (name) {
+    case "NotAllowedError":
+    case "SecurityError":
+      return "Microphone permission was denied. On iPhone: Settings › Safari › Microphone › Allow, or tap the address bar and allow the mic, then try again.";
+    case "NotFoundError":
+    case "OverconstrainedError":
+      return "No microphone was found on this device.";
+    case "NotReadableError":
+    case "AbortError":
+      return "Another app is using the microphone. Close it — phone calls and video apps hold the mic — then try again.";
+    default:
+      return "Could not start the microphone. Check your browser permissions and try again.";
+  }
+}
