@@ -113,7 +113,7 @@ export function CatalogDrillAudienceFields({
       ) : null}
 
       <p className="text-xs text-slate-500">
-        Saving updates recommendations immediately for the selected audience.
+        Saving sends the drill to this audience right away.
       </p>
     </fieldset>
   );
