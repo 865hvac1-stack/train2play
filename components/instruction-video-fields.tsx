@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Film, Link2, Upload } from "lucide-react";
+import { Camera, Film, Link2, RefreshCcw, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,11 +38,13 @@ export function InstructionVideoFields({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  function openPicker(pickerMode: "gallery" | "camera") {
+  function openPicker(pickerMode: "gallery" | "back-camera" | "front-camera") {
     const input = fileInputRef.current;
     if (!input) return;
-    if (pickerMode === "camera") {
+    if (pickerMode === "back-camera") {
       input.setAttribute("capture", "environment");
+    } else if (pickerMode === "front-camera") {
+      input.setAttribute("capture", "user");
     } else {
       input.removeAttribute("capture");
     }
@@ -105,17 +107,34 @@ export function InstructionVideoFields({
             required={required && !selectedFile}
             onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
           />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <button
               type="button"
-              onClick={() => openPicker("camera")}
+              onClick={() => openPicker("back-camera")}
               className={cn(
                 "flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-brand/40 bg-white px-3 py-3 text-center",
                 "hover:border-brand hover:bg-brand-light/40",
               )}
             >
               <Camera className="h-6 w-6 text-brand" />
-              <span className="text-sm font-semibold text-slate-900">Record</span>
+              <span className="text-sm font-semibold text-slate-900">
+                Record demo
+              </span>
+              <span className="text-[11px] text-slate-500">Back camera</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openPicker("front-camera")}
+              className={cn(
+                "flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-brand/40 bg-white px-3 py-3 text-center",
+                "hover:border-brand hover:bg-brand-light/40",
+              )}
+            >
+              <RefreshCcw className="h-6 w-6 text-brand" />
+              <span className="text-sm font-semibold text-slate-900">
+                Record yourself
+              </span>
+              <span className="text-[11px] text-slate-500">Front camera</span>
             </button>
             <button
               type="button"
