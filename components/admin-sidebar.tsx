@@ -6,6 +6,7 @@ import {
   BookOpen,
   Building2,
   Gauge,
+  LayoutDashboard,
   Menu,
   Search,
   ShieldCheck,
@@ -70,6 +71,32 @@ function AdminLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+/** Platform Admin can open the portals below their level without a URL. */
+function PortalLinks({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <div className="mt-6 border-t border-white/10 pt-5">
+      <p className="mb-2 px-3 text-[10px] font-bold tracking-[0.18em] text-zinc-500 uppercase">
+        Open a portal
+      </p>
+      {[
+        { href: "/admin/search", label: "Global search", icon: Search },
+        { href: "/trainer", label: "Director portal", icon: ShieldCheck },
+        { href: "/dashboard", label: "Coach portal", icon: LayoutDashboard },
+      ].map(({ href, label, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-400 transition hover:bg-white/8 hover:text-white"
+        >
+          <Icon className="size-4" />
+          {label}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 function AdminBrand() {
   return (
     <div>
@@ -89,15 +116,7 @@ export function AdminSidebar() {
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         <AdminLinks />
-        <div className="mt-6 border-t border-white/10 pt-5">
-          <Link
-            href="/admin/search"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-400 transition hover:bg-white/8 hover:text-white"
-          >
-            <Search className="size-4" />
-            Global search
-          </Link>
-        </div>
+        <PortalLinks />
       </div>
       <div className="border-t border-white/10 p-5 text-xs text-zinc-500">
         Train · Track · Develop · Perform
@@ -128,6 +147,7 @@ export function AdminMobileNav() {
         </SheetHeader>
         <div className="p-4">
           <AdminLinks />
+          <PortalLinks />
         </div>
       </SheetContent>
     </Sheet>

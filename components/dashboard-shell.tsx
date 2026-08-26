@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { prisma } from "@/lib/db";
-import { isAthleteRole, isLibraryEditor } from "@/lib/roles";
+import { isAthleteRole, isLibraryEditor, isPlatformAdmin } from "@/lib/roles";
 import { requireCoach } from "@/lib/session";
 
 export async function DashboardShell({
@@ -35,6 +35,7 @@ export async function DashboardShell({
         description={description}
         action={action}
         navVariant={isLibraryEditor(user.role) ? "trainer" : "coach"}
+        isPlatformAdmin={isPlatformAdmin(user.role)}
       />
       <main className="safe-area-px min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">
         {children}
@@ -73,7 +74,7 @@ export async function DashboardLayoutWrapper({
 
   return (
     <div className="t2p-portal-bg flex min-h-full min-w-0 overflow-x-hidden">
-      <AppSidebar variant={navVariant} />
+      <AppSidebar variant={navVariant} admin={isPlatformAdmin(user?.role)} />
       <div className="flex min-h-full min-w-0 flex-1 flex-col overflow-x-hidden">
         {children}
       </div>

@@ -12,6 +12,7 @@ import {
   Library,
   Menu,
   Settings,
+  ShieldCheck,
   Users,
   UserPlus,
   Video,
@@ -98,14 +99,42 @@ function NavLink({
   );
 }
 
+/** Sends a Platform Admin back up to the command center from a lower portal. */
+function AdminReturnLink({
+  onNavigate,
+  dark,
+}: {
+  onNavigate?: () => void;
+  dark?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "mt-4 border-t pt-4",
+        dark ? "border-white/10" : "border-orange-200",
+      )}
+    >
+      <NavLink
+        href="/admin"
+        label="Platform Admin"
+        icon={ShieldCheck}
+        onNavigate={onNavigate}
+        dark={dark}
+      />
+    </div>
+  );
+}
+
 function NavLinks({
   onNavigate,
   dark,
   variant = "coach",
+  admin = false,
 }: {
   onNavigate?: () => void;
   dark?: boolean;
   variant?: "coach" | "trainer";
+  admin?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -125,6 +154,7 @@ function NavLinks({
         {directorNav.map((item) => (
           <NavLink key={item.href} {...item} onNavigate={onNavigate} dark={dark} />
         ))}
+        {admin ? <AdminReturnLink onNavigate={onNavigate} dark={dark} /> : null}
       </nav>
     );
   }
@@ -165,11 +195,19 @@ function NavLinks({
           </div>
         ) : null}
       </div>
+
+      {admin ? <AdminReturnLink onNavigate={onNavigate} dark={dark} /> : null}
     </nav>
   );
 }
 
-export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer" }) {
+export function AppSidebar({
+  variant = "coach",
+  admin = false,
+}: {
+  variant?: "coach" | "trainer";
+  admin?: boolean;
+}) {
   const director = variant === "trainer";
   return (
     <aside
@@ -195,7 +233,7 @@ export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer
         <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.18em] text-brand uppercase">
           {variant === "trainer" ? "Director portal" : "Coach portal"}
         </p>
-        <NavLinks dark={!director} variant={variant} />
+        <NavLinks dark={!director} variant={variant} admin={admin} />
       </div>
       <div
         className={cn(
@@ -211,7 +249,13 @@ export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer
   );
 }
 
-export function MobileNav({ variant = "coach" }: { variant?: "coach" | "trainer" }) {
+export function MobileNav({
+  variant = "coach",
+  admin = false,
+}: {
+  variant?: "coach" | "trainer";
+  admin?: boolean;
+}) {
   const director = variant === "trainer";
   return (
     <Sheet>
@@ -246,7 +290,7 @@ export function MobileNav({ variant = "coach" }: { variant?: "coach" | "trainer"
           </SheetTitle>
         </SheetHeader>
         <div className="p-4">
-          <NavLinks dark={!director} variant={variant} />
+          <NavLinks dark={!director} variant={variant} admin={admin} />
         </div>
       </SheetContent>
     </Sheet>
