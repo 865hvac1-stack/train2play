@@ -7,7 +7,7 @@ import {
   normalizeMetricLabel,
   PROFILE_METRICS,
 } from "@/lib/player-profile";
-import { getSuggestedDrills } from "@/lib/drills";
+import { getSuggestedDrills } from "@/lib/catalog-drills";
 
 export type AthleteContext = {
   userId: string;
@@ -467,7 +467,7 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
     },
   ];
 
-  const recommended = getSuggestedDrills({
+  const recommended = await getSuggestedDrills({
     sport: ctx.sport,
     dateOfBirth: ctx.dateOfBirth,
     limit: 2,

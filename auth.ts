@@ -45,11 +45,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        const staffRole = (() => {
+          const lowered = user.email.toLowerCase();
+          const admins = (process.env.PLATFORM_ADMIN_EMAIL ?? "")
+            .split(",")
+            .map((value) => value.trim().toLowerCase())
+            .filter(Boolean);
+          if (admins.includes(lowered) && user.role !== "PLATFORM_ADMIN") {
+            return "PLATFORM_ADMIN" as const;
+          }
+          const trainers = (process.env.TRAINER_EMAILS ?? "")
+            .split(",")
+            .map((value) => value.trim().toLowerCase())
+            .filter(Boolean);
+          if (
+            trainers.includes(lowered) &&
+            user.role !== "PLATFORM_ADMIN" &&
+            user.role !== "TRAINER"
+          ) {
+            return "TRAINER" as const;
+          }
+          return null;
+        })();
+        let role = user.role;
+        if (staffRole) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              role: staffRole,
+              onboardingCompletedAt: user.onboardingCompletedAt ?? new Date(),
+            },
+          });
+          role = staffRole;
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role,
         };
       },
     }),

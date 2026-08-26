@@ -601,7 +601,45 @@ export function getSuggestedDrills(options: {
   };
 }
 
-/** Flat catalog for seeding Courses from the in-house drill library. */
+/** Every built-in drill, tagged with the public sport name trainers edit. */
+export function listAllBuiltInDrills(): {
+  sport: string;
+  ageBandId: AgeBandId;
+  ageBandLabel: string;
+  drill: Drill;
+}[] {
+  const packs: { sport: string; catalog: Record<AgeBandId, Drill[]> }[] = [
+    { sport: "Baseball", catalog: BASEBALL_SOFTBALL },
+    { sport: "Softball", catalog: BASEBALL_SOFTBALL },
+    { sport: "Basketball", catalog: BASKETBALL },
+    { sport: "Volleyball", catalog: VOLLEYBALL },
+    { sport: "Football", catalog: FOOTBALL },
+    { sport: "Soccer", catalog: SOCCER },
+    { sport: "Track & Field", catalog: STRENGTH },
+  ];
+  const rows: {
+    sport: string;
+    ageBandId: AgeBandId;
+    ageBandLabel: string;
+    drill: Drill;
+  }[] = [];
+  for (const pack of packs) {
+    for (const band of AGE_BANDS) {
+      for (const drill of pack.catalog[band.id] ?? []) {
+        rows.push({
+          sport: pack.sport,
+          ageBandId: band.id,
+          ageBandLabel: band.label,
+          drill: {
+            ...drill,
+            id: `${pack.sport.toLowerCase().replace(/[^a-z]+/g, "-")}-${drill.id}`,
+          },
+        });
+      }
+    }
+  }
+  return rows;
+}
 export function listCatalogDrillsForSport(sport: string): {
   ageBandId: AgeBandId;
   ageBandLabel: string;

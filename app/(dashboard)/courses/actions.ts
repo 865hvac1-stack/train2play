@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { listCatalogDrillsForSport } from "@/lib/drills";
+import { listCatalogDrillsForSport } from "@/lib/catalog-drills";
 import { courseItemSchema, courseSchema } from "@/lib/courses";
 import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { prisma } from "@/lib/db";
@@ -320,7 +320,7 @@ export async function importStarterDrillsAction(courseId: string) {
   });
   if (!course) throw new Error("Course not found");
 
-  const catalog = listCatalogDrillsForSport(course.sport);
+  const catalog = await listCatalogDrillsForSport(course.sport);
   if (catalog.length === 0) {
     throw new Error("No starter drills for this sport yet");
   }

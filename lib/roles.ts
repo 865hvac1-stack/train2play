@@ -6,6 +6,7 @@ export const COACH_PORTAL_ROLES = [
   "STAFF",
   "ORG_ADMIN",
   "PLATFORM_ADMIN",
+  "TRAINER",
 ] as const satisfies readonly UserRole[];
 
 export type CoachPortalRole = (typeof COACH_PORTAL_ROLES)[number];
@@ -26,10 +27,20 @@ export function isPlatformAdmin(role: string | null | undefined): boolean {
   return role === "PLATFORM_ADMIN";
 }
 
+export function isTrainer(role: string | null | undefined): boolean {
+  return role === "TRAINER";
+}
+
+/** Can edit the master sport library and suggested-drill catalog. */
+export function isLibraryEditor(role: string | null | undefined): boolean {
+  return isPlatformAdmin(role) || isTrainer(role);
+}
+
 /** Post-auth home path by role (onboarding handled separately for coaches). */
 export function getRoleHomePath(role: string | null | undefined): string {
   if (isAthleteRole(role)) return "/athlete";
-  if (isParentRole(role)) return "/view"; // parent accounts later; share links stay public
+  if (isParentRole(role)) return "/view";
+  if (isTrainer(role) || isPlatformAdmin(role)) return "/trainer";
   return "/dashboard";
 }
 
@@ -41,8 +52,10 @@ export function getLoginLandingPath(options: {
     return "/athlete";
   }
   if (isParentRole(options.role)) {
-    // Parent dashboard not built yet — keep them out of coach portal.
     return "/login?error=parent-coming-soon";
+  }
+  if (isTrainer(options.role) || isPlatformAdmin(options.role)) {
+    return "/trainer";
   }
   return options.onboardingCompletedAt ? "/dashboard" : "/onboarding";
 }

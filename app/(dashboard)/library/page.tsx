@@ -15,7 +15,7 @@ import { AddLibraryCourseButton } from "@/components/library-sharing-form";
 import { formatAgeBandLabel } from "@/lib/courses";
 import { SPORTS } from "@/lib/athletes";
 import { prisma } from "@/lib/db";
-import { isPlatformAdmin } from "@/lib/roles";
+import { isLibraryEditor } from "@/lib/roles";
 import { requireCoach } from "@/lib/session";
 import { COURSE_ORIGIN, listPlatformCoursesForSports } from "@/lib/sport-library";
 
@@ -25,7 +25,7 @@ export default async function LibraryPage({
   searchParams: Promise<{ sport?: string }>;
 }) {
   const user = await requireCoach();
-  const admin = isPlatformAdmin(user.role);
+  const admin = isLibraryEditor(user.role);
   const { sport: sportFilter } = await searchParams;
 
   const ownedLibrary = admin

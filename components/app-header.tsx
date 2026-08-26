@@ -9,14 +9,21 @@ type AppHeaderProps = {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  navVariant?: "coach" | "trainer";
 };
 
-export function AppHeader({ user, title, description, action }: AppHeaderProps) {
+export function AppHeader({
+  user,
+  title,
+  description,
+  action,
+  navVariant = "coach",
+}: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
       <div className="safe-area-px flex min-w-0 flex-wrap items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 md:px-6 md:py-0 md:h-16">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          <MobileNav />
+          <MobileNav variant={navVariant} />
           <div className="min-w-0">
             <h1 className="font-heading truncate text-lg font-bold tracking-tight text-slate-900 sm:text-xl md:text-2xl">
               {title}

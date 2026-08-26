@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 
 import { courseSchema } from "@/lib/courses";
 import { prisma } from "@/lib/db";
-import { isPlatformAdmin } from "@/lib/roles";
-import { requireCoach, requirePlatformAdmin } from "@/lib/session";
+import { isLibraryEditor } from "@/lib/roles";
+import { requireCoach, requireLibraryEditor } from "@/lib/session";
 import {
   COURSE_ORIGIN,
   copyPlatformCourseToCoach,
@@ -20,7 +20,7 @@ export async function createLibraryCourseAction(
   _prev: LibraryActionState,
   formData: FormData,
 ): Promise<LibraryActionState> {
-  const user = await requirePlatformAdmin();
+  const user = await requireLibraryEditor();
   const parsed = courseSchema.safeParse({
     title: formData.get("title"),
     sport: formData.get("sport"),
@@ -56,12 +56,12 @@ export async function updateLibrarySharingAction(
   _prev: LibraryActionState,
   formData: FormData,
 ): Promise<LibraryActionState> {
-  const user = await requirePlatformAdmin();
+  const user = await requireLibraryEditor();
   const course = await prisma.course.findFirst({
     where: { id: courseId, origin: COURSE_ORIGIN.PLATFORM },
   });
   if (!course) return { error: "Library course not found" };
-  if (course.coachId !== user.id && !isPlatformAdmin(user.role)) {
+  if (course.coachId !== user.id && !isLibraryEditor(user.role)) {
     return { error: "Library course not found" };
   }
 

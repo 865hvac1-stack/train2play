@@ -39,6 +39,8 @@ export default auth((req) => {
     pathname.startsWith("/videos") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/teams") ||
+    pathname.startsWith("/library") ||
+    pathname.startsWith("/trainer") ||
     isOnboardingPage;
 
   const isProtected = isCoachArea || isAthleteArea;
@@ -58,9 +60,11 @@ export default auth((req) => {
     // Send coaches to /dashboard; layout will bounce incomplete onboarding.
     const dest = isAthleteRole(role)
       ? "/athlete"
-      : isCoachPortalRole(role)
-        ? "/dashboard"
-        : landing;
+      : role === "TRAINER" || role === "PLATFORM_ADMIN"
+        ? "/trainer"
+        : isCoachPortalRole(role)
+          ? "/dashboard"
+          : landing;
     return NextResponse.redirect(new URL(dest, req.nextUrl.origin));
   }
 
@@ -88,7 +92,8 @@ export const config = {
     "/videos/:path*",
     "/settings/:path*",
     "/teams/:path*",
-    "/athlete/:path*",
+    "/library/:path*",
+    "/trainer/:path*",
     "/onboarding",
     "/login",
     "/signup",

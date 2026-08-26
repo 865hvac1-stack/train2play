@@ -11,6 +11,7 @@ enum UserRole {
   PLATFORM_ADMIN
   ORG_ADMIN
   COACH
+  TRAINER
   STAFF
   PARENT
   ATHLETE
@@ -693,4 +694,24 @@ model CourseItem {
   updatedAt       DateTime @updatedAt
 
   @@index([courseId])
+}
+
+/** Train2Play-wide suggested drills, edited by trainers. */
+model CatalogDrill {
+  id           String   @id @default(cuid())
+  sport        String
+  ageBand      String
+  title        String
+  focus        String
+  durationMin  Int
+  equipment    String
+  howTo        String
+  coachingCue  String
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  updatedById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([sport, ageBand, isActive])
 }

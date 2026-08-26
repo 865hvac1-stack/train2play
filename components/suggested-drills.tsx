@@ -8,10 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getSuggestedDrills,
-  type AgeBandId,
-} from "@/lib/drills";
+import { getSuggestedDrills, type AgeBandId } from "@/lib/catalog-drills";
 
 type SuggestedDrillsProps = {
   sport: string;
@@ -21,14 +18,14 @@ type SuggestedDrillsProps = {
   compact?: boolean;
 };
 
-export function SuggestedDrills({
+export async function SuggestedDrills({
   sport,
   dateOfBirth,
   ageBandId,
   athleteFirstName,
   compact = false,
 }: SuggestedDrillsProps) {
-  const { band, drills, sportLabel } = getSuggestedDrills({
+  const { band, drills, sportLabel } = await getSuggestedDrills({
     sport,
     dateOfBirth,
     ageBandId,

@@ -3,10 +3,10 @@ import Link from "next/link";
 import { CourseForm } from "@/components/course-forms";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { requirePlatformAdmin } from "@/lib/session";
+import { requireLibraryEditor } from "@/lib/session";
 
 export default async function NewLibraryCoursePage() {
-  await requirePlatformAdmin();
+  await requireLibraryEditor();
 
   return (
     <DashboardShell

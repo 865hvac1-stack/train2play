@@ -5,7 +5,9 @@ import {
   getLoginLandingPath,
   isAthleteRole,
   isCoachPortalRole,
+  isLibraryEditor,
   isPlatformAdmin,
+  isTrainer,
 } from "@/lib/roles";
 import { prisma } from "@/lib/db";
 
@@ -26,7 +28,7 @@ export async function requireUser() {
 /** Coach Portal only — athletes/parents are redirected to their home. */
 export async function requireCoach() {
   const user = await requireUser();
-  await maybePromotePlatformAdmin(user.id, user.email);
+  await maybePromoteStaff(user.id, user.email);
   const role = (await getUserRole(user.id)) ?? user.role ?? "COACH";
 
   if (isAthleteRole(role)) {
@@ -39,33 +41,55 @@ export async function requireCoach() {
   return { ...user, role };
 }
 
-/** Train2Play master-library admins only. */
-export async function requirePlatformAdmin() {
+/** Train2Play master-library editors — trainers and platform admins. */
+export async function requireLibraryEditor() {
   const user = await requireCoach();
-  if (!isPlatformAdmin(user.role)) {
-    redirect("/dashboard");
+  if (!isLibraryEditor(user.role)) {
+    redirect(isTrainer(user.role) ? "/trainer" : "/dashboard");
   }
   return user;
 }
 
-function platformAdminEmails() {
-  return (process.env.PLATFORM_ADMIN_EMAIL ?? "")
+/** Train2Play master-library admins only. */
+export async function requirePlatformAdmin() {
+  const user = await requireCoach();
+  if (!isPlatformAdmin(user.role)) {
+    redirect(isTrainer(user.role) ? "/trainer" : "/dashboard");
+  }
+  return user;
+}
+
+function splitEmails(value: string | undefined) {
+  return (value ?? "")
     .split(",")
-    .map((value) => value.trim().toLowerCase())
+    .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
 }
 
-async function maybePromotePlatformAdmin(
+async function maybePromoteStaff(
   userId: string,
   email: string | null | undefined,
 ) {
-  const allowlist = platformAdminEmails();
-  if (!email || allowlist.length === 0) return;
-  if (!allowlist.includes(email.toLowerCase())) return;
-  await prisma.user.updateMany({
-    where: { id: userId, role: { not: "PLATFORM_ADMIN" } },
-    data: { role: "PLATFORM_ADMIN" },
-  });
+  if (!email) return;
+  const lowered = email.toLowerCase();
+  const admins = splitEmails(process.env.PLATFORM_ADMIN_EMAIL);
+  if (admins.includes(lowered)) {
+    await prisma.user.updateMany({
+      where: { id: userId, role: { not: "PLATFORM_ADMIN" } },
+      data: { role: "PLATFORM_ADMIN", onboardingCompletedAt: new Date() },
+    });
+    return;
+  }
+  const trainers = splitEmails(process.env.TRAINER_EMAILS);
+  if (trainers.includes(lowered)) {
+    await prisma.user.updateMany({
+      where: {
+        id: userId,
+        role: { notIn: ["PLATFORM_ADMIN", "TRAINER"] },
+      },
+      data: { role: "TRAINER", onboardingCompletedAt: new Date() },
+    });
+  }
 }
 
 export async function requireCoachId() {

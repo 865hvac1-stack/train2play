@@ -56,6 +56,21 @@ function splitDisplayName(name: string) {
   return { firstName, lastName };
 }
 
+function staffRoleForEmail(email: string) {
+  const lowered = email.toLowerCase();
+  const admins = (process.env.PLATFORM_ADMIN_EMAIL ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (admins.includes(lowered)) return "PLATFORM_ADMIN" as const;
+  const trainers = (process.env.TRAINER_EMAILS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (trainers.includes(lowered)) return "TRAINER" as const;
+  return "COACH" as const;
+}
+
 export async function createUser(input: SignupInput) {
   const data = signupSchema.parse(input);
   const email = data.email.toLowerCase();
@@ -121,12 +136,15 @@ export async function createUser(input: SignupInput) {
     return user;
   }
 
+  const staffRole = staffRoleForEmail(email);
   const user = await prisma.user.create({
     data: {
       name: displayName,
       email,
       passwordHash,
-      role: "COACH",
+      role: staffRole,
+      onboardingCompletedAt:
+        staffRole === "COACH" ? null : new Date(),
     },
   });
 

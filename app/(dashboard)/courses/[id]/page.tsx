@@ -25,7 +25,7 @@ import {
   formatCourseItemType,
 } from "@/lib/courses";
 import { prisma } from "@/lib/db";
-import { isPlatformAdmin } from "@/lib/roles";
+import { isLibraryEditor } from "@/lib/roles";
 import { requireCoach } from "@/lib/session";
 import { COURSE_ORIGIN } from "@/lib/sport-library";
 
@@ -37,7 +37,7 @@ export default async function CourseDetailPage({
   searchParams: Promise<{ edit?: string; item?: string }>;
 }) {
   const user = await requireCoach();
-  const admin = isPlatformAdmin(user.role);
+  const admin = isLibraryEditor(user.role);
   const { id } = await params;
   const { edit, item: editItemId } = await searchParams;
 

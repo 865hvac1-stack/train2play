@@ -29,6 +29,7 @@ The app is **code-ready to launch**. Complete the ops steps below, then smoke-te
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` (verify domain in Resend) |
 | `CLOUDINARY_URL` | **Phone video uploads** (easiest — one variable from cloudinary.com) |
 | `PLATFORM_ADMIN_EMAIL` | Your login — unlocks the Sport library master catalog |
+| `TRAINER_EMAILS` | `chase@train2play.com` (comma-separated) — trainer desk |
 
 Optional (only if not using Cloudinary): `S3_BUCKET`, `S3_ENDPOINT`, `S3_PUBLIC_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_REGION`
 

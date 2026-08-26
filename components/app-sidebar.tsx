@@ -7,6 +7,7 @@ import {
   BookOpen,
   Calendar,
   ClipboardList,
+  Dumbbell,
   LayoutDashboard,
   Library,
   Menu,
@@ -45,6 +46,12 @@ const primaryNav = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+const trainerNav = [
+  { href: "/trainer", label: "Trainer desk", icon: LayoutDashboard, exact: true },
+  { href: "/library", label: "Sport library", icon: Library },
+  { href: "/trainer/drills", label: "Suggested drills", icon: Dumbbell },
+];
+
 const communityNav = [
   { href: "/pickup-players/nearby", label: "Players near me", icon: MapPin },
   { href: "/pickup-players", label: "Pickup players", icon: UserPlus },
@@ -56,16 +63,19 @@ function NavLink({
   icon: Icon,
   onNavigate,
   dark,
+  exact,
 }: {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   onNavigate?: () => void;
   dark?: boolean;
+  exact?: boolean;
 }) {
   const pathname = usePathname();
-  const isActive =
-    pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  const isActive = exact
+    ? pathname === href
+    : pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
   return (
     <Link
@@ -86,11 +96,28 @@ function NavLink({
   );
 }
 
-function NavLinks({ onNavigate, dark }: { onNavigate?: () => void; dark?: boolean }) {
+function NavLinks({
+  onNavigate,
+  dark,
+  variant = "coach",
+}: {
+  onNavigate?: () => void;
+  dark?: boolean;
+  variant?: "coach" | "trainer";
+}) {
   const pathname = usePathname();
-  const communityOpenDefault =
-    pathname.startsWith("/pickup-players");
+  const communityOpenDefault = pathname.startsWith("/pickup-players");
   const [communityOpen, setCommunityOpen] = useState(communityOpenDefault);
+
+  if (variant === "trainer") {
+    return (
+      <nav className="flex flex-col gap-1">
+        {trainerNav.map((item) => (
+          <NavLink key={item.href} {...item} onNavigate={onNavigate} dark={dark} />
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <nav className="flex flex-col gap-1">
@@ -132,7 +159,7 @@ function NavLinks({ onNavigate, dark }: { onNavigate?: () => void; dark?: boolea
   );
 }
 
-export function AppSidebar() {
+export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer" }) {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-zinc-950 md:flex md:flex-col">
       <div className="flex h-16 items-center border-b border-white/10 px-6">
@@ -140,9 +167,9 @@ export function AppSidebar() {
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto p-4">
         <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.18em] text-brand uppercase">
-          Coach portal
+          {variant === "trainer" ? "Trainer desk" : "Coach portal"}
         </p>
-        <NavLinks dark />
+        <NavLinks dark variant={variant} />
       </div>
       <div className="border-t border-white/10 p-4">
         <p className="px-3 text-xs text-slate-500">
@@ -153,7 +180,7 @@ export function AppSidebar() {
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ variant = "coach" }: { variant?: "coach" | "trainer" }) {
   return (
     <Sheet>
       <SheetTrigger
@@ -171,7 +198,7 @@ export function MobileNav() {
           </SheetTitle>
         </SheetHeader>
         <div className="p-4">
-          <NavLinks dark />
+          <NavLinks dark variant={variant} />
         </div>
       </SheetContent>
     </Sheet>

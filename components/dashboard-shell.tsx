@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { prisma } from "@/lib/db";
-import { isAthleteRole } from "@/lib/roles";
+import { isAthleteRole, isTrainer } from "@/lib/roles";
 import { requireCoach } from "@/lib/session";
 
 export async function DashboardShell({
@@ -34,6 +34,7 @@ export async function DashboardShell({
         title={title}
         description={description}
         action={action}
+        navVariant={isTrainer(user.role) ? "trainer" : "coach"}
       />
       <main className="safe-area-px min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6">
         {children}
@@ -61,16 +62,18 @@ export async function DashboardLayoutWrapper({
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { onboardingCompletedAt: true },
+    select: { onboardingCompletedAt: true, role: true },
   });
 
-  if (!user?.onboardingCompletedAt) {
+  if (!user?.onboardingCompletedAt && !isTrainer(user?.role) && user?.role !== "PLATFORM_ADMIN") {
     redirect("/onboarding");
   }
 
+  const navVariant = isTrainer(user?.role) ? "trainer" : "coach";
+
   return (
     <div className="t2p-portal-bg flex min-h-full min-w-0 overflow-x-hidden">
-      <AppSidebar />
+      <AppSidebar variant={navVariant} />
       <div className="flex min-h-full min-w-0 flex-1 flex-col overflow-x-hidden">
         {children}
       </div>
