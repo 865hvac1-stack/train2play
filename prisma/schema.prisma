@@ -38,16 +38,60 @@ enum MetricSource {
 }
 
 model Organization {
-  id           String                   @id @default(cuid())
-  name         String
-  slug         String                   @unique
-  logoUrl      String?
-  primaryColor String?
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @updatedAt
-  memberships  OrganizationMembership[]
-  teams        Team[]
-  athleteMemberships AthleteMembership[]
+  id                  String                    @id @default(cuid())
+  name                String
+  slug                String                    @unique
+  logoUrl             String?
+  primaryColor        String?
+  isActive            Boolean                   @default(true)
+  deactivatedAt       DateTime?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  memberships         OrganizationMembership[]
+  teams               Team[]
+  athleteMemberships  AthleteMembership[]
+  directorAssignments DirectorSportAssignment[]
+
+  @@index([isActive])
+}
+
+/**
+ * Sports enabled across Train2Play. Existing sport strings remain compatible.
+ */
+model PlatformSport {
+  id                  String                    @id @default(cuid())
+  name                String                    @unique
+  slug                String                    @unique
+  isActive            Boolean                   @default(true)
+  sortOrder           Int                       @default(0)
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  directorAssignments DirectorSportAssignment[]
+
+  @@index([isActive, sortOrder])
+}
+
+/**
+ * A Director may operate one or more sports, optionally scoped to an organization.
+ */
+model DirectorSportAssignment {
+  id             String        @id @default(cuid())
+  directorUserId String
+  directorUser   User          @relation("DirectorSportAssignments", fields: [directorUserId], references: [id], onDelete: Cascade)
+  sportId        String
+  sport          PlatformSport @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedById   String?
+  assignedBy     User?         @relation("DirectorAssignmentsMade", fields: [assignedById], references: [id], onDelete: SetNull)
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([directorUserId, sportId, organizationId])
+  @@index([directorUserId, isActive])
+  @@index([sportId, isActive])
+  @@index([organizationId, isActive])
 }
 
 model OrganizationMembership {
@@ -64,41 +108,41 @@ model OrganizationMembership {
 }
 
 model Team {
-  id             String              @id @default(cuid())
-  organizationId String
-  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
-  sport          String
-  season         String?
-  createdAt      DateTime            @default(now())
+  id                 String              @id @default(cuid())
+  organizationId     String
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name               String
+  sport              String
+  season             String?
+  createdAt          DateTime            @default(now())
   athleteMemberships AthleteMembership[]
 
   @@index([organizationId])
 }
 
 model AthleteProfile {
-  id              String              @id @default(cuid())
-  userId          String?             @unique
-  user            User?               @relation("AthleteProfileUser", fields: [userId], references: [id], onDelete: SetNull)
-  firstName       String
-  lastName        String
-  dateOfBirth     DateTime?
-  graduationYear  Int?
-  avatarUrl       String?
-  primarySport    String?
-  legacyAthleteId String?             @unique
-  legacyAthlete   Athlete?            @relation("LegacyAthleteProfile", fields: [legacyAthleteId], references: [id], onDelete: SetNull)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  sports          AthleteSport[]
-  memberships     AthleteMembership[]
-  guardianLinks   GuardianLink[]
-  metricEntries   MetricEntry[]
-  coachConnections CoachAthleteConnection[]
-  videoReviews     VideoReview[]
-  courseItemProgress CourseItemProgress[]
+  id                     String                         @id @default(cuid())
+  userId                 String?                        @unique
+  user                   User?                          @relation("AthleteProfileUser", fields: [userId], references: [id], onDelete: SetNull)
+  firstName              String
+  lastName               String
+  dateOfBirth            DateTime?
+  graduationYear         Int?
+  avatarUrl              String?
+  primarySport           String?
+  legacyAthleteId        String?                        @unique
+  legacyAthlete          Athlete?                       @relation("LegacyAthleteProfile", fields: [legacyAthleteId], references: [id], onDelete: SetNull)
+  createdAt              DateTime                       @default(now())
+  updatedAt              DateTime                       @updatedAt
+  sports                 AthleteSport[]
+  memberships            AthleteMembership[]
+  guardianLinks          GuardianLink[]
+  metricEntries          MetricEntry[]
+  coachConnections       CoachAthleteConnection[]
+  videoReviews           VideoReview[]
+  courseItemProgress     CourseItemProgress[]
   catalogDrillRecipients CatalogDrillAthleteRecipient[]
-  catalogDrillPushes CatalogDrillPush[]
+  catalogDrillPushes     CatalogDrillPush[]
 
   @@index([legacyAthleteId])
 }
@@ -154,24 +198,30 @@ model GuardianLink {
  * authorization for connected coaches uses APPROVED rows here (+ AthleteMembership).
  */
 model CoachAthleteConnection {
-  id               String         @id @default(cuid())
-  coachUserId      String
-  coachUser        User           @relation("CoachConnectionCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
-  athleteProfileId String
-  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
-  /** PENDING | APPROVED | DECLINED | CANCELLED | REVOKED */
-  status           String         @default("PENDING")
-  /** EMAIL_INVITE | COACH_CODE | QR_CODE | ORGANIZATION | ADMIN */
-  source           String         @default("COACH_CODE")
-  requestedAt      DateTime       @default(now())
-  approvedAt       DateTime?
-  declinedAt       DateTime?
-  cancelledAt      DateTime?
-  /** Future guardian gate — not enforced yet */
-  guardianApprovalRequired Boolean @default(false)
-  guardianApprovedAt DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                       String         @id @default(cuid())
+  coachUserId              String
+  coachUser                User           @relation("CoachConnectionCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
+  athleteProfileId         String
+  athleteProfile           AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  /**
+   * PENDING | APPROVED | DECLINED | CANCELLED | REVOKED
+   */
+  status                   String         @default("PENDING")
+  /**
+   * EMAIL_INVITE | COACH_CODE | QR_CODE | ORGANIZATION | ADMIN
+   */
+  source                   String         @default("COACH_CODE")
+  requestedAt              DateTime       @default(now())
+  approvedAt               DateTime?
+  declinedAt               DateTime?
+  cancelledAt              DateTime?
+  /**
+   * Future guardian gate — not enforced yet
+   */
+  guardianApprovalRequired Boolean        @default(false)
+  guardianApprovedAt       DateTime?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
 
   @@index([coachUserId, status])
   @@index([athleteProfileId, status])
@@ -179,18 +229,22 @@ model CoachAthleteConnection {
 }
 
 model MetricDefinition {
-  id        String          @id @default(cuid())
-  sport     String
-  slug      String
-  name      String
-  category  String
-  unit      String
-  direction MetricDirection
-  inputType String          @default("number")
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
-  entries   MetricEntry[]
-  workoutExercises WorkoutExercise[]
+  id                        String            @id @default(cuid())
+  sport                     String
+  slug                      String
+  name                      String
+  category                  String
+  unit                      String
+  direction                 MetricDirection
+  inputType                 String            @default("number")
+  isActive                  Boolean           @default(true)
+  leaderboardEligible       Boolean           @default(false)
+  publicLeaderboardEligible Boolean           @default(false)
+  verificationRequirement   String            @default("NONE")
+  isSensitive               Boolean           @default(false)
+  createdAt                 DateTime          @default(now())
+  entries                   MetricEntry[]
+  workoutExercises          WorkoutExercise[]
 
   @@unique([sport, slug])
   @@index([sport, isActive])
@@ -220,45 +274,78 @@ model MetricEntry {
 }
 
 model User {
-  id                    String                   @id @default(cuid())
-  name                  String
-  email                 String                   @unique
-  passwordHash          String
-  role                  UserRole                 @default(COACH)
-  zipCode               String?
-  latitude              Float?
-  longitude             Float?
-  searchRadiusMiles     Int                      @default(25)
-  pickupAlertsEnabled   Boolean                  @default(true)
-  lookingForSport       String?
-  lookingForPositions   String?
-  minThrowingVelo       Float?
-  onboardingCompletedAt DateTime?
-  /** Human-readable coach connection code (e.g. LESTER4821). Not a login secret. */
-  connectionCode        String?                  @unique
-  connectionCodeCreatedAt DateTime?
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-  athletes              Athlete[]
-  trainingPlans         TrainingPlan[]
-  trainingVideos        TrainingVideo[]
-  courses               Course[]
-  pickupInterests       PickupInterest[]
-  passwordResetTokens   PasswordResetToken[]
-  organizationMemberships OrganizationMembership[]
-  athleteProfile        AthleteProfile?          @relation("AthleteProfileUser")
-  coachedAthleteMemberships AthleteMembership[]  @relation("AthleteMembershipCoach")
-  guardianLinks         GuardianLink[]           @relation("GuardianUser")
-  metricEntriesEntered  MetricEntry[]            @relation("MetricEntryEnteredBy")
-  athleteInvitesSent    AthleteInvite[]          @relation("AthleteInviteSender")
-  workoutSessions       WorkoutSession[]         @relation("WorkoutSessionAthleteUser")
-  coachConnections      CoachAthleteConnection[] @relation("CoachConnectionCoach")
-  catalogDrillPushes    CatalogDrillPush[]       @relation("CatalogDrillPushSender")
-  videoReviewsAsCoach   VideoReview[]            @relation("VideoReviewCoach")
-  videoReviewsUploaded  VideoReview[]            @relation("VideoReviewUploadedBy")
-  voiceReviewsRecorded  VoiceReview[]            @relation("VoiceReviewCoach")
-  notifications         AppNotification[]
+  id                          String                    @id @default(cuid())
+  name                        String
+  email                       String                    @unique
+  passwordHash                String
+  role                        UserRole                  @default(COACH)
+  zipCode                     String?
+  latitude                    Float?
+  longitude                   Float?
+  searchRadiusMiles           Int                       @default(25)
+  pickupAlertsEnabled         Boolean                   @default(true)
+  lookingForSport             String?
+  lookingForPositions         String?
+  minThrowingVelo             Float?
+  onboardingCompletedAt       DateTime?
+  isActive                    Boolean                   @default(true)
+  deactivatedAt               DateTime?
+  lastActiveAt                DateTime?
+  sessionVersion              Int                       @default(0)
+  /**
+   * Human-readable coach connection code (e.g. LESTER4821). Not a login secret.
+   */
+  connectionCode              String?                   @unique
+  connectionCodeCreatedAt     DateTime?
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+  athletes                    Athlete[]
+  trainingPlans               TrainingPlan[]
+  trainingVideos              TrainingVideo[]
+  courses                     Course[]
+  pickupInterests             PickupInterest[]
+  passwordResetTokens         PasswordResetToken[]
+  organizationMemberships     OrganizationMembership[]
+  athleteProfile              AthleteProfile?           @relation("AthleteProfileUser")
+  coachedAthleteMemberships   AthleteMembership[]       @relation("AthleteMembershipCoach")
+  guardianLinks               GuardianLink[]            @relation("GuardianUser")
+  metricEntriesEntered        MetricEntry[]             @relation("MetricEntryEnteredBy")
+  athleteInvitesSent          AthleteInvite[]           @relation("AthleteInviteSender")
+  workoutSessions             WorkoutSession[]          @relation("WorkoutSessionAthleteUser")
+  coachConnections            CoachAthleteConnection[]  @relation("CoachConnectionCoach")
+  catalogDrillPushes          CatalogDrillPush[]        @relation("CatalogDrillPushSender")
+  directorSportAssignments    DirectorSportAssignment[] @relation("DirectorSportAssignments")
+  directorAssignmentsMade     DirectorSportAssignment[] @relation("DirectorAssignmentsMade")
+  adminAuditActions           AdminAuditLog[]           @relation("AdminAuditActor")
+  videoReviewsAsCoach         VideoReview[]             @relation("VideoReviewCoach")
+  videoReviewsUploaded        VideoReview[]             @relation("VideoReviewUploadedBy")
+  voiceReviewsRecorded        VoiceReview[]             @relation("VoiceReviewCoach")
+  notifications               AppNotification[]
   videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
+
+  @@index([role, isActive])
+  @@index([createdAt])
+  @@index([lastActiveAt])
+}
+
+/**
+ * Immutable audit trail for material Platform Admin changes.
+ */
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String
+  actorUser    User     @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  action       String
+  entityType   String
+  entityId     String
+  summary      String
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
 }
 
 model PasswordResetToken {
@@ -323,20 +410,22 @@ model PickupInterest {
 }
 
 model TrainingVideo {
-  id          String            @id @default(cuid())
-  coachId     String
-  coach       User              @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  athleteId   String?
-  athlete     Athlete?          @relation(fields: [athleteId], references: [id], onDelete: SetNull)
-  title       String
-  description String?
-  sourceType  String            @default("URL")
-  videoUrl    String
-  /** Object-storage key when uploaded (Cloudinary/S3); not used for URL pastes */
-  storageKey  String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  annotations VideoAnnotation[]
+  id           String            @id @default(cuid())
+  coachId      String
+  coach        User              @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  athleteId    String?
+  athlete      Athlete?          @relation(fields: [athleteId], references: [id], onDelete: SetNull)
+  title        String
+  description  String?
+  sourceType   String            @default("URL")
+  videoUrl     String
+  /**
+   * Object-storage key when uploaded (Cloudinary/S3); not used for URL pastes
+   */
+  storageKey   String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  annotations  VideoAnnotation[]
   videoReviews VideoReview[]
 
   @@index([coachId])
@@ -362,28 +451,32 @@ model VideoAnnotation {
  * Reuses TrainingVideo for storage + VideoAnnotation for drawings.
  */
 model VideoReview {
-  id                 String         @id @default(cuid())
+  id                 String                    @id @default(cuid())
   trainingVideoId    String
-  trainingVideo      TrainingVideo  @relation(fields: [trainingVideoId], references: [id], onDelete: Cascade)
+  trainingVideo      TrainingVideo             @relation(fields: [trainingVideoId], references: [id], onDelete: Cascade)
   athleteProfileId   String
-  athleteProfile     AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  athleteProfile     AthleteProfile            @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
   coachUserId        String
-  coachUser          User           @relation("VideoReviewCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
+  coachUser          User                      @relation("VideoReviewCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
   uploadedByUserId   String
-  uploadedByUser     User           @relation("VideoReviewUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  uploadedByUser     User                      @relation("VideoReviewUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
   title              String
   sport              String
   category           String
   athleteNote        String?
   coachFeedback      String?
-  /** AWAITING_REVIEW | IN_REVIEW | REVIEWED */
-  status             String         @default("AWAITING_REVIEW")
-  submittedAt        DateTime       @default(now())
+  /**
+   * AWAITING_REVIEW | IN_REVIEW | REVIEWED
+   */
+  status             String                    @default("AWAITING_REVIEW")
+  submittedAt        DateTime                  @default(now())
   reviewedAt         DateTime?
-  /** Future: AI observations JSON — not used yet */
+  /**
+   * Future: AI observations JSON — not used yet
+   */
   aiObservationsJson String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
   trainingLinks      VideoReviewTrainingLink[]
   voiceReview        VoiceReview?
 
@@ -409,9 +502,13 @@ model VoiceReview {
   audioMimeType    String
   durationMs       Int
   timelineJson     Json
-  /** READY | FAILED */
+  /**
+   * READY | FAILED
+   */
   status           String      @default("READY")
-  /** Future transcription fields; not populated yet */
+  /**
+   * Future transcription fields; not populated yet
+   */
   transcriptText   String?
   transcriptStatus String?
   createdAt        DateTime    @default(now())
@@ -422,37 +519,49 @@ model VoiceReview {
   @@index([status])
 }
 
-/** Links a video review to training assigned from that review (TrainingPlan). */
+/**
+ * Links a video review to training assigned from that review (TrainingPlan).
+ */
 model VideoReviewTrainingLink {
-  id               String       @id @default(cuid())
-  videoReviewId    String
-  videoReview      VideoReview  @relation(fields: [videoReviewId], references: [id], onDelete: Cascade)
-  trainingPlanId   String
-  trainingPlan     TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
-  /** DRILL | WORKOUT | PROGRAM */
-  assignmentKind   String       @default("DRILL")
-  coachNote        String?
-  /** Future: COACH | AI_SUGGESTED | AI_APPROVED */
-  recommendationSource String   @default("COACH")
-  assignedByUserId String
-  assignedByUser   User         @relation("VideoReviewTrainingAssignedBy", fields: [assignedByUserId], references: [id], onDelete: Cascade)
-  createdAt        DateTime     @default(now())
+  id                   String       @id @default(cuid())
+  videoReviewId        String
+  videoReview          VideoReview  @relation(fields: [videoReviewId], references: [id], onDelete: Cascade)
+  trainingPlanId       String
+  trainingPlan         TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  /**
+   * DRILL | WORKOUT | PROGRAM
+   */
+  assignmentKind       String       @default("DRILL")
+  coachNote            String?
+  /**
+   * Future: COACH | AI_SUGGESTED | AI_APPROVED
+   */
+  recommendationSource String       @default("COACH")
+  assignedByUserId     String
+  assignedByUser       User         @relation("VideoReviewTrainingAssignedBy", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+  createdAt            DateTime     @default(now())
 
   @@index([videoReviewId])
   @@index([trainingPlanId])
 }
 
-/** Extensible in-app notification feed. */
+/**
+ * Extensible in-app notification feed.
+ */
 model AppNotification {
   id          String    @id @default(cuid())
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /** VIDEO_SUBMITTED | VIDEO_REVIEWED | VIDEO_TRAINING_ASSIGNED | ... */
+  /**
+   * VIDEO_SUBMITTED | VIDEO_REVIEWED | VIDEO_TRAINING_ASSIGNED | ...
+   */
   type        String
   title       String
   body        String?
   href        String?
-  /** Opaque related entity id (e.g. videoReviewId) */
+  /**
+   * Opaque related entity id (e.g. videoReviewId)
+   */
   entityId    String?
   entityType  String?
   readAt      DateTime?
@@ -495,15 +604,15 @@ model ParentShareLink {
 }
 
 model ProgressMetric {
-  id         String       @id @default(cuid())
-  athleteId  String
-  athlete    Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  label      String
-  value      Float
-  unit       String
-  recordedAt DateTime     @default(now())
-  notes      String?
-  createdAt  DateTime     @default(now())
+  id          String       @id @default(cuid())
+  athleteId   String
+  athlete     Athlete      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  label       String
+  value       Float
+  unit        String
+  recordedAt  DateTime     @default(now())
+  notes       String?
+  createdAt   DateTime     @default(now())
   metricEntry MetricEntry? @relation("LegacyMetricEntry")
 
   @@index([athleteId])
@@ -511,19 +620,19 @@ model ProgressMetric {
 }
 
 model TrainingPlan {
-  id          String    @id @default(cuid())
-  coachId     String
-  coach       User      @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  athleteId   String?
-  athlete     Athlete?  @relation(fields: [athleteId], references: [id], onDelete: SetNull)
-  title       String
-  description String?
-  status      String    @default("ACTIVE")
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  workouts    Workout[]
+  id               String                    @id @default(cuid())
+  coachId          String
+  coach            User                      @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  athleteId        String?
+  athlete          Athlete?                  @relation(fields: [athleteId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?
+  status           String                    @default("ACTIVE")
+  startDate        DateTime?
+  endDate          DateTime?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  workouts         Workout[]
   videoReviewLinks VideoReviewTrainingLink[]
 
   @@index([coachId])
@@ -531,17 +640,19 @@ model TrainingPlan {
 }
 
 model Workout {
-  id                         String       @id @default(cuid())
+  id                         String            @id @default(cuid())
   trainingPlanId             String
-  trainingPlan               TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  trainingPlan               TrainingPlan      @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
   title                      String
   description                String?
   scheduledDate              DateTime?
   durationMinutes            Int?
-  completed                  Boolean      @default(false)
+  completed                  Boolean           @default(false)
   completedAt                DateTime?
-  sortOrder                  Int          @default(0)
-  /** Demo / how-to clip kids and parents can watch (share link + coach portal) */
+  sortOrder                  Int               @default(0)
+  /**
+   * Demo / how-to clip kids and parents can watch (share link + coach portal)
+   */
   instructionVideoUrl        String?
   instructionVideoStorageKey String?
   createdAt                  DateTime          @default(now())
@@ -552,7 +663,9 @@ model Workout {
   @@index([trainingPlanId])
 }
 
-/** Prescription line inside a workout (reusable structure, assigned with the plan). */
+/**
+ * Prescription line inside a workout (reusable structure, assigned with the plan).
+ */
 model WorkoutExercise {
   id                 String            @id @default(cuid())
   workoutId          String
@@ -568,7 +681,9 @@ model WorkoutExercise {
   equipment          String?
   sortOrder          Int               @default(0)
   resultRequired     Boolean           @default(false)
-  /** NUMBER | RATIO | COUNT | TIME | WEIGHT | NONE */
+  /**
+   * NUMBER | RATIO | COUNT | TIME | WEIGHT | NONE
+   */
   resultKind         String            @default("NONE")
   resultUnit         String?
   metricDefinitionId String?
@@ -581,17 +696,23 @@ model WorkoutExercise {
   @@index([metricDefinitionId])
 }
 
-/** One athlete's attempt at a prescribed workout. */
+/**
+ * One athlete's attempt at a prescribed workout.
+ */
 model WorkoutSession {
   id              String           @id @default(cuid())
   workoutId       String
   workout         Workout          @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   athleteId       String
   athlete         Athlete          @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  /** Logged-in athlete user when they run the session */
+  /**
+   * Logged-in athlete user when they run the session
+   */
   athleteUserId   String?
   athleteUser     User?            @relation("WorkoutSessionAthleteUser", fields: [athleteUserId], references: [id], onDelete: SetNull)
-  /** NOT_STARTED | IN_PROGRESS | COMPLETED */
+  /**
+   * NOT_STARTED | IN_PROGRESS | COMPLETED
+   */
   status          String           @default("IN_PROGRESS")
   startedAt       DateTime         @default(now())
   completedAt     DateTime?
@@ -607,7 +728,9 @@ model WorkoutSession {
   @@index([status])
 }
 
-/** Per-exercise completion + flexible result payload. */
+/**
+ * Per-exercise completion + flexible result payload.
+ */
 model ExerciseResult {
   id                String          @id @default(cuid())
   sessionId         String
@@ -616,7 +739,9 @@ model ExerciseResult {
   workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
   completed         Boolean         @default(true)
   completedAt       DateTime        @default(now())
-  /** NUMBER | RATIO | COUNT | TIME | WEIGHT | NONE */
+  /**
+   * NUMBER | RATIO | COUNT | TIME | WEIGHT | NONE
+   */
   resultKind        String          @default("NONE")
   valuePrimary      Float?
   valueSecondary    Float?
@@ -634,7 +759,9 @@ model ExerciseResult {
   @@index([workoutExerciseId])
 }
 
-/** Coach invites an athlete to create their own login linked to AthleteProfile. */
+/**
+ * Coach invites an athlete to create their own login linked to AthleteProfile.
+ */
 model AthleteInvite {
   id              String    @id @default(cuid())
   athleteId       String
@@ -653,23 +780,27 @@ model AthleteInvite {
 }
 
 model Course {
-  id          String       @id @default(cuid())
-  coachId     String
-  coach       User         @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  sport       String
-  title       String
-  description String?
-  ageBand     String?
-  published   Boolean      @default(true)
-  /** COACH = private coach library. PLATFORM = Train2Play master sport catalog. */
-  origin      String       @default("COACH")
-  shareWithCoaches  Boolean @default(false)
-  shareWithAthletes Boolean @default(false)
-  /** If this row was copied from a platform course, that source id. */
-  sourceCourseId String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  items       CourseItem[]
+  id                String       @id @default(cuid())
+  coachId           String
+  coach             User         @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  sport             String
+  title             String
+  description       String?
+  ageBand           String?
+  published         Boolean      @default(true)
+  /**
+   * COACH = private coach library. PLATFORM = Train2Play master sport catalog.
+   */
+  origin            String       @default("COACH")
+  shareWithCoaches  Boolean      @default(false)
+  shareWithAthletes Boolean      @default(false)
+  /**
+   * If this row was copied from a platform course, that source id.
+   */
+  sourceCourseId    String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  items             CourseItem[]
 
   @@index([coachId])
   @@index([coachId, sport])
@@ -680,10 +811,10 @@ model Course {
 }
 
 model CourseItem {
-  id              String   @id @default(cuid())
+  id              String               @id @default(cuid())
   courseId        String
-  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  type            String   @default("DRILL")
+  course          Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  type            String               @default("DRILL")
   title           String
   body            String?
   focus           String?
@@ -693,15 +824,17 @@ model CourseItem {
   ageBand         String?
   videoUrl        String?
   videoStorageKey String?
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  sortOrder       Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
   athleteProgress CourseItemProgress[]
 
   @@index([courseId])
 }
 
-/** Athlete engagement with one published library item. Powers director health metrics. */
+/**
+ * Athlete engagement with one published library item. Powers director health metrics.
+ */
 model CourseItemProgress {
   id               String         @id @default(cuid())
   athleteProfileId String
@@ -719,35 +852,41 @@ model CourseItemProgress {
   @@index([courseItemId, viewedAt])
 }
 
-/** Train2Play-wide suggested drills, edited by trainers. */
+/**
+ * Train2Play-wide suggested drills, edited by trainers.
+ */
 model CatalogDrill {
-  id           String   @id @default(cuid())
-  sport        String
-  ageBand      String
-  title        String
-  focus        String
-  durationMin  Int
-  equipment    String
-  howTo        String
-  coachingCue  String
-  videoUrl      String?
-  videoStorageKey String?
-  shareWithCoaches  Boolean @default(true)
-  shareWithAthletes Boolean @default(true)
-  /** NONE | ALL_SPORT | SELECTED */
-  athleteAudience String @default("ALL_SPORT")
+  id                String                         @id @default(cuid())
+  sport             String
+  ageBand           String
+  title             String
+  focus             String
+  durationMin       Int
+  equipment         String
+  howTo             String
+  coachingCue       String
+  videoUrl          String?
+  videoStorageKey   String?
+  shareWithCoaches  Boolean                        @default(true)
+  shareWithAthletes Boolean                        @default(true)
+  /**
+   * NONE | ALL_SPORT | SELECTED
+   */
+  athleteAudience   String                         @default("ALL_SPORT")
   athleteRecipients CatalogDrillAthleteRecipient[]
-  pushes       CatalogDrillPush[]
-  sortOrder    Int      @default(0)
-  isActive     Boolean  @default(true)
-  updatedById  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  pushes            CatalogDrillPush[]
+  sortOrder         Int                            @default(0)
+  isActive          Boolean                        @default(true)
+  updatedById       String?
+  createdAt         DateTime                       @default(now())
+  updatedAt         DateTime                       @updatedAt
 
   @@index([sport, ageBand, isActive])
 }
 
-/** Named-player delivery for a suggested drill when athleteAudience = SELECTED. */
+/**
+ * Named-player delivery for a suggested drill when athleteAudience = SELECTED.
+ */
 model CatalogDrillAthleteRecipient {
   id               String         @id @default(cuid())
   catalogDrillId   String
@@ -760,14 +899,18 @@ model CatalogDrillAthleteRecipient {
   @@index([athleteProfileId])
 }
 
-/** One real send of a suggested drill to one player, by the director or by a coach. */
+/**
+ * One real send of a suggested drill to one player, by the director or by a coach.
+ */
 model CatalogDrillPush {
   id               String         @id @default(cuid())
   catalogDrillId   String
   catalogDrill     CatalogDrill   @relation(fields: [catalogDrillId], references: [id], onDelete: Cascade)
   athleteProfileId String
   athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
-  /** DIRECTOR | COACH */
+  /**
+   * DIRECTOR | COACH
+   */
   source           String         @default("DIRECTOR")
   pushedByUserId   String
   pushedBy         User           @relation("CatalogDrillPushSender", fields: [pushedByUserId], references: [id], onDelete: Cascade)
