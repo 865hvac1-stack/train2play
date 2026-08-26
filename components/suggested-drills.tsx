@@ -1,5 +1,6 @@
 import { Clock3, Dumbbell, Lightbulb } from "lucide-react";
 
+import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -87,6 +88,13 @@ export async function SuggestedDrills({
             ) : (
               <p className="mt-2 text-sm text-slate-600">{drill.coachingCue}</p>
             )}
+            {drill.videoUrl ? (
+              <InstructionVideoPlayer
+                src={drill.videoUrl}
+                title={`${drill.title} demo`}
+                className="mt-3"
+              />
+            ) : null}
           </div>
         ))}
       </CardContent>

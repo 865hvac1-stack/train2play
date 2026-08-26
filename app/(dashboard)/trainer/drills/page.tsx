@@ -3,6 +3,7 @@ import Link from "next/link";
 import { deleteCatalogDrillAction } from "@/app/(dashboard)/trainer/drill-actions";
 import { CatalogDrillForm } from "@/components/catalog-drill-form";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CATALOG_SPORTS, listCatalogDrills } from "@/lib/catalog-drills";
@@ -75,6 +76,7 @@ export default async function TrainerDrillsPage({
                       equipment: drill.equipment,
                       howTo: drill.howTo,
                       coachingCue: drill.coachingCue,
+                      videoUrl: drill.videoUrl,
                     }}
                   />
                 ) : (
@@ -92,6 +94,13 @@ export default async function TrainerDrillsPage({
                     <p className="mt-1 text-sm text-slate-800">
                       Cue: {drill.coachingCue}
                     </p>
+                    {drill.videoUrl ? (
+                      <InstructionVideoPlayer
+                        src={drill.videoUrl}
+                        title={`${drill.title} demo`}
+                        className="mt-3"
+                      />
+                    ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
                         size="sm"

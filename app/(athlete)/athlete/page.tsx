@@ -9,6 +9,7 @@ import {
   Medal,
 } from "lucide-react";
 
+import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import {
   getAthleteDashboardData,
   requireAthleteContext,
@@ -283,6 +284,13 @@ export default async function AthleteHomePage() {
                 {drill.focus} · {drill.durationMin} min
               </p>
               <p className="mt-2 text-sm text-slate-400">{drill.coachingCue}</p>
+              {drill.videoUrl ? (
+                <InstructionVideoPlayer
+                  src={drill.videoUrl}
+                  title={`${drill.title} demo`}
+                  className="mt-3"
+                />
+              ) : null}
             </div>
           ))}
         </div>

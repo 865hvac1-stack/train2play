@@ -56,6 +56,7 @@ function toDrill(row: {
   equipment: string;
   howTo: string;
   coachingCue: string;
+  videoUrl?: string | null;
 }): Drill {
   return {
     id: row.id,
@@ -65,6 +66,7 @@ function toDrill(row: {
     equipment: row.equipment,
     howTo: row.howTo,
     coachingCue: row.coachingCue,
+    videoUrl: row.videoUrl,
   };
 }
 

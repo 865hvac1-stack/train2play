@@ -7,6 +7,7 @@ import {
   updateCatalogDrillAction,
   type DrillActionState,
 } from "@/app/(dashboard)/trainer/drill-actions";
+import { InstructionVideoFields } from "@/components/instruction-video-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,7 @@ export function CatalogDrillForm({
     equipment?: string;
     howTo?: string;
     coachingCue?: string;
+    videoUrl?: string | null;
   };
 }) {
   const action =
@@ -41,7 +43,11 @@ export function CatalogDrillForm({
   );
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form
+      action={formAction}
+      className="space-y-3"
+      encType="multipart/form-data"
+    >
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="sport">Sport</Label>
@@ -132,6 +138,12 @@ export function CatalogDrillForm({
           defaultValue={defaults?.coachingCue}
         />
       </div>
+      <InstructionVideoFields
+        idPrefix={drillId ? `catalog-drill-${drillId}` : "catalog-drill-new"}
+        defaultUrl={defaults?.videoUrl}
+        title="Suggested drill video (optional)"
+        description="Record with either phone camera, choose from your gallery, or paste a video link."
+      />
       {state.error ? (
         <p className="text-sm text-destructive">{state.error}</p>
       ) : null}

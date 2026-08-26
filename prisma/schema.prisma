@@ -727,6 +727,8 @@ model CatalogDrill {
   equipment    String
   howTo        String
   coachingCue  String
+  videoUrl      String?
+  videoStorageKey String?
   sortOrder    Int      @default(0)
   isActive     Boolean  @default(true)
   updatedById  String?

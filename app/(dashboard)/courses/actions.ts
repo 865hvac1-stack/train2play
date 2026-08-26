@@ -5,14 +5,10 @@ import { redirect } from "next/navigation";
 
 import { listCatalogDrillsForSport } from "@/lib/catalog-drills";
 import { courseItemSchema, courseSchema } from "@/lib/courses";
-import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { prisma } from "@/lib/db";
-import { isProductionRuntime } from "@/lib/env";
+import { resolveOptionalInstructionVideo } from "@/lib/instruction-video-upload";
 import { isLibraryEditor } from "@/lib/roles";
-import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { requireCoach } from "@/lib/session";
-
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 export type CourseActionState = {
   error?: string;
@@ -31,84 +27,6 @@ async function findEditableCourse(
       ],
     },
   });
-}
-
-async function resolveOptionalVideo(formData: FormData): Promise<
-  | { ok: true; url: string | null; storageKey: string | null }
-  | { ok: false; error: string }
-> {
-  const mode = String(formData.get("instructionVideoMode") ?? "url").trim();
-  const urlRaw = String(
-    formData.get("instructionVideoUrl") ?? formData.get("videoUrl") ?? "",
-  ).trim();
-  const file = formData.get("instructionVideoFile") ?? formData.get("videoFile");
-
-  // Prefer explicit upload mode so an empty URL field never blocks a file.
-  if (mode === "upload") {
-    if (!(file instanceof File) || file.size === 0) {
-      return { ok: true, url: null, storageKey: null };
-    }
-  } else if (mode === "url" || urlRaw) {
-    if (!urlRaw) return { ok: true, url: null, storageKey: null };
-    if (!isValidInstructionVideoUrl(urlRaw)) {
-      return {
-        ok: false,
-        error: "Use a YouTube, Vimeo, or direct MP4/MOV link",
-      };
-    }
-    return { ok: true, url: urlRaw, storageKey: null };
-  }
-
-  if (!(file instanceof File) || file.size === 0) {
-    return { ok: true, url: null, storageKey: null };
-  }
-
-  const nameLower = file.name.toLowerCase();
-  const looksLikeVideoExt = /\.(mp4|mov|webm|m4v|mpeg|mpg|avi)$/i.test(nameLower);
-  const hasVideoMime =
-    file.type.startsWith("video/") ||
-    file.type === "application/octet-stream" ||
-    file.type === "";
-
-  if (!file.type.startsWith("video/") && !(hasVideoMime && looksLikeVideoExt)) {
-    return { ok: false, error: "File must be a video (mp4, mov, webm)" };
-  }
-
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return { ok: false, error: "Video must be 100 MB or smaller" };
-  }
-
-  if (isProductionRuntime() && !isObjectStorageConfigured()) {
-    return {
-      ok: false,
-      error:
-        "Phone uploads need Cloudinary. Add CLOUDINARY_URL in Railway, or paste a link instead.",
-    };
-  }
-
-  try {
-    const ext =
-      file.name.split(".").pop()?.toLowerCase() ||
-      (file.type === "video/quicktime" ? "mov" : "mp4");
-    const filename = `${crypto.randomUUID()}.${ext}`;
-    const contentType =
-      file.type && file.type !== "application/octet-stream"
-        ? file.type
-        : ext === "mov"
-          ? "video/quicktime"
-          : ext === "webm"
-            ? "video/webm"
-            : "video/mp4";
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const stored = await storeVideoFile(buffer, filename, contentType);
-    return { ok: true, url: stored.videoUrl, storageKey: stored.storageKey };
-  } catch (error) {
-    return {
-      ok: false,
-      error:
-        error instanceof Error ? error.message : "Could not upload the video",
-    };
-  }
 }
 
 export async function createCourseAction(
@@ -221,7 +139,7 @@ export async function createCourseItemAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const video = await resolveOptionalVideo(formData);
+  const video = await resolveOptionalInstructionVideo(formData);
   if (!video.ok) return { error: video.error };
 
   const count = await prisma.courseItem.count({ where: { courseId } });
@@ -280,7 +198,7 @@ export async function updateCourseItemAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const video = await resolveOptionalVideo(formData);
+  const video = await resolveOptionalInstructionVideo(formData);
   if (!video.ok) return { error: video.error };
 
   await prisma.courseItem.update({
@@ -350,6 +268,7 @@ export async function importStarterDrillsAction(courseId: string) {
       equipment: row.drill.equipment,
       durationMin: row.drill.durationMin,
       ageBand: row.ageBandId,
+      videoUrl: row.drill.videoUrl,
       sortOrder: existingCount + index,
     })),
   });

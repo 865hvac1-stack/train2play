@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { AGE_BANDS } from "@/lib/drills";
 import { CATALOG_SPORTS } from "@/lib/catalog-drills";
 import { prisma } from "@/lib/db";
+import { resolveOptionalInstructionVideo } from "@/lib/instruction-video-upload";
 import { requireLibraryEditor } from "@/lib/session";
 import { z } from "zod";
 
@@ -46,6 +47,8 @@ export async function createCatalogDrillAction(
   if (!AGE_BANDS.some((band) => band.id === parsed.data.ageBand)) {
     return { error: "Pick an age band" };
   }
+  const video = await resolveOptionalInstructionVideo(formData);
+  if (!video.ok) return { error: video.error };
 
   const count = await prisma.catalogDrill.count({
     where: { sport: parsed.data.sport, ageBand: parsed.data.ageBand },
@@ -53,6 +56,8 @@ export async function createCatalogDrillAction(
   await prisma.catalogDrill.create({
     data: {
       ...parsed.data,
+      videoUrl: video.url,
+      videoStorageKey: video.storageKey,
       sortOrder: count,
       updatedById: user.id,
     },
@@ -83,9 +88,16 @@ export async function updateCatalogDrillAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid drill" };
   }
+  const video = await resolveOptionalInstructionVideo(formData);
+  if (!video.ok) return { error: video.error };
   await prisma.catalogDrill.update({
     where: { id: drillId },
-    data: parsed.data,
+    data: {
+      ...parsed.data,
+      ...(video.url
+        ? { videoUrl: video.url, videoStorageKey: video.storageKey }
+        : {}),
+    },
   });
   revalidatePath("/trainer/drills");
   revalidatePath("/trainer");
