@@ -96,6 +96,7 @@ model AthleteProfile {
   metricEntries   MetricEntry[]
   coachConnections CoachAthleteConnection[]
   videoReviews     VideoReview[]
+  courseItemProgress CourseItemProgress[]
 
   @@index([legacyAthleteId])
 }
@@ -692,8 +693,27 @@ model CourseItem {
   sortOrder       Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  athleteProgress CourseItemProgress[]
 
   @@index([courseId])
+}
+
+/** Athlete engagement with one published library item. Powers director health metrics. */
+model CourseItemProgress {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  courseItemId     String
+  courseItem       CourseItem     @relation(fields: [courseItemId], references: [id], onDelete: Cascade)
+  viewedAt         DateTime?
+  completedAt      DateTime?
+  viewCount        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([athleteProfileId, courseItemId])
+  @@index([athleteProfileId, completedAt])
+  @@index([courseItemId, viewedAt])
 }
 
 /** Train2Play-wide suggested drills, edited by trainers. */
