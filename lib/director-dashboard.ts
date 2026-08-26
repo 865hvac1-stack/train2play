@@ -57,7 +57,7 @@ export async function getBaseballProgramHealth() {
   const legacyAthleteIds = athletes.flatMap((athlete) =>
     athlete.legacyAthlete?.id ? [athlete.legacyAthlete.id] : [],
   );
-  const connectedCoachIds = new Set(
+  const relatedUserIds = new Set(
     athletes.flatMap((athlete) => [
       ...(athlete.legacyAthlete?.coachId
         ? [athlete.legacyAthlete.coachId]
@@ -68,6 +68,17 @@ export async function getBaseballProgramHealth() {
       ),
     ]),
   );
+  const coachUsers =
+    relatedUserIds.size > 0
+      ? await prisma.user.findMany({
+          where: {
+            id: { in: [...relatedUserIds] },
+            role: { in: ["COACH", "STAFF", "ORG_ADMIN"] },
+          },
+          select: { id: true },
+        })
+      : [];
+  const connectedCoachIds = new Set(coachUsers.map((coach) => coach.id));
 
   const [courses, progress, workoutSessions, recentVideos, recentCourseVideos, drills] =
     await Promise.all([
@@ -164,6 +175,9 @@ export async function getBaseballProgramHealth() {
   );
   const completedCourseAthleteIds = new Set<string>();
   const completedCourseKeys = new Set<string>();
+  const startedCourseAthleteIds = new Set(
+    progress.map((row) => row.athleteProfileId),
+  );
 
   for (const athleteId of athleteProfileIds) {
     for (const course of courses) {
@@ -265,16 +279,19 @@ export async function getBaseballProgramHealth() {
         lastName: athlete.lastName,
         ageBand: ageBandFromAge(ageFromDateOfBirth(dateOfBirth)).label,
         sports,
-        coachCount: new Set([
-          ...(athlete.legacyAthlete?.coachId
-            ? [athlete.legacyAthlete.coachId]
-            : []),
-          ...athlete.coachConnections.map((row) => row.coachUserId),
-          ...athlete.memberships.flatMap((row) =>
-            row.coachUserId ? [row.coachUserId] : [],
-          ),
-        ]).size,
+        coachCount: new Set(
+          [
+            ...(athlete.legacyAthlete?.coachId
+              ? [athlete.legacyAthlete.coachId]
+              : []),
+            ...athlete.coachConnections.map((row) => row.coachUserId),
+            ...athlete.memberships.flatMap((row) =>
+              row.coachUserId ? [row.coachUserId] : [],
+            ),
+          ].filter((coachId) => connectedCoachIds.has(coachId)),
+        ).size,
         watchedVideo: watchedAthleteIds.has(athlete.id),
+        startedCourse: startedCourseAthleteIds.has(athlete.id),
         completedCourse: completedCourseAthleteIds.has(athlete.id),
         activeThisMonth: athlete.legacyAthlete?.id
           ? activeLegacyAthleteIds.has(athlete.legacyAthlete.id)

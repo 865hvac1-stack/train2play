@@ -374,7 +374,11 @@ export default async function DirectorHomePage() {
                           athlete.completedCourse ? "default" : "secondary"
                         }
                       >
-                        {athlete.completedCourse ? "Completed" : "In progress"}
+                        {athlete.completedCourse
+                          ? "Completed"
+                          : athlete.startedCourse
+                            ? "In progress"
+                            : "Not started"}
                       </Badge>
                     </td>
                   </tr>
