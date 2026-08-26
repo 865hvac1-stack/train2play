@@ -23,7 +23,21 @@ export async function saveCoachFeedbackAction(
 ): Promise<CoachReviewActionState> {
   const coach = await requireCoach();
   const feedback = String(formData.get("coachFeedback") ?? "").trim();
-  if (!feedback) return { error: "Add written feedback before completing" };
+  if (!feedback) {
+    const voice = await prisma.voiceReview.findFirst({
+      where: {
+        videoReviewId: reviewId,
+        coachUserId: coach.id,
+        status: "READY",
+      },
+      select: { id: true },
+    });
+    if (!voice) {
+      return {
+        error: "Add written feedback or save a voice review before completing",
+      };
+    }
+  }
 
   try {
     await markReviewInProgress(reviewId, coach.id);

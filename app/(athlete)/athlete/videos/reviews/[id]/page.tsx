@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { VideoAnnotator } from "@/components/video-annotator";
+import { SynchronizedVoiceReviewPlayer } from "@/components/synchronized-voice-review-player";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
 import { formatVideoReviewStatus } from "@/lib/video-categories";
 import { prisma } from "@/lib/db";
+import { voiceTimelineSchema } from "@/lib/voice-timeline";
 
 export default async function AthleteVideoReviewDetailPage({
   params,
@@ -24,6 +26,13 @@ export default async function AthleteVideoReviewDetailPage({
       trainingVideo: {
         include: {
           annotations: { orderBy: { timestampMs: "asc" } },
+        },
+      },
+      voiceReview: {
+        select: {
+          durationMs: true,
+          timelineJson: true,
+          status: true,
         },
       },
       trainingLinks: {
@@ -59,6 +68,18 @@ export default async function AthleteVideoReviewDetailPage({
   const workout = assigned?.trainingPlan.workouts[0] ?? null;
   const exercise = workout?.exercises[0] ?? null;
   const completedSession = workout?.sessions[0] ?? null;
+  const parsedVoiceTimeline = review.voiceReview
+    ? voiceTimelineSchema.safeParse(review.voiceReview.timelineJson)
+    : null;
+  const voiceReview =
+    review.status === "REVIEWED" &&
+    review.voiceReview?.status === "READY" &&
+    parsedVoiceTimeline?.success
+      ? {
+          durationMs: review.voiceReview.durationMs,
+          timeline: parsedVoiceTimeline.data,
+        }
+      : null;
 
   return (
     <div className="space-y-6">
@@ -89,12 +110,32 @@ export default async function AthleteVideoReviewDetailPage({
         </section>
       ) : null}
 
-      <VideoAnnotator
-        videoId={review.trainingVideo.id}
-        videoUrl={review.trainingVideo.videoUrl}
-        initialAnnotations={review.trainingVideo.annotations}
-        readOnly
-      />
+      {voiceReview ? (
+        <section className="space-y-3">
+          <div>
+            <p className="text-xs font-bold tracking-[0.16em] text-brand uppercase">
+              Watch coach review
+            </p>
+            <h2 className="font-heading text-2xl font-bold">
+              {review.coachUser.name}
+            </h2>
+          </div>
+          <SynchronizedVoiceReviewPlayer
+            videoUrl={review.trainingVideo.videoUrl}
+            audioUrl={`/api/video-reviews/${review.id}/voice`}
+            durationMs={voiceReview.durationMs}
+            timeline={voiceReview.timeline}
+            annotations={review.trainingVideo.annotations}
+          />
+        </section>
+      ) : (
+        <VideoAnnotator
+          videoId={review.trainingVideo.id}
+          videoUrl={review.trainingVideo.videoUrl}
+          initialAnnotations={review.trainingVideo.annotations}
+          readOnly
+        />
+      )}
 
       {review.coachFeedback ? (
         <section className="rounded-2xl border border-brand/30 bg-brand/10 p-4">

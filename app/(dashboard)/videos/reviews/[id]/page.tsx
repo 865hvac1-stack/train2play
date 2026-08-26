@@ -7,13 +7,14 @@ import {
   CoachReviewFeedbackForm,
 } from "@/components/coach-video-review-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { VideoAnnotator } from "@/components/video-annotator";
+import { VoiceReviewWorkspace } from "@/components/voice-review-workspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requireCoach } from "@/lib/session";
 import { formatVideoReviewStatus, VIDEO_REVIEW_STATUS } from "@/lib/video-categories";
 import { markReviewInProgress } from "@/lib/video-reviews";
 import { prisma } from "@/lib/db";
+import { voiceTimelineSchema } from "@/lib/voice-timeline";
 
 function formatRelative(date: Date) {
   const mins = Math.round((Date.now() - date.getTime()) / 60000);
@@ -50,6 +51,13 @@ export default async function CoachVideoReviewPage({
       trainingVideo: {
         include: {
           annotations: { orderBy: { timestampMs: "asc" } },
+        },
+      },
+      voiceReview: {
+        select: {
+          durationMs: true,
+          timelineJson: true,
+          status: true,
         },
       },
       trainingLinks: {
@@ -96,6 +104,16 @@ export default async function CoachVideoReviewPage({
   const athleteHref = review.athleteProfile.legacyAthleteId
     ? `/athletes/${review.athleteProfile.legacyAthleteId}`
     : "/athletes";
+  const parsedTimeline = review.voiceReview
+    ? voiceTimelineSchema.safeParse(review.voiceReview.timelineJson)
+    : null;
+  const existingVoiceReview =
+    review.voiceReview?.status === "READY" && parsedTimeline?.success
+      ? {
+          durationMs: review.voiceReview.durationMs,
+          timeline: parsedTimeline.data,
+        }
+      : null;
 
   return (
     <DashboardShell
@@ -140,10 +158,12 @@ export default async function CoachVideoReviewPage({
       </div>
 
       <div className="space-y-6">
-        <VideoAnnotator
+        <VoiceReviewWorkspace
+          reviewId={review.id}
           videoId={review.trainingVideo.id}
           videoUrl={review.trainingVideo.videoUrl}
-          initialAnnotations={review.trainingVideo.annotations}
+          annotations={review.trainingVideo.annotations}
+          existingVoiceReview={existingVoiceReview}
         />
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -151,6 +171,7 @@ export default async function CoachVideoReviewPage({
             reviewId={review.id}
             defaultFeedback={review.coachFeedback ?? ""}
             isReviewed={review.status === VIDEO_REVIEW_STATUS.REVIEWED}
+            hasVoiceReview={existingVoiceReview !== null}
           />
           <CoachReviewAssignPanel
             reviewId={review.id}

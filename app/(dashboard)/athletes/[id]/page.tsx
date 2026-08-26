@@ -120,6 +120,7 @@ export default async function AthleteDetailPage({
           },
           include: {
             trainingLinks: { select: { id: true }, take: 1 },
+            voiceReview: { select: { status: true } },
           },
           orderBy: { submittedAt: "desc" },
           take: 10,
@@ -409,6 +410,9 @@ export default async function AthleteDetailPage({
                     <p className="font-medium text-slate-900">{review.title}</p>
                     <p className="mt-1 text-sm text-slate-500">
                       {review.sport} · {review.category} · {review.status.replaceAll("_", " ")}
+                      {review.voiceReview?.status === "READY"
+                        ? " · Voice review ✓"
+                        : ""}
                       {review.trainingLinks.length > 0
                         ? " · Training assigned"
                         : ""}

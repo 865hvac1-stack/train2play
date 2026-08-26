@@ -145,7 +145,7 @@ export async function saveVideoAnnotationAction(
     note?: string;
     strokes: string;
   },
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; annotationId?: string }> {
   const user = await requireUser();
 
   const video = await prisma.trainingVideo.findFirst({
@@ -161,7 +161,7 @@ export async function saveVideoAnnotationAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid annotation" };
   }
 
-  await prisma.videoAnnotation.create({
+  const annotation = await prisma.videoAnnotation.create({
     data: {
       videoId,
       timestampMs: parsed.data.timestampMs,
@@ -172,7 +172,7 @@ export async function saveVideoAnnotationAction(
   });
 
   revalidatePath(`/videos/${videoId}`);
-  return {};
+  return { annotationId: annotation.id };
 }
 
 export async function deleteVideoAnnotationAction(

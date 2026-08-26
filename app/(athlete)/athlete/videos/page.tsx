@@ -23,6 +23,7 @@ export default async function AthleteVideosPage() {
     include: {
       coachUser: { select: { name: true } },
       trainingLinks: { select: { id: true }, take: 1 },
+      voiceReview: { select: { status: true } },
     },
     orderBy: { submittedAt: "desc" },
     take: 40,
@@ -96,6 +97,10 @@ export default async function AthleteVideosPage() {
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
                         {review.coachUser.name}
+                        {review.status === "REVIEWED" &&
+                        review.voiceReview?.status === "READY"
+                          ? " · Voice review ✓"
+                          : ""}
                         {review.trainingLinks.length > 0
                           ? " · Training assigned"
                           : ""}

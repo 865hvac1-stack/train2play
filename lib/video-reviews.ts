@@ -179,6 +179,7 @@ export async function completeVideoReview(options: {
       },
       coachUser: { select: { name: true } },
       trainingLinks: { take: 1 },
+      voiceReview: { select: { status: true } },
     },
   });
   if (!review) throw new Error("Review not found");
@@ -195,9 +196,10 @@ export async function completeVideoReview(options: {
   const athleteUserId = review.athleteProfile.userId;
   if (athleteUserId) {
     const hasTraining = review.trainingLinks.length > 0;
+    const hasVoice = review.voiceReview?.status === "READY";
     const body = hasTraining
-      ? `${review.coachUser.name} reviewed your ${review.title} and assigned new training.`
-      : `${review.coachUser.name} reviewed your ${review.title} video.`;
+      ? `${review.coachUser.name} reviewed your ${review.title}${hasVoice ? " with voice commentary" : ""} and assigned new training.`
+      : `${review.coachUser.name} reviewed your ${review.title}${hasVoice ? " with synchronized voice commentary" : " video"}.`;
 
     const href = `/athlete/videos/reviews/${review.id}`;
     await createNotification({

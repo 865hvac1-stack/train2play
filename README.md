@@ -109,6 +109,7 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 - Coach connection codes — athletes request to connect; coaches approve (see `docs/COACH-CONNECTION-CODES.md`)
 - Athlete self-signup + Connect with a coach flow
 - Video review loop — athlete uploads film → coach annotates/feedback → assign training (see `docs/VIDEO-REVIEW-WORKFLOW.md`)
+- Synchronized trainer voice-over reviews (see `docs/SYNCHRONIZED-VOICE-REVIEWS.md`)
 - Video coaching — upload MP4, draw on frames, timestamped notes
 - Player profiles with velo vs system averages
 - Pickup players + zip-based matching + email alerts

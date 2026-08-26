@@ -49,6 +49,7 @@ export default async function VideosPage() {
         athleteProfile: {
           select: { firstName: true, lastName: true },
         },
+        voiceReview: { select: { status: true } },
       },
       orderBy: { submittedAt: "desc" },
     }),
@@ -62,6 +63,7 @@ export default async function VideosPage() {
           select: { firstName: true, lastName: true },
         },
         trainingLinks: { select: { id: true }, take: 1 },
+        voiceReview: { select: { status: true } },
       },
       orderBy: { reviewedAt: "desc" },
       take: 30,
@@ -119,6 +121,9 @@ export default async function VideosPage() {
                       <p className="font-medium text-slate-900">{review.title}</p>
                       <p className="mt-2 text-xs text-slate-500">
                         Submitted {formatRelative(review.submittedAt)}
+                        {review.voiceReview?.status === "READY"
+                          ? " · Voice draft saved"
+                          : ""}
                       </p>
                       <p className="mt-3 text-sm font-semibold text-primary">
                         Review →
@@ -155,6 +160,9 @@ export default async function VideosPage() {
                     <CardContent>
                       <p className="text-xs font-bold tracking-wide text-brand uppercase">
                         Reviewed ✓
+                        {review.voiceReview?.status === "READY"
+                          ? " · Voice review ✓"
+                          : ""}
                         {review.trainingLinks.length > 0
                           ? " · Training assigned"
                           : ""}

@@ -16,6 +16,7 @@ import {
   saveVideoAnnotationAction,
 } from "@/app/(dashboard)/videos/actions";
 import {
+  drawVideoStrokes,
   formatTimestamp,
   parseStrokes,
   type VideoStroke,
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { VoiceTimelineEventInput } from "@/lib/voice-timeline";
 
 type Annotation = {
   id: string;
@@ -39,6 +41,18 @@ type VideoAnnotatorProps = {
   initialAnnotations: Annotation[];
   /** Athlete viewing coach notes — no draw/save/delete */
   readOnly?: boolean;
+  /** Optional hook used by synchronized voice recording; normal reviews ignore it. */
+  onTimelineEvent?: (
+    event: VoiceTimelineEventInput,
+    reviewTimeOverrideMs?: number,
+  ) => void;
+  getReviewTimeMs?: () => number | null;
+  onVideoState?: (state: {
+    videoTimeMs: number;
+    paused: boolean;
+    playbackRate: number;
+  }) => void;
+  forcePauseToken?: number;
 };
 
 const COLORS = ["#FF6600", "#dc2626", "#2563eb", "#eab308", "#ffffff"];
@@ -48,10 +62,15 @@ export function VideoAnnotator({
   videoUrl,
   initialAnnotations,
   readOnly = false,
+  onTimelineEvent,
+  onVideoState,
+  forcePauseToken = 0,
+  getReviewTimeMs,
 }: VideoAnnotatorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const annotationStartedAtRef = useRef<number | null>(null);
 
   const [tool, setTool] = useState<VideoStroke["tool"]>("pen");
   const [color, setColor] = useState(COLORS[0]);
@@ -63,6 +82,7 @@ export function VideoAnnotator({
   const [pending, startTransition] = useTransition();
   const [isPaused, setIsPaused] = useState(true);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [videoStatus, setVideoStatus] = useState<"loading" | "ready" | "error">("loading");
   const router = useRouter();
 
@@ -96,77 +116,22 @@ export function VideoAnnotator({
     }
   }, [videoUrl]);
 
-  function redraw(canvas: HTMLCanvasElement, strokes: VideoStroke[]) {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const stroke of strokes) {
-      drawStroke(ctx, stroke, canvas.width, canvas.height);
-    }
+  useEffect(() => {
+    if (forcePauseToken > 0) videoRef.current?.pause();
+  }, [forcePauseToken]);
+
+  function reportVideoState() {
+    const video = videoRef.current;
+    if (!video) return;
+    onVideoState?.({
+      videoTimeMs: Math.floor(video.currentTime * 1000),
+      paused: video.paused,
+      playbackRate: video.playbackRate,
+    });
   }
 
-  function drawStroke(
-    ctx: CanvasRenderingContext2D,
-    stroke: VideoStroke,
-    width: number,
-    height: number,
-  ) {
-    const points = stroke.points.map((point) => ({
-      x: point.x * width,
-      y: point.y * height,
-    }));
-
-    if (points.length === 0) return;
-
-    ctx.strokeStyle = stroke.color;
-    ctx.fillStyle = stroke.color;
-    ctx.lineWidth = stroke.width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (stroke.tool === "pen") {
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.stroke();
-      return;
-    }
-
-    if (stroke.tool === "arrow" && points.length >= 2) {
-      const start = points[0];
-      const end = points[points.length - 1];
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
-      ctx.stroke();
-
-      const angle = Math.atan2(end.y - start.y, end.x - start.x);
-      const head = 12;
-      ctx.beginPath();
-      ctx.moveTo(end.x, end.y);
-      ctx.lineTo(
-        end.x - head * Math.cos(angle - Math.PI / 6),
-        end.y - head * Math.sin(angle - Math.PI / 6),
-      );
-      ctx.lineTo(
-        end.x - head * Math.cos(angle + Math.PI / 6),
-        end.y - head * Math.sin(angle + Math.PI / 6),
-      );
-      ctx.closePath();
-      ctx.fill();
-      return;
-    }
-
-    if (stroke.tool === "circle" && points.length >= 2) {
-      const center = points[0];
-      const edge = points[points.length - 1];
-      const radius = Math.hypot(edge.x - center.x, edge.y - center.y);
-      ctx.beginPath();
-      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-      ctx.stroke();
-    }
+  function redraw(canvas: HTMLCanvasElement, strokes: VideoStroke[]) {
+    drawVideoStrokes(canvas, strokes);
   }
 
   function getRelativePoint(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -180,6 +145,9 @@ export function VideoAnnotator({
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     if (!canDraw) return;
+    if (annotationStartedAtRef.current === null) {
+      annotationStartedAtRef.current = getReviewTimeMs?.() ?? null;
+    }
     event.currentTarget.setPointerCapture(event.pointerId);
     const point = getRelativePoint(event);
     const stroke: VideoStroke = {
@@ -219,6 +187,10 @@ export function VideoAnnotator({
     setActiveStroke(null);
     const canvas = canvasRef.current;
     if (canvas) redraw(canvas, []);
+    const videoTimeMs = Math.floor(
+      (videoRef.current?.currentTime ?? 0) * 1000,
+    );
+    onTimelineEvent?.({ type: "annotation_clear", videoTimeMs });
   }
 
   function seekTo(ms: number) {
@@ -234,6 +206,11 @@ export function VideoAnnotator({
       const strokes = parseStrokes(annotation.strokes);
       redraw(canvas, strokes);
       setDraftStrokes(strokes);
+      onTimelineEvent?.({
+        type: "annotation_show",
+        videoTimeMs: ms,
+        annotationId: annotation.id,
+      });
     }
   }
 
@@ -250,10 +227,20 @@ export function VideoAnnotator({
     setIsPaused(false);
     setIsDrawing(false);
     clearDraft();
+    onTimelineEvent?.({
+      type: "video_play",
+      videoTimeMs: Math.floor((videoRef.current?.currentTime ?? 0) * 1000),
+    });
+    reportVideoState();
   }
 
   function handleVideoPause() {
     setIsPaused(true);
+    onTimelineEvent?.({
+      type: "video_pause",
+      videoTimeMs: Math.floor((videoRef.current?.currentTime ?? 0) * 1000),
+    });
+    reportVideoState();
   }
 
   function handleSave() {
@@ -281,6 +268,14 @@ export function VideoAnnotator({
       setNote("");
       setIsDrawing(false);
       clearDraft();
+      if (result.annotationId) {
+        onTimelineEvent?.({
+          type: "annotation_show",
+          videoTimeMs: Math.floor(video.currentTime * 1000),
+          annotationId: result.annotationId,
+        }, annotationStartedAtRef.current ?? undefined);
+      }
+      annotationStartedAtRef.current = null;
       router.refresh();
     });
   }
@@ -307,8 +302,31 @@ export function VideoAnnotator({
           playsInline
           onPlay={handleVideoPlay}
           onPause={handleVideoPause}
+          onSeeked={() => {
+            onTimelineEvent?.({
+              type: "video_seek",
+              videoTimeMs: Math.floor(
+                (videoRef.current?.currentTime ?? 0) * 1000,
+              ),
+            });
+            reportVideoState();
+          }}
+          onRateChange={() => {
+            setPlaybackRate(videoRef.current?.playbackRate ?? 1);
+            onTimelineEvent?.({
+              type: "playback_rate_change",
+              videoTimeMs: Math.floor(
+                (videoRef.current?.currentTime ?? 0) * 1000,
+              ),
+              playbackRate: videoRef.current?.playbackRate ?? 1,
+            });
+            reportVideoState();
+          }}
           onLoadedData={() => setVideoStatus("ready")}
-          onCanPlay={() => setVideoStatus("ready")}
+          onCanPlay={() => {
+            setVideoStatus("ready");
+            reportVideoState();
+          }}
           onError={() => setVideoStatus("error")}
         />
         <canvas
@@ -358,6 +376,22 @@ export function VideoAnnotator({
           <Pencil className="h-4 w-4" />
           {isDrawing ? "Drawing on frame" : "Draw on frame"}
         </Button>
+        <div className="flex items-center gap-1">
+          {[0.5, 0.75, 1].map((rate) => (
+            <Button
+              key={rate}
+              type="button"
+              size="sm"
+              variant={playbackRate === rate ? "default" : "outline"}
+              onClick={() => {
+                if (videoRef.current) videoRef.current.playbackRate = rate;
+                setPlaybackRate(rate);
+              }}
+            >
+              {rate}×
+            </Button>
+          ))}
+        </div>
         <span className="text-slate-600">
           {videoStatus === "loading"
             ? "Waiting for video to load…"

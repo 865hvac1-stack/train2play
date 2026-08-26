@@ -209,10 +209,12 @@ export function CoachReviewFeedbackForm({
   reviewId,
   defaultFeedback,
   isReviewed,
+  hasVoiceReview = false,
 }: {
   reviewId: string;
   defaultFeedback: string;
   isReviewed: boolean;
+  hasVoiceReview?: boolean;
 }) {
   const [draftState, draftAction] = useActionState(
     saveCoachFeedbackDraftAction.bind(null, reviewId),
@@ -232,8 +234,8 @@ export function CoachReviewFeedbackForm({
           Coach feedback
         </h3>
         <p className="text-sm text-slate-600">
-          Write what the athlete should fix. Save a draft anytime, then complete
-          the review when ready.
+          Written feedback is optional when a voice review is saved. Save a
+          draft anytime, then complete the review when ready.
         </p>
       </div>
       <form action={completeAction} className="space-y-3">
@@ -241,7 +243,7 @@ export function CoachReviewFeedbackForm({
           name="coachFeedback"
           rows={5}
           defaultValue={defaultFeedback}
-          required
+          required={!hasVoiceReview}
           placeholder="Your feet are getting too narrow before the catch..."
           className="w-full rounded-lg border border-input px-3 py-2 text-sm"
         />
@@ -251,7 +253,13 @@ export function CoachReviewFeedbackForm({
           </Button>
           <Button type="submit" disabled={isReviewed}>
             <SubmitLabel
-              idle={isReviewed ? "Already reviewed" : "Complete review"}
+              idle={
+                isReviewed
+                  ? "Already reviewed"
+                  : hasVoiceReview
+                    ? "Save & send review"
+                    : "Complete review"
+              }
               busy="Sending…"
             />
           </Button>

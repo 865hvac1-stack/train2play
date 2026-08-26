@@ -251,6 +251,7 @@ model User {
   coachConnections      CoachAthleteConnection[] @relation("CoachConnectionCoach")
   videoReviewsAsCoach   VideoReview[]            @relation("VideoReviewCoach")
   videoReviewsUploaded  VideoReview[]            @relation("VideoReviewUploadedBy")
+  voiceReviewsRecorded  VoiceReview[]            @relation("VoiceReviewCoach")
   notifications         AppNotification[]
   videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
 }
@@ -379,11 +380,41 @@ model VideoReview {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   trainingLinks      VideoReviewTrainingLink[]
+  voiceReview        VoiceReview?
 
   @@index([coachUserId, status])
   @@index([athleteProfileId, status])
   @@index([trainingVideoId])
   @@index([submittedAt])
+}
+
+/**
+ * Synchronized coach commentary for one VideoReview.
+ * timelineJson is a validated ordered event array because playback reads the
+ * whole timeline sequentially; individual events are not queried independently.
+ */
+model VoiceReview {
+  id               String      @id @default(cuid())
+  videoReviewId    String      @unique
+  videoReview      VideoReview @relation(fields: [videoReviewId], references: [id], onDelete: Cascade)
+  coachUserId      String
+  coachUser        User        @relation("VoiceReviewCoach", fields: [coachUserId], references: [id], onDelete: Cascade)
+  audioStorageKey  String
+  storageProvider  String
+  audioMimeType    String
+  durationMs       Int
+  timelineJson     Json
+  /** READY | FAILED */
+  status           String      @default("READY")
+  /** Future transcription fields; not populated yet */
+  transcriptText   String?
+  transcriptStatus String?
+  createdAt        DateTime    @default(now())
+  completedAt      DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([coachUserId])
+  @@index([status])
 }
 
 /** Links a video review to training assigned from that review (TrainingPlan). */
