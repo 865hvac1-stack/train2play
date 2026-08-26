@@ -47,8 +47,8 @@ const primaryNav = [
 ];
 
 const trainerNav = [
-  { href: "/trainer", label: "Trainer desk", icon: LayoutDashboard, exact: true },
-  { href: "/library", label: "Sport library", icon: Library },
+  { href: "/trainer", label: "Program health", icon: LayoutDashboard, exact: true },
+  { href: "/library", label: "Content library", icon: Library },
   { href: "/trainer/drills", label: "Suggested drills", icon: Dumbbell },
 ];
 
@@ -167,7 +167,7 @@ export function AppSidebar({ variant = "coach" }: { variant?: "coach" | "trainer
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto p-4">
         <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.18em] text-brand uppercase">
-          {variant === "trainer" ? "Trainer desk" : "Coach portal"}
+          {variant === "trainer" ? "Director portal" : "Coach portal"}
         </p>
         <NavLinks dark variant={variant} />
       </div>
