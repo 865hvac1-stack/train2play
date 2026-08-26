@@ -51,6 +51,7 @@ async function main() {
       sortOrder: 9999,
     },
   });
+  const recipientProfileIds: string[] = [];
   try {
     const coachSuggestions = await getSuggestedDrills({
       sport: "Basketball",
@@ -74,8 +75,67 @@ async function main() {
       true,
       "athlete-enabled drill should reach players",
     );
+
+    const selectedAthlete = await prisma.athleteProfile.create({
+      data: {
+        firstName: "Selected",
+        lastName: "Audience Test",
+        primarySport: "Basketball",
+        sports: { create: { sport: "Basketball", isPrimary: true } },
+      },
+    });
+    const otherAthlete = await prisma.athleteProfile.create({
+      data: {
+        firstName: "Other",
+        lastName: "Audience Test",
+        primarySport: "Basketball",
+        sports: { create: { sport: "Basketball", isPrimary: true } },
+      },
+    });
+    recipientProfileIds.push(selectedAthlete.id, otherAthlete.id);
+    await prisma.catalogDrill.update({
+      where: { id: audienceDrill.id },
+      data: {
+        athleteAudience: "SELECTED",
+        athleteRecipients: {
+          create: { athleteProfileId: selectedAthlete.id },
+        },
+      },
+    });
+
+    const selectedSuggestions = await getSuggestedDrills({
+      sport: "Basketball",
+      ageBandId: "11-13",
+      limit: 100,
+      audience: "athletes",
+      athleteProfileId: selectedAthlete.id,
+    });
+    const otherSuggestions = await getSuggestedDrills({
+      sport: "Basketball",
+      ageBandId: "11-13",
+      limit: 100,
+      audience: "athletes",
+      athleteProfileId: otherAthlete.id,
+    });
+    assert.equal(
+      selectedSuggestions.drills.some(
+        (drill) => drill.id === audienceDrill.id,
+      ),
+      true,
+      "selected player should receive the targeted drill",
+    );
+    assert.equal(
+      otherSuggestions.drills.some((drill) => drill.id === audienceDrill.id),
+      false,
+      "unselected player must not receive the targeted drill",
+    );
   } finally {
     await prisma.catalogDrill.delete({ where: { id: audienceDrill.id } });
+    if (recipientProfileIds.length > 0) {
+      await prisma.athleteProfile.deleteMany({
+        where: { id: { in: recipientProfileIds } },
+      });
+    }
   }
   console.log(
     `catalog-drill checks passed (inserted=${seeded.inserted}, total=${count})`,
