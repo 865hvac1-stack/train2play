@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useMemo, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 
 import {
   submitAthleteVideoReviewAction,
@@ -10,7 +9,8 @@ import {
 import { getVideoCategoriesForSport } from "@/lib/video-categories";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { videoFileSizeError } from "@/lib/video-upload-limits";
+import { usePreservingSubmit } from "@/components/use-preserving-submit";
+import { useVideoCompression } from "@/components/use-video-compression";
 
 type CoachOption = {
   id: string;
@@ -23,15 +23,22 @@ type CoachOption = {
 const LIBRARY_ACCEPT =
   "video/mp4,video/quicktime,video/x-m4v,video/webm,.mp4,.mov,.m4v,.webm";
 
-function SubmitButton({ disabled }: { disabled?: boolean }) {
-  const { pending } = useFormStatus();
+function SubmitButton({
+  disabled,
+  compressing,
+  pending,
+}: {
+  disabled?: boolean;
+  compressing?: boolean;
+  pending: boolean;
+}) {
   return (
     <button
       type="submit"
       disabled={pending || disabled}
       className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-brand px-6 text-base font-bold text-black disabled:opacity-60"
     >
-      {pending ? "Sending…" : "SEND FOR REVIEW"}
+      {compressing ? "COMPRESSING…" : pending ? "Sending…" : "SEND FOR REVIEW"}
     </button>
   );
 }
@@ -61,10 +68,13 @@ export function AthleteVideoUploadForm({
   const libraryRef = useRef<HTMLInputElement>(null);
   const recordRef = useRef<HTMLInputElement>(null);
 
-  const [state, action] = useActionState(
+  const [state, action, pending] = useActionState(
     submitAthleteVideoReviewAction,
     {} as AthleteVideoActionState,
   );
+  const onSubmit = usePreservingSubmit(action);
+  const { state: compression, prepare, reset } = useVideoCompression();
+  const busy = compression.status === "working";
 
   const categories = useMemo(
     () => getVideoCategoriesForSport(sport),
@@ -76,19 +86,14 @@ export function AthleteVideoUploadForm({
     if (!file.type.startsWith("video/") && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) {
       setFileError("Please choose a video file from your camera roll.");
       setFileName(null);
-      if (formFileRef.current) formFileRef.current.value = "";
-      return;
-    }
-    const sizeError = videoFileSizeError(file);
-    if (sizeError) {
-      setFileError(sizeError);
-      setFileName(null);
+      reset();
       if (formFileRef.current) formFileRef.current.value = "";
       return;
     }
     copyFileToInput(file, formFileRef.current);
     setFileName(file.name || "Selected video");
     setFileError(null);
+    void prepare(file, formFileRef.current);
   }
 
   if (coaches.length === 0) {
@@ -109,7 +114,7 @@ export function AthleteVideoUploadForm({
   }
 
   return (
-    <form action={action} className="space-y-5" encType="multipart/form-data">
+    <form onSubmit={onSubmit} className="space-y-5" encType="multipart/form-data">
       <div className="space-y-3">
         <Label className="text-slate-300">Video</Label>
 
@@ -170,16 +175,38 @@ export function AthleteVideoUploadForm({
         </div>
 
         {fileName ? (
-          <p className="rounded-xl border border-brand/30 bg-brand/10 px-3 py-2 text-sm text-brand">
-            Selected: {fileName}
-          </p>
+          <div className="space-y-2 rounded-xl border border-brand/30 bg-brand/10 px-3 py-2">
+            <p className="truncate text-sm text-brand">Selected: {fileName}</p>
+            {compression.message ? (
+              <p className="text-xs text-slate-300">{compression.message}</p>
+            ) : null}
+            {busy ? (
+              <div
+                className="h-1.5 w-full overflow-hidden rounded-full bg-white/15"
+                role="progressbar"
+                aria-valuenow={compression.percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="h-full rounded-full bg-brand transition-[width]"
+                  style={{ width: `${compression.percent}%` }}
+                />
+              </div>
+            ) : null}
+          </div>
         ) : (
           <p className="text-xs text-slate-500">
             Tap <strong className="text-slate-300">Choose from camera roll</strong>{" "}
-            to upload a video already on your phone (up to 100 MB).
+            to upload a video already on your phone. Long clips are compressed
+            here first so they actually send.
           </p>
         )}
-        {fileError ? <p className="text-sm text-red-400">{fileError}</p> : null}
+        {fileError ?? compression.sizeError ? (
+          <p className="text-sm text-red-400">
+            {fileError ?? compression.sizeError}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -284,7 +311,11 @@ export function AthleteVideoUploadForm({
         <p className="text-sm text-red-400">{state.error}</p>
       ) : null}
 
-      <SubmitButton disabled={!fileName} />
+      <SubmitButton
+        disabled={!fileName || busy || Boolean(compression.sizeError)}
+        compressing={busy}
+        pending={pending}
+      />
     </form>
   );
 }

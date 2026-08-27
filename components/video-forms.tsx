@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { Camera, Film, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,16 +12,25 @@ import {
   createVideoFromUrlAction,
   type VideoActionState,
 } from "@/app/(dashboard)/videos/actions";
+import { usePreservingSubmit } from "@/components/use-preserving-submit";
+import { useVideoCompression } from "@/components/use-video-compression";
 import { cn } from "@/lib/utils";
-import { videoFileSizeError } from "@/lib/video-upload-limits";
+import { formatBytes } from "@/lib/video-upload-limits";
 
 const initialState: VideoActionState = {};
 
 const VIDEO_ACCEPT =
   "video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
 
-function SubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
-  const { pending } = useFormStatus();
+function SubmitButton({
+  label,
+  pending,
+  disabled,
+}: {
+  label: string;
+  pending: boolean;
+  disabled?: boolean;
+}) {
   return (
     <Button
       type="submit"
@@ -71,10 +79,14 @@ export function AddVideoUrlForm({
   athletes: { id: string; firstName: string; lastName: string }[];
   defaultAthleteId?: string;
 }) {
-  const [state, formAction] = useActionState(createVideoFromUrlAction, initialState);
+  const [state, formAction, pending] = useActionState(
+    createVideoFromUrlAction,
+    initialState,
+  );
+  const onSubmit = usePreservingSubmit(formAction);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       {state.error ? (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
@@ -125,14 +137,9 @@ export function AddVideoUrlForm({
         />
       </div>
 
-      <SubmitButton label="Add from URL" />
+      <SubmitButton label="Add from URL" pending={pending} />
     </form>
   );
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function UploadVideoForm({
@@ -142,10 +149,16 @@ export function UploadVideoForm({
   athletes: { id: string; firstName: string; lastName: string }[];
   defaultAthleteId?: string;
 }) {
-  const [state, formAction] = useActionState(createVideoFromUploadAction, initialState);
+  const [state, formAction, pending] = useActionState(
+    createVideoFromUploadAction,
+    initialState,
+  );
+  const onSubmit = usePreservingSubmit(formAction);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileError = selectedFile ? videoFileSizeError(selectedFile) : null;
+  const { state: compression, prepare, reset } = useVideoCompression();
+  const busy = compression.status === "working";
+  const fileError = compression.sizeError;
 
   function openPicker(mode: "gallery" | "camera") {
     const input = fileInputRef.current;
@@ -161,7 +174,7 @@ export function UploadVideoForm({
   }
 
   return (
-    <form action={formAction} className="space-y-4" encType="multipart/form-data">
+    <form onSubmit={onSubmit} className="space-y-4" encType="multipart/form-data">
       {state.error ? (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
@@ -192,7 +205,12 @@ export function UploadVideoForm({
           accept={VIDEO_ACCEPT}
           className="sr-only"
           required={!selectedFile}
-          onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setSelectedFile(file);
+            if (file) void prepare(file, fileInputRef.current);
+            else reset();
+          }}
         />
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -228,16 +246,34 @@ export function UploadVideoForm({
             <Upload className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900">{selectedFile.name}</p>
-              <p className="text-xs text-slate-600">
-                {formatBytes(selectedFile.size)}
-                {fileError ? ` — ${fileError}` : " · ready to upload"}
-              </p>
+              {fileError ? (
+                <p className="text-xs text-destructive">{fileError}</p>
+              ) : (
+                <p className="text-xs text-slate-600">
+                  {compression.message ?? formatBytes(selectedFile.size)}
+                </p>
+              )}
+              {busy ? (
+                <div
+                  className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-brand/20"
+                  role="progressbar"
+                  aria-valuenow={compression.percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="h-full rounded-full bg-brand transition-[width]"
+                    style={{ width: `${compression.percent}%` }}
+                  />
+                </div>
+              ) : null}
             </div>
             <button
               type="button"
               className="text-xs font-medium text-primary hover:underline"
               onClick={() => {
                 setSelectedFile(null);
+                reset();
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
             >
@@ -246,8 +282,9 @@ export function UploadVideoForm({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Works with iPhone and Android videos (MP4 / MOV). Max 100 MB — shorter clips upload
-            more reliably on cellular.
+            Works with iPhone and Android videos (MP4 / MOV). Long clips are
+            compressed on your device first, so a 45-second drill uploads in
+            seconds instead of failing.
           </p>
         )}
       </div>
@@ -268,7 +305,11 @@ export function UploadVideoForm({
         />
       </div>
 
-      <SubmitButton label="Upload video" disabled={Boolean(fileError)} />
+      <SubmitButton
+        label={busy ? "Compressing…" : "Upload video"}
+        pending={pending}
+        disabled={Boolean(fileError) || busy}
+      />
     </form>
   );
 }

@@ -12,6 +12,7 @@ import {
   type CatalogRecipientAthlete,
 } from "@/components/catalog-drill-audience-fields";
 import { InstructionVideoFields } from "@/components/instruction-video-fields";
+import { usePreservingSubmit } from "@/components/use-preserving-submit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,10 +52,11 @@ export function CatalogDrillForm({
     action,
     {} as DrillActionState,
   );
+  const onSubmit = usePreservingSubmit(formAction);
 
   return (
     <form
-      action={formAction}
+      onSubmit={onSubmit}
       className="space-y-3"
       encType="multipart/form-data"
     >
