@@ -83,6 +83,18 @@ export function getProductionWarnings() {
       "Video storage is not configured — add CLOUDINARY_URL (easiest) so phone uploads work in production.",
     );
   }
+  if (
+    !(
+      process.env.S3_BUCKET &&
+      process.env.S3_ENDPOINT &&
+      process.env.AWS_ACCESS_KEY_ID &&
+      process.env.AWS_SECRET_ACCESS_KEY
+    )
+  ) {
+    warnings.push(
+      "Private direct video uploads are not configured — add the Cloudflare R2 S3 variables for long, resumable uploads.",
+    );
+  }
 
   return warnings;
 }

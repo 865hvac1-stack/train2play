@@ -1,4 +1,5 @@
 import { isProductionRuntime } from "@/lib/env";
+import { resolveDirectVideoMedia } from "@/lib/direct-video-media";
 import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
@@ -24,6 +25,15 @@ export async function resolveOptionalInstructionVideo(
   if (mode === "upload") {
     if (isCompressionPending(formData)) {
       return { ok: false, error: COMPRESSION_PENDING_MESSAGE };
+    }
+    const direct = await resolveDirectVideoMedia(formData, context.userId);
+    if (!direct.ok) return direct;
+    if (direct.media) {
+      return {
+        ok: true,
+        url: direct.media.url,
+        storageKey: direct.media.storageKey,
+      };
     }
     if (!(file instanceof File) || file.size === 0) {
       return { ok: true, url: null, storageKey: null };

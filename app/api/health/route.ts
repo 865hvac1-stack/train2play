@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import { getAppUrl, getProductionWarnings } from "@/lib/env";
 import { prisma } from "@/lib/db";
-import { isObjectStorageConfigured } from "@/lib/storage";
+import {
+  isDirectVideoUploadConfigured,
+  isObjectStorageConfigured,
+} from "@/lib/storage";
 
 /** Newest applied migration, so a deploy's schema state is checkable by URL. */
 async function readLatestMigration() {
@@ -40,6 +43,7 @@ export async function GET() {
     auth: Boolean(process.env.AUTH_SECRET),
     appUrl: Boolean(process.env.AUTH_URL || process.env.NEXT_PUBLIC_APP_URL),
     objectStorage: isObjectStorageConfigured(),
+    directPrivateVideo: isDirectVideoUploadConfigured(),
     email: Boolean(process.env.RESEND_API_KEY),
   };
 

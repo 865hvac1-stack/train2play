@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
+import { resolveDirectVideoMedia } from "@/lib/direct-video-media";
 import { isProductionRuntime } from "@/lib/env";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { submitVideoForReview } from "@/lib/video-reviews";
@@ -40,34 +41,48 @@ export async function submitAthleteVideoReviewAction(
     return { error: "Choose a valid category for this sport" };
   }
 
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose a video from your device" };
+  const direct = await resolveDirectVideoMedia(formData, ctx.userId);
+  if (!direct.ok) return { error: direct.error };
+  let stored = direct.media;
+  if (!stored) {
+    if (!(file instanceof File) || file.size === 0) {
+      return { error: "Choose a video from your device" };
+    }
+    if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
+      return { error: "Video must be 100 MB or smaller" };
+    }
+    if (isProductionRuntime() && !isObjectStorageConfigured()) {
+      return {
+        error:
+          "Video uploads need Cloudinary or R2. Ask your admin to configure storage.",
+      };
+    }
+    const ext =
+      file.name.split(".").pop()?.toLowerCase() ||
+      (file.type === "video/quicktime" ? "mov" : "mp4");
+    const filename = `${crypto.randomUUID()}.${ext}`;
+    const contentType =
+      file.type && file.type !== "application/octet-stream"
+        ? file.type
+        : ext === "mov"
+          ? "video/quicktime"
+          : "video/mp4";
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const uploaded = await storeVideoFile(buffer, filename, contentType);
+      stored = { url: uploaded.videoUrl, storageKey: uploaded.storageKey };
+    } catch (error) {
+      return {
+        error: reportVideoUploadFailure(error, {
+          surface: "athlete-video-review",
+          userId: ctx.userId,
+          file,
+        }),
+      };
+    }
   }
-  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
-    return { error: "Video must be 100 MB or smaller" };
-  }
-  if (isProductionRuntime() && !isObjectStorageConfigured()) {
-    return {
-      error:
-        "Video uploads need Cloudinary (or S3). Ask your admin to configure storage, or try again later.",
-    };
-  }
-
-  const ext =
-    file.name.split(".").pop()?.toLowerCase() ||
-    (file.type === "video/quicktime" ? "mov" : "mp4");
-  const filename = `${crypto.randomUUID()}.${ext}`;
-  const contentType =
-    file.type && file.type !== "application/octet-stream"
-      ? file.type
-      : ext === "mov"
-        ? "video/quicktime"
-        : "video/mp4";
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const stored = await storeVideoFile(buffer, filename, contentType);
-
     const { review } = await submitVideoForReview({
       uploadedByUserId: ctx.userId,
       athleteProfileId: ctx.profileId,
@@ -77,7 +92,7 @@ export async function submitAthleteVideoReviewAction(
       sport,
       category,
       athleteNote: athleteNote || null,
-      videoUrl: stored.videoUrl,
+      videoUrl: stored.url,
       storageKey: stored.storageKey,
       sourceType: "UPLOAD",
     });
@@ -100,7 +115,7 @@ export async function submitAthleteVideoReviewAction(
       error: reportVideoUploadFailure(error, {
         surface: "athlete-video-review",
         userId: ctx.userId,
-        file,
+        file: file instanceof File ? file : null,
       }),
     };
   }

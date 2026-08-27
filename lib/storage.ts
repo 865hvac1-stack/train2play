@@ -58,7 +58,7 @@ function configureCloudinary() {
   return cloudinary;
 }
 
-function getS3Config() {
+export function getS3Config() {
   const bucket = process.env.S3_BUCKET;
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -87,7 +87,7 @@ export function getVideoStorageProvider(): "cloudinary" | "s3" | "local" {
   return "local";
 }
 
-function getS3Client(config: NonNullable<ReturnType<typeof getS3Config>>) {
+export function getS3Client(config: NonNullable<ReturnType<typeof getS3Config>>) {
   return new S3Client({
     region: config.region,
     endpoint: config.endpoint,
@@ -97,6 +97,12 @@ function getS3Client(config: NonNullable<ReturnType<typeof getS3Config>>) {
     },
     forcePathStyle: Boolean(config.endpoint),
   });
+}
+
+/** Direct multipart uploads require an S3-compatible endpoint (Cloudflare R2). */
+export function isDirectVideoUploadConfigured() {
+  const config = getS3Config();
+  return Boolean(config?.endpoint);
 }
 
 function buildPublicUrl(

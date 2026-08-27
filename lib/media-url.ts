@@ -9,7 +9,9 @@ export type MediaPlayback =
 
 function safeUrl(raw: string): URL | null {
   try {
-    return new URL(raw.trim());
+    const value = raw.trim();
+    if (value.startsWith("/")) return new URL(value, "https://train2play.local");
+    return new URL(value);
   } catch {
     return null;
   }

@@ -322,10 +322,36 @@ model User {
   voiceReviewsRecorded        VoiceReview[]             @relation("VoiceReviewCoach")
   notifications               AppNotification[]
   videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
+  mediaUploads                MediaUpload[]
 
   @@index([role, isActive])
   @@index([createdAt])
   @@index([lastActiveAt])
+}
+
+/**
+ * A private, direct-to-R2 multipart video. The browser uploads chunks straight
+ * to R2; application records reference /api/media/videos/{id}, never a public
+ * bucket URL. Associations are resolved from those URLs for playback auth.
+ */
+model MediaUpload {
+  id            String    @id @default(cuid())
+  ownerUserId   String
+  ownerUser     User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  provider      String    @default("s3")
+  storageKey    String    @unique
+  multipartId   String?
+  originalName  String
+  contentType   String
+  sizeBytes     BigInt
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+  expiresAt     DateTime
+
+  @@index([ownerUserId, status])
+  @@index([status, expiresAt])
 }
 
 /**

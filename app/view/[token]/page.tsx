@@ -37,6 +37,11 @@ function formatWorkoutDate(date: Date | null) {
   }).format(date);
 }
 
+function familyVideoUrl(src: string, token: string) {
+  if (!src.startsWith("/api/media/videos/")) return src;
+  return `${src}?shareToken=${encodeURIComponent(token)}`;
+}
+
 export default async function ParentViewPage({
   params,
 }: {
@@ -126,7 +131,7 @@ export default async function ParentViewPage({
                   </div>
                   {workout.instructionVideoUrl ? (
                     <InstructionVideoPlayer
-                      src={workout.instructionVideoUrl}
+                      src={familyVideoUrl(workout.instructionVideoUrl, token)}
                       title="Tap play"
                     />
                   ) : null}
@@ -188,7 +193,7 @@ export default async function ParentViewPage({
                             </div>
                             {workout.instructionVideoUrl ? (
                               <InstructionVideoPlayer
-                                src={workout.instructionVideoUrl}
+                                src={familyVideoUrl(workout.instructionVideoUrl, token)}
                                 title="Watch"
                               />
                             ) : null}

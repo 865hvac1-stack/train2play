@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { annotationSchema, videoUrlSchema } from "@/lib/videos";
 import { requireAthleteAccess } from "@/lib/authz";
+import { resolveDirectVideoMedia } from "@/lib/direct-video-media";
 import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
@@ -72,33 +73,6 @@ export async function createVideoFromUploadAction(
     return { error: "Title is required" };
   }
 
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose a video file to upload" };
-  }
-
-  const nameLower = file.name.toLowerCase();
-  const looksLikeVideoExt = /\.(mp4|mov|webm|m4v|mpeg|mpg|avi)$/i.test(nameLower);
-  const hasVideoMime =
-    file.type.startsWith("video/") ||
-    file.type === "application/octet-stream" ||
-    file.type === "";
-
-  // iPhone often sends empty MIME or octet-stream for Camera Roll MOV/MP4
-  if (!file.type.startsWith("video/") && !(hasVideoMime && looksLikeVideoExt)) {
-    return { error: "File must be a video (mp4, mov, webm)" };
-  }
-
-  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
-    return { error: "Video must be 100 MB or smaller" };
-  }
-
-  if (isProductionRuntime() && !isObjectStorageConfigured()) {
-    return {
-      error:
-        "Phone uploads need Cloudinary. Add CLOUDINARY_URL in Railway (see docs/VIDEO-UPLOAD.md), or paste a direct MP4 URL instead.",
-    };
-  }
-
   if (athleteId) {
     try {
       await requireAthleteAccess(prisma, user.id, athleteId, "edit");
@@ -107,22 +81,61 @@ export async function createVideoFromUploadAction(
     }
   }
 
-  const ext =
-    file.name.split(".").pop()?.toLowerCase() ||
-    (file.type === "video/quicktime" ? "mov" : "mp4");
-  const filename = `${crypto.randomUUID()}.${ext}`;
-  const contentType =
-    file.type && file.type !== "application/octet-stream"
-      ? file.type
-      : ext === "mov"
-        ? "video/quicktime"
-        : ext === "webm"
-          ? "video/webm"
-          : "video/mp4";
+  const direct = await resolveDirectVideoMedia(formData, user.id);
+  if (!direct.ok) return { error: direct.error };
+  let stored = direct.media;
+
+  if (!stored) {
+    if (!(file instanceof File) || file.size === 0) {
+      return { error: "Choose a video file to upload" };
+    }
+    const nameLower = file.name.toLowerCase();
+    const looksLikeVideoExt = /\.(mp4|mov|webm|m4v|mpeg|mpg|avi)$/i.test(nameLower);
+    const hasVideoMime =
+      file.type.startsWith("video/") ||
+      file.type === "application/octet-stream" ||
+      file.type === "";
+    if (!file.type.startsWith("video/") && !(hasVideoMime && looksLikeVideoExt)) {
+      return { error: "File must be a video (mp4, mov, webm)" };
+    }
+    if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
+      return { error: "Video must be 100 MB or smaller" };
+    }
+    if (isProductionRuntime() && !isObjectStorageConfigured()) {
+      return {
+        error:
+          "Phone uploads need Cloudinary or R2. Ask your admin to configure video storage.",
+      };
+    }
+    const ext =
+      file.name.split(".").pop()?.toLowerCase() ||
+      (file.type === "video/quicktime" ? "mov" : "mp4");
+    const filename = `${crypto.randomUUID()}.${ext}`;
+    const contentType =
+      file.type && file.type !== "application/octet-stream"
+        ? file.type
+        : ext === "mov"
+          ? "video/quicktime"
+          : ext === "webm"
+            ? "video/webm"
+            : "video/mp4";
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const uploaded = await storeVideoFile(buffer, filename, contentType);
+      stored = { url: uploaded.videoUrl, storageKey: uploaded.storageKey };
+    } catch (error) {
+      return {
+        error: reportVideoUploadFailure(error, {
+          surface: "coach-training-video",
+          userId: user.id,
+          file,
+        }),
+      };
+    }
+  }
+
   let video;
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const stored = await storeVideoFile(buffer, filename, contentType);
     video = await prisma.trainingVideo.create({
       data: {
         coachId: user.id,
@@ -130,7 +143,7 @@ export async function createVideoFromUploadAction(
         title,
         description: description || null,
         sourceType: "UPLOAD",
-        videoUrl: stored.videoUrl,
+        videoUrl: stored.url,
         storageKey: stored.storageKey,
       },
     });
@@ -139,7 +152,7 @@ export async function createVideoFromUploadAction(
       error: reportVideoUploadFailure(error, {
         surface: "coach-training-video",
         userId: user.id,
-        file,
+        file: file instanceof File ? file : null,
       }),
     };
   }
