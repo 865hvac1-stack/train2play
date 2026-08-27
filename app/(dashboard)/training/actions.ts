@@ -12,6 +12,10 @@ import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { requireUser } from "@/lib/session";
 import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
 import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
+import {
+  COMPRESSION_PENDING_MESSAGE,
+  isCompressionPending,
+} from "@/lib/video-upload-pending";
 
 export type TrainingActionState = {
   error?: string;
@@ -39,6 +43,10 @@ async function resolveInstructionVideo(
       };
     }
     return { ok: true, url: urlRaw, storageKey: null };
+  }
+
+  if (isCompressionPending(formData)) {
+    return { ok: false, error: COMPRESSION_PENDING_MESSAGE };
   }
 
   if (!(file instanceof File) || file.size === 0) {

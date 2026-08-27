@@ -3,6 +3,10 @@ import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
 import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
+import {
+  COMPRESSION_PENDING_MESSAGE,
+  isCompressionPending,
+} from "@/lib/video-upload-pending";
 
 export async function resolveOptionalInstructionVideo(
   formData: FormData,
@@ -18,6 +22,9 @@ export async function resolveOptionalInstructionVideo(
   const file = formData.get("instructionVideoFile") ?? formData.get("videoFile");
 
   if (mode === "upload") {
+    if (isCompressionPending(formData)) {
+      return { ok: false, error: COMPRESSION_PENDING_MESSAGE };
+    }
     if (!(file instanceof File) || file.size === 0) {
       return { ok: true, url: null, storageKey: null };
     }

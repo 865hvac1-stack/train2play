@@ -6,16 +6,12 @@ import { Camera, Film, Link2, RefreshCcw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useVideoCompression } from "@/components/use-video-compression";
 import { cn } from "@/lib/utils";
-import { videoFileSizeError } from "@/lib/video-upload-limits";
+import { formatBytes } from "@/lib/video-upload-limits";
 
 const VIDEO_ACCEPT =
   "video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 type InstructionVideoFieldsProps = {
   idPrefix: string;
@@ -38,7 +34,9 @@ export function InstructionVideoFields({
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileError = selectedFile ? videoFileSizeError(selectedFile) : null;
+  const { state: compression, prepare, reset } = useVideoCompression();
+  const busy = compression.status === "working";
+  const fileError = compression.sizeError;
 
   function openPicker(pickerMode: "gallery" | "back-camera" | "front-camera") {
     const input = fileInputRef.current;
@@ -98,6 +96,10 @@ export function InstructionVideoFields({
       ) : (
         <div className="space-y-3">
           <input type="hidden" name="instructionVideoMode" value="upload" />
+          {/* Blocks a save that would upload the original, uncompressed file. */}
+          {busy ? (
+            <input type="hidden" name="videoCompressionPending" value="1" />
+          ) : null}
           {/* Keep existing URL when replacing via upload only if needed — empty on upload */}
           <input
             ref={fileInputRef}
@@ -110,9 +112,8 @@ export function InstructionVideoFields({
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
               setSelectedFile(file);
-              e.currentTarget.setCustomValidity(
-                file ? (videoFileSizeError(file) ?? "") : "",
-              );
+              if (file) void prepare(file, fileInputRef.current);
+              else reset();
             }}
           />
           <div className="grid gap-3 sm:grid-cols-3">
@@ -169,12 +170,28 @@ export function InstructionVideoFields({
                   fileError ? "text-destructive" : "text-slate-600",
                 )}
               >
-                {formatBytes(selectedFile.size)} · {fileError ?? "ready"}
+                {fileError ??
+                  compression.message ??
+                  formatBytes(selectedFile.size)}
               </p>
+              {busy ? (
+                <div
+                  className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-brand/20"
+                  role="progressbar"
+                  aria-valuenow={compression.percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="h-full rounded-full bg-brand transition-[width]"
+                    style={{ width: `${compression.percent}%` }}
+                  />
+                </div>
+              ) : null}
             </div>
           ) : (
             <p className="text-xs text-slate-500">
-              MP4 / MOV · up to 100 MB
+              MP4 / MOV · long clips are compressed on your device before upload
               {defaultUrl ? " · uploading replaces the current video" : ""}
             </p>
           )}

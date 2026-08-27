@@ -27,7 +27,7 @@ async function main() {
       name: "too-large.mp4",
       size: MAX_VIDEO_UPLOAD_BYTES + 1,
     } as File) ?? "",
-    /100 MB or smaller/,
+    /over the 100 MB limit/,
   );
 
   const browser = await chromium.launch({
