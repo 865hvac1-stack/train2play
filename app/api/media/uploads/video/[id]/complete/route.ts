@@ -51,9 +51,12 @@ export async function POST(
     return Response.json({ error: "Upload not found or expired" }, { status: 404 });
   }
   const expectedParts = Math.ceil(Number(media.sizeBytes) / R2_PART_BYTES);
+  const partNumbers = parsed.data.parts
+    .map((part) => part.partNumber)
+    .sort((a, b) => a - b);
   if (
     parsed.data.parts.length !== expectedParts ||
-    new Set(parsed.data.parts.map((part) => part.partNumber)).size !== expectedParts
+    partNumbers.some((partNumber, index) => partNumber !== index + 1)
   ) {
     return Response.json({ error: "Some video chunks are missing" }, { status: 400 });
   }
