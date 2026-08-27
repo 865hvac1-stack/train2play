@@ -1,4 +1,62 @@
-# Phone video uploads — super simple setup (Cloudinary)
+# Phone video uploads
+
+## Recommended production setup: private Cloudflare R2
+
+R2 lets coaches upload 5–10 minute film directly from the browser in 10 MB
+chunks. A failed chunk retries four times without restarting the whole video.
+The bytes never pass through Railway, and the bucket stays private.
+
+### 1. Create the bucket and credentials
+
+1. Cloudflare Dashboard → **R2 Object Storage** → Create bucket.
+2. Name it `train2play-videos`.
+3. Leave public access disabled.
+4. R2 → **Manage R2 API Tokens** → create an Object Read & Write token scoped
+   only to this bucket.
+
+### 2. Add bucket CORS
+
+R2 bucket → Settings → CORS policy:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "https://www.train2play.com",
+      "https://train2play.com",
+      "https://train2play-production-efb5.up.railway.app"
+    ],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Range"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+`ETag` must be exposed: Train2Play needs it to finish a multipart upload.
+
+### 3. Add Railway variables
+
+```dotenv
+S3_BUCKET=train2play-videos
+S3_REGION=auto
+S3_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
+AWS_ACCESS_KEY_ID=YOUR_R2_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_R2_SECRET_ACCESS_KEY
+```
+
+Do **not** set `S3_PUBLIC_URL`. Videos are private and Train2Play grants a
+short-lived playback URL only after checking the viewer.
+
+After redeploying, `/api/health` should show:
+
+```json
+"objectStorage": true,
+"directPrivateVideo": true
+```
+
+## Cloudinary fallback
 
 You only need **one** Railway variable.
 
@@ -93,6 +151,5 @@ has no per-file limit like Cloudinary's free plan.
 
 Put `CLOUDINARY_URL` / API secret only in Railway — never send them to Cursor or Slack.
 
-## Advanced (optional)
-
-S3 / Cloudflare R2 still works if you already set those variables. Cloudinary is preferred when both are present.
+When R2 and Cloudinary are both configured, new browser uploads use private,
+direct R2. Cloudinary remains the fallback for older upload paths.

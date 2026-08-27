@@ -34,6 +34,7 @@ export function InstructionVideoFields({
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [optimize, setOptimize] = useState(true);
   const { state: compression, prepare, reset } = useVideoCompression();
   const busy = compression.status === "working";
   const fileError = compression.sizeError;
@@ -100,6 +101,52 @@ export function InstructionVideoFields({
           {busy ? (
             <input type="hidden" name="videoCompressionPending" value="1" />
           ) : null}
+          {compression.mediaId ? (
+            <input
+              type="hidden"
+              name="directVideoMediaId"
+              value={compression.mediaId}
+            />
+          ) : null}
+          <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
+            {[
+              {
+                value: true,
+                label: "Optimized 720p",
+                note: "Fast upload",
+              },
+              {
+                value: false,
+                label: "Original quality",
+                note: "R2 required",
+              },
+            ].map((choice) => (
+              <button
+                key={String(choice.value)}
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setOptimize(choice.value);
+                  if (selectedFile) {
+                    void prepare(selectedFile, fileInputRef.current, {
+                      optimize: choice.value,
+                    });
+                  }
+                }}
+                className={cn(
+                  "rounded-md px-2 py-2 text-center text-xs disabled:opacity-60",
+                  optimize === choice.value
+                    ? "bg-white font-semibold text-slate-900 shadow-sm"
+                    : "text-slate-600",
+                )}
+              >
+                <span className="block">{choice.label}</span>
+                <span className="block font-normal text-slate-500">
+                  {choice.note}
+                </span>
+              </button>
+            ))}
+          </div>
           {/* Keep existing URL when replacing via upload only if needed — empty on upload */}
           <input
             ref={fileInputRef}
@@ -112,7 +159,9 @@ export function InstructionVideoFields({
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
               setSelectedFile(file);
-              if (file) void prepare(file, fileInputRef.current);
+              if (file) {
+                void prepare(file, fileInputRef.current, { optimize });
+              }
               else reset();
             }}
           />
@@ -167,10 +216,13 @@ export function InstructionVideoFields({
               <p
                 className={cn(
                   "text-xs",
-                  fileError ? "text-destructive" : "text-slate-600",
+                  fileError || compression.uploadError
+                    ? "text-destructive"
+                    : "text-slate-600",
                 )}
               >
                 {fileError ??
+                  compression.uploadError ??
                   compression.message ??
                   formatBytes(selectedFile.size)}
               </p>

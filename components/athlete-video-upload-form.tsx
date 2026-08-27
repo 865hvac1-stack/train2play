@@ -64,9 +64,11 @@ export function AthleteVideoUploadForm({
   const [sport, setSport] = useState(defaultSport || sportOptions[0] || "Basketball");
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [optimize, setOptimize] = useState(true);
   const formFileRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
   const recordRef = useRef<HTMLInputElement>(null);
+  const originalFileRef = useRef<File | null>(null);
 
   const [state, action, pending] = useActionState(
     submitAthleteVideoReviewAction,
@@ -91,9 +93,10 @@ export function AthleteVideoUploadForm({
       return;
     }
     copyFileToInput(file, formFileRef.current);
+    originalFileRef.current = file;
     setFileName(file.name || "Selected video");
     setFileError(null);
-    void prepare(file, formFileRef.current);
+    void prepare(file, formFileRef.current, { optimize });
   }
 
   if (coaches.length === 0) {
@@ -115,8 +118,44 @@ export function AthleteVideoUploadForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5" encType="multipart/form-data">
+      {compression.mediaId ? (
+        <input
+          type="hidden"
+          name="directVideoMediaId"
+          value={compression.mediaId}
+        />
+      ) : null}
       <div className="space-y-3">
         <Label className="text-slate-300">Video</Label>
+        <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-900 p-1">
+          {[
+            { value: true, label: "Optimized", note: "Faster" },
+            { value: false, label: "Original", note: "Full quality" },
+          ].map((choice) => (
+            <button
+              key={String(choice.value)}
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setOptimize(choice.value);
+                const original = originalFileRef.current;
+                if (original) {
+                  void prepare(original, formFileRef.current, {
+                    optimize: choice.value,
+                  });
+                }
+              }}
+              className={
+                optimize === choice.value
+                  ? "rounded-lg bg-brand px-3 py-2 text-xs font-bold text-black"
+                  : "rounded-lg px-3 py-2 text-xs font-semibold text-slate-400"
+              }
+            >
+              <span className="block">{choice.label}</span>
+              <span className="block font-normal">{choice.note}</span>
+            </button>
+          ))}
+        </div>
 
         {/* Named field the server action reads — never uses capture */}
         <input
@@ -202,9 +241,9 @@ export function AthleteVideoUploadForm({
             here first so they actually send.
           </p>
         )}
-        {fileError ?? compression.sizeError ? (
+        {fileError ?? compression.sizeError ?? compression.uploadError ? (
           <p className="text-sm text-red-400">
-            {fileError ?? compression.sizeError}
+            {fileError ?? compression.sizeError ?? compression.uploadError}
           </p>
         ) : null}
       </div>

@@ -66,18 +66,19 @@ Train2Play is ready for **Railway** or **Render** with PostgreSQL and optional c
 | `RESEND_API_KEY` | Pickup alert + parent invite emails |
 | `EMAIL_FROM` | `Train2Play <noreply@train2play.com>` |
 | `CLOUDINARY_URL` | Phone video uploads (easiest — one value from cloudinary.com) |
+| `S3_BUCKET`, `S3_ENDPOINT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Private, direct, chunked long-video uploads through Cloudflare R2 |
 | `PLATFORM_ADMIN_EMAIL` | Your email — unlocks the master Sport library |
 | `TRAINER_EMAILS` | Comma-separated trainer logins, e.g. `chase@train2play.com` |
 | `SEED_DEMO` | Leave unset or `false` in production |
 
-### 5. Phone video uploads (Cloudinary)
+### 5. Phone and long-video uploads
 
-Without Cloudinary (or S3/R2), production **blocks file uploads**. Quick setup:
+Cloudinary remains a simple fallback. Cloudflare R2 is recommended for 5–10
+minute film: the browser sends private 10 MB chunks directly to R2, retries
+interrupted chunks, and Train2Play authorizes every playback.
 
-1. Free account at [cloudinary.com](https://cloudinary.com/users/register_free)
-2. Copy **CLOUDINARY_URL** from the dashboard
-3. Paste into Railway Variables
-4. Confirm `/api/health` shows `"objectStorage": true`
+After R2 setup, confirm `/api/health` shows both `"objectStorage": true` and
+`"directPrivateVideo": true`.
 
 Full guide: [docs/VIDEO-UPLOAD.md](./docs/VIDEO-UPLOAD.md)
 

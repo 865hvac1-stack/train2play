@@ -155,6 +155,7 @@ export function UploadVideoForm({
   );
   const onSubmit = usePreservingSubmit(formAction);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [optimize, setOptimize] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { state: compression, prepare, reset } = useVideoCompression();
   const busy = compression.status === "working";
@@ -175,6 +176,13 @@ export function UploadVideoForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" encType="multipart/form-data">
+      {compression.mediaId ? (
+        <input
+          type="hidden"
+          name="directVideoMediaId"
+          value={compression.mediaId}
+        />
+      ) : null}
       {state.error ? (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
@@ -196,6 +204,37 @@ export function UploadVideoForm({
 
       <div className="space-y-3">
         <Label>Video from your phone or computer</Label>
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
+          {[
+            { value: true, label: "Optimized 720p", note: "Recommended" },
+            { value: false, label: "Original quality", note: "R2 required" },
+          ].map((choice) => (
+            <button
+              key={String(choice.value)}
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setOptimize(choice.value);
+                if (selectedFile) {
+                  void prepare(selectedFile, fileInputRef.current, {
+                    optimize: choice.value,
+                  });
+                }
+              }}
+              className={cn(
+                "rounded-md px-2 py-2 text-xs disabled:opacity-60",
+                optimize === choice.value
+                  ? "bg-white font-semibold shadow-sm"
+                  : "text-slate-600",
+              )}
+            >
+              <span className="block">{choice.label}</span>
+              <span className="block font-normal text-slate-500">
+                {choice.note}
+              </span>
+            </button>
+          ))}
+        </div>
 
         <input
           ref={fileInputRef}
@@ -208,7 +247,9 @@ export function UploadVideoForm({
           onChange={(e) => {
             const file = e.target.files?.[0] ?? null;
             setSelectedFile(file);
-            if (file) void prepare(file, fileInputRef.current);
+            if (file) {
+              void prepare(file, fileInputRef.current, { optimize });
+            }
             else reset();
           }}
         />
@@ -246,8 +287,10 @@ export function UploadVideoForm({
             <Upload className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900">{selectedFile.name}</p>
-              {fileError ? (
-                <p className="text-xs text-destructive">{fileError}</p>
+              {fileError || compression.uploadError ? (
+                <p className="text-xs text-destructive">
+                  {fileError ?? compression.uploadError}
+                </p>
               ) : (
                 <p className="text-xs text-slate-600">
                   {compression.message ?? formatBytes(selectedFile.size)}

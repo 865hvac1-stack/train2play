@@ -11,7 +11,7 @@
  */
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, stat, unlink } from "node:fs/promises";
+import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -80,9 +80,16 @@ async function probeDuration(file: string) {
 async function cleanup(storageKey: string | null) {
   const leftover = await prisma.trainingVideo.findFirst({
     where: { title },
-    select: { id: true, storageKey: true },
+    select: { id: true, storageKey: true, videoUrl: true },
   });
   if (leftover) await prisma.trainingVideo.delete({ where: { id: leftover.id } });
+  if (leftover?.videoUrl.startsWith("/api/media/videos/")) {
+    const mediaId = leftover.videoUrl.split("/").pop();
+    if (mediaId) {
+      await prisma.mediaUpload.delete({ where: { id: mediaId } }).catch(() => {});
+    }
+    return;
+  }
   const key = storageKey ?? leftover?.storageKey ?? null;
   if (key) {
     await unlink(path.join(process.cwd(), "public", "uploads", key)).catch(
@@ -119,13 +126,15 @@ async function main() {
     await page.locator('input[name="file"]').setInputFiles(SOURCE);
 
     // Compression plays the clip through, so allow longer than its duration.
-    const status = page.locator("text=/ready to upload/i").first();
+    const status = page
+      .locator("text=/ready to upload|Uploaded securely · ready to save/i")
+      .first();
     await status.waitFor({ timeout: 180_000 });
     const statusText = (await status.innerText()).replace(/\s+/g, " ").trim();
     console.log(`form reported: ${statusText}`);
     assert.match(
       statusText,
-      /Compressed .* → .* · ready to upload/i,
+      /Compressed .* → .*(ready to upload|Uploaded securely)/i,
       "the form should report the before and after size",
     );
 
@@ -139,12 +148,18 @@ async function main() {
 
     const created = await prisma.trainingVideo.findFirst({
       where: { title },
-      select: { storageKey: true },
+      select: { storageKey: true, videoUrl: true },
     });
     assert.ok(created?.storageKey, "the upload should be stored");
     storageKey = created.storageKey;
 
-    const storedPath = path.join(process.cwd(), "public", "uploads", storageKey);
+    let storedPath = path.join(process.cwd(), "public", "uploads", storageKey);
+    if (created.videoUrl.startsWith("/api/media/videos/")) {
+      const response = await page.request.get(`${BASE_URL}${created.videoUrl}`);
+      assert.ok(response.ok(), "authorized playback should reach private R2");
+      storedPath = "/tmp/vid/compressed-from-r2.mp4";
+      await writeFile(storedPath, await response.body());
+    }
     const stored = await stat(storedPath);
     const duration = await probeDuration(storedPath);
 

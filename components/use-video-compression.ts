@@ -7,6 +7,7 @@ import {
   compressVideo,
   type CompressionProgress,
 } from "@/lib/video-compression";
+import { uploadVideoDirectly } from "@/lib/direct-video-upload";
 import {
   COMPRESS_ABOVE_BYTES,
   formatBytes,
@@ -18,8 +19,10 @@ export type CompressionState = {
   percent: number;
   message: string | null;
   sizeError: string | null;
+  uploadError: string | null;
   fileName: string | null;
   finalBytes: number | null;
+  mediaId: string | null;
 };
 
 const idleState: CompressionState = {
@@ -27,8 +30,10 @@ const idleState: CompressionState = {
   percent: 0,
   message: null,
   sizeError: null,
+  uploadError: null,
   fileName: null,
   finalBytes: null,
+  mediaId: null,
 };
 
 function assignToInput(file: File, input: HTMLInputElement | null) {
@@ -60,27 +65,104 @@ export function useVideoCompression() {
   }, []);
 
   const prepare = useCallback(
-    async (file: File, input: HTMLInputElement | null) => {
+    async (
+      file: File,
+      input: HTMLInputElement | null,
+      options: { optimize?: boolean } = {},
+    ) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
       assignToInput(file, input);
 
-      const shouldCompress =
-        file.size > COMPRESS_ABOVE_BYTES && canCompressVideo();
+      const finish = async (
+        prepared: File,
+        compressionMessage: string | null,
+      ) => {
+        assignToInput(prepared, input);
 
-      if (!shouldCompress) {
-        const sizeError = videoFileSizeError(file);
+        setState({
+          status: "working",
+          percent: 0,
+          message: `${compressionMessage ? `${compressionMessage} · ` : ""}Starting secure upload…`,
+          sizeError: null,
+          uploadError: null,
+          fileName: prepared.name,
+          finalBytes: prepared.size,
+          mediaId: null,
+        });
+        try {
+          const direct = await uploadVideoDirectly(prepared, {
+            signal: controller.signal,
+            onProgress: (progress) =>
+              setState((current) => ({
+                ...current,
+                percent: progress.percent,
+                message: `${compressionMessage ? `${compressionMessage} · ` : ""}Uploading securely — ${progress.percent}%`,
+              })),
+          });
+          if (direct) {
+            // R2 already has the bytes; leave only the small media id in the form.
+            if (input) input.files = new DataTransfer().files;
+            setState({
+              status: "ready",
+              percent: 100,
+              message: `${compressionMessage ? `${compressionMessage} · ` : ""}Uploaded securely · ready to save`,
+              sizeError: null,
+              uploadError: null,
+              fileName: prepared.name,
+              finalBytes: prepared.size,
+              mediaId: direct.mediaId,
+            });
+            return prepared;
+          }
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            return prepared;
+          }
+          setState({
+            status: "error",
+            percent: 0,
+            message: null,
+            sizeError: null,
+            uploadError:
+              error instanceof Error
+                ? error.message
+                : "The secure upload failed. Choose the file and try again.",
+            fileName: prepared.name,
+            finalBytes: prepared.size,
+            mediaId: null,
+          });
+          return prepared;
+        }
+
+        // No R2 yet: preserve today's server/Cloudinary path and its 100 MB cap.
+        const sizeError = videoFileSizeError(prepared);
         setState({
           status: sizeError ? "error" : "ready",
           percent: 100,
-          message: sizeError ? null : `${formatBytes(file.size)} · ready`,
+          message: sizeError
+            ? null
+            : compressionMessage
+              ? `${compressionMessage} · ready to upload`
+              : `${formatBytes(prepared.size)} · ready`,
           sizeError,
-          fileName: file.name,
-          finalBytes: file.size,
+          uploadError: null,
+          fileName: prepared.name,
+          finalBytes: prepared.size,
+          mediaId: null,
         });
-        return file;
+        return prepared;
+      };
+
+      const shouldCompress =
+        options.optimize !== false &&
+        file.size > COMPRESS_ABOVE_BYTES &&
+        canCompressVideo();
+
+      if (!shouldCompress) {
+        return finish(file, `${formatBytes(file.size)} · ready to upload`);
       }
 
       setState({
@@ -88,8 +170,10 @@ export function useVideoCompression() {
         percent: 0,
         message: `Compressing ${formatBytes(file.size)} video — 0%`,
         sizeError: null,
+        uploadError: null,
         fileName: file.name,
         finalBytes: null,
+        mediaId: null,
       });
 
       try {
@@ -109,21 +193,12 @@ export function useVideoCompression() {
 
         if (controller.signal.aborted) return file;
 
-        assignToInput(result.file, input);
-        const sizeError = videoFileSizeError(result.file);
-        setState({
-          status: sizeError ? "error" : "ready",
-          percent: 100,
-          message: sizeError
-            ? null
-            : result.compressed
-              ? `Compressed ${formatBytes(result.originalBytes)} → ${formatBytes(result.finalBytes)} · ready to upload`
-              : `${formatBytes(result.finalBytes)} · ready to upload`,
-          sizeError,
-          fileName: result.file.name,
-          finalBytes: result.finalBytes,
-        });
-        return result.file;
+        return finish(
+          result.file,
+          result.compressed
+            ? `Compressed ${formatBytes(result.originalBytes)} → ${formatBytes(result.finalBytes)}`
+            : `${formatBytes(result.finalBytes)} · ready to upload`,
+        );
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           return file;
@@ -134,8 +209,10 @@ export function useVideoCompression() {
           percent: 100,
           message: sizeError ? null : `${formatBytes(file.size)} · ready`,
           sizeError,
+          uploadError: null,
           fileName: file.name,
           finalBytes: file.size,
+          mediaId: null,
         });
         return file;
       } finally {

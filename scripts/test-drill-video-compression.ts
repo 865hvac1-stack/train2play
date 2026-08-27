@@ -36,10 +36,17 @@ async function fillDrill(page: Page) {
 async function cleanup() {
   const drill = await prisma.catalogDrill.findFirst({
     where: { title },
-    select: { id: true, videoStorageKey: true },
+    select: { id: true, videoStorageKey: true, videoUrl: true },
   });
   if (!drill) return;
   await prisma.catalogDrill.delete({ where: { id: drill.id } });
+  if (drill.videoUrl?.startsWith("/api/media/videos/")) {
+    const mediaId = drill.videoUrl.split("/").pop();
+    if (mediaId) {
+      await prisma.mediaUpload.delete({ where: { id: mediaId } }).catch(() => {});
+    }
+    return;
+  }
   if (drill.videoStorageKey) {
     await unlink(
       path.join(process.cwd(), "public", "uploads", drill.videoStorageKey),
@@ -83,7 +90,7 @@ async function main() {
 
     // Now let it finish and save for real.
     await page
-      .locator("text=/ready to upload|Compressed .* →/i")
+      .locator("text=/ready to upload|Uploaded securely · ready to save/i")
       .first()
       .waitFor({ timeout: 180_000 });
     await page.click('button:has-text("Add drill")');
@@ -95,14 +102,25 @@ async function main() {
     });
     assert.ok(drill?.videoStorageKey, "the drill should have a stored video");
 
-    const stored = await stat(
-      path.join(process.cwd(), "public", "uploads", drill.videoStorageKey),
-    );
+    const storedBytes = drill.videoUrl?.startsWith("/api/media/videos/")
+      ? Number(
+          (
+            await prisma.mediaUpload.findUnique({
+              where: { id: drill.videoUrl.split("/").pop()! },
+              select: { sizeBytes: true },
+            })
+          )?.sizeBytes ?? 0,
+        )
+      : (
+          await stat(
+            path.join(process.cwd(), "public", "uploads", drill.videoStorageKey),
+          )
+        ).size;
     console.log(
-      `drill video stored: ${(stored.size / 1024 / 1024).toFixed(1)} MB (source ${(sourceBytes / 1024 / 1024).toFixed(1)} MB)`,
+      `drill video stored: ${(storedBytes / 1024 / 1024).toFixed(1)} MB (source ${(sourceBytes / 1024 / 1024).toFixed(1)} MB)`,
     );
     assert.ok(
-      stored.size < sourceBytes / 3,
+      storedBytes < sourceBytes / 3,
       "the drill video should be compressed before upload",
     );
 
