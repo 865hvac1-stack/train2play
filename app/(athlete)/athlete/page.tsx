@@ -348,12 +348,24 @@ export default async function AthleteHomePage() {
         {data.activity.length > 0 ? (
           <ul className="space-y-2">
             {data.activity.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-xl border border-white/10 bg-zinc-900 px-4 py-3"
-              >
-                <p className="text-sm font-semibold text-white">{item.title}</p>
-                <p className="text-xs text-slate-400">{item.detail}</p>
+              <li key={item.id}>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="block rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 transition hover:border-brand/50 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    <p className="text-sm font-semibold text-white">{item.title}</p>
+                    <p className="text-xs text-slate-400">{item.detail}</p>
+                    <p className="mt-2 text-xs font-semibold text-brand">
+                      Watch video →
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="rounded-xl border border-white/10 bg-zinc-900 px-4 py-3">
+                    <p className="text-sm font-semibold text-white">{item.title}</p>
+                    <p className="text-xs text-slate-400">{item.detail}</p>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

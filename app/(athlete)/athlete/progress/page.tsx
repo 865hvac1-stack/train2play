@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   getAthleteDashboardData,
   requireAthleteContext,
@@ -87,13 +89,25 @@ export default async function AthleteProgressPage() {
       <section className="space-y-2">
         <h2 className="font-heading text-xl font-bold">Activity</h2>
         {data.activity.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-xl border border-white/10 bg-zinc-900 px-4 py-3"
-          >
-            <p className="text-sm font-semibold">{item.title}</p>
-            <p className="text-xs text-slate-400">{item.detail}</p>
-          </div>
+          item.href ? (
+            <Link
+              key={item.id}
+              href={item.href}
+              className="block rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 transition hover:border-brand/50 hover:bg-zinc-800"
+            >
+              <p className="text-sm font-semibold">{item.title}</p>
+              <p className="text-xs text-slate-400">{item.detail}</p>
+              <p className="mt-2 text-xs font-semibold text-brand">Watch video →</p>
+            </Link>
+          ) : (
+            <div
+              key={item.id}
+              className="rounded-xl border border-white/10 bg-zinc-900 px-4 py-3"
+            >
+              <p className="text-sm font-semibold">{item.title}</p>
+              <p className="text-xs text-slate-400">{item.detail}</p>
+            </div>
+          )
         ))}
       </section>
     </div>

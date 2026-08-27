@@ -92,7 +92,7 @@ function isSameLocalDay(a: Date, b: Date) {
 export async function getAthleteDashboardData(ctx: AthleteContext) {
   const athleteId = ctx.athleteId;
 
-  const [plans, metrics, goals, videos, metricEntries, sessions] = await Promise.all([
+  const [plans, metrics, goals, videoReviews, metricEntries, sessions] = await Promise.all([
     athleteId
       ? prisma.trainingPlan.findMany({
           where: { athleteId, status: "ACTIVE" },
@@ -125,13 +125,12 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
           orderBy: { createdAt: "desc" },
         })
       : Promise.resolve([]),
-    athleteId
-      ? prisma.trainingVideo.findMany({
-          where: { athleteId },
-          orderBy: { updatedAt: "desc" },
-          take: 5,
-        })
-      : Promise.resolve([]),
+    prisma.videoReview.findMany({
+      where: { athleteProfileId: ctx.profileId },
+      select: { id: true, title: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+    }),
     prisma.metricEntry.findMany({
       where: { athleteProfileId: ctx.profileId },
       include: { metricDefinition: true },
@@ -364,7 +363,13 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
   }
 
   // Recent activity (simple timeline)
-  const activity: { id: string; title: string; detail: string; at: Date }[] = [];
+  const activity: {
+    id: string;
+    title: string;
+    detail: string;
+    at: Date;
+    href?: string;
+  }[] = [];
 
   for (const s of sessions) {
     if (s.status === "COMPLETED" && s.completedAt) {
@@ -418,12 +423,13 @@ export async function getAthleteDashboardData(ctx: AthleteContext) {
       at: new Date(),
     });
   }
-  for (const v of videos.slice(0, 3)) {
+  for (const review of videoReviews) {
     activity.push({
-      id: `video-${v.id}`,
+      id: `video-review-${review.id}`,
       title: "Video available",
-      detail: v.title,
-      at: v.updatedAt,
+      detail: review.title,
+      at: review.updatedAt,
+      href: `/athlete/videos/reviews/${review.id}`,
     });
   }
 
