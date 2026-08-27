@@ -258,7 +258,7 @@ export async function importStarterDrillsAction(courseId: string) {
 
   const catalog = await listCatalogDrillsForSport(course.sport);
   if (catalog.length === 0) {
-    throw new Error("No starter drills for this sport yet");
+    throw new Error("No published suggested drills for this sport yet");
   }
 
   const existingCount = await prisma.courseItem.count({ where: { courseId } });

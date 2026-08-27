@@ -10,6 +10,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { VoiceReviewWorkspace } from "@/components/voice-review-workspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { listCatalogDrillsForSport } from "@/lib/catalog-drills";
 import { requireCoach } from "@/lib/session";
 import { formatVideoReviewStatus, VIDEO_REVIEW_STATUS } from "@/lib/video-categories";
 import { markReviewInProgress } from "@/lib/video-reviews";
@@ -90,16 +91,19 @@ export default async function CoachVideoReviewPage({
     await markReviewInProgress(review.id, coach.id);
   }
 
-  const plans = await prisma.trainingPlan.findMany({
-    where: { coachId: coach.id },
-    orderBy: { updatedAt: "desc" },
-    take: 40,
-    select: {
-      id: true,
-      title: true,
-      _count: { select: { workouts: true } },
-    },
-  });
+  const [plans, catalogDrills] = await Promise.all([
+    prisma.trainingPlan.findMany({
+      where: { coachId: coach.id },
+      orderBy: { updatedAt: "desc" },
+      take: 40,
+      select: {
+        id: true,
+        title: true,
+        _count: { select: { workouts: true } },
+      },
+    }),
+    listCatalogDrillsForSport(review.sport),
+  ]);
 
   const athleteHref = review.athleteProfile.legacyAthleteId
     ? `/athletes/${review.athleteProfile.legacyAthleteId}`
@@ -175,7 +179,11 @@ export default async function CoachVideoReviewPage({
           />
           <CoachReviewAssignPanel
             reviewId={review.id}
-            sport={review.sport}
+            drills={catalogDrills.map(({ drill, ageBandLabel }) => ({
+              id: drill.id,
+              title: drill.title,
+              ageBandLabel,
+            }))}
             plans={plans.map((p) => ({
               id: p.id,
               title: p.title,

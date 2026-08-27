@@ -7,8 +7,8 @@ import {
 } from "@/lib/email";
 import { getAppUrl } from "@/lib/env";
 import { VIDEO_REVIEW_STATUS } from "@/lib/video-categories";
+import { listCatalogDrillsForSport } from "@/lib/catalog-drills";
 import type { Drill } from "@/lib/drills";
-import { listCatalogDrillsForSport } from "@/lib/drills";
 
 export async function assertApprovedCoachForAthlete(
   athleteProfileId: string,
@@ -258,7 +258,7 @@ export async function assignDrillFromReview(options: {
   });
   if (!review) throw new Error("Review not found");
 
-  const catalog = listCatalogDrillsForSport(options.sport);
+  const catalog = await listCatalogDrillsForSport(options.sport);
   const match = catalog.find((row) => row.drill.id === options.drillId);
   if (!match) throw new Error("Drill not found");
   const drill: Drill = match.drill;

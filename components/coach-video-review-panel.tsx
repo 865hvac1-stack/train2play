@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { listCatalogDrillsForSport } from "@/lib/drills";
 
 function SubmitLabel({ idle, busy }: { idle: string; busy: string }) {
   const { pending } = useFormStatus();
@@ -28,14 +27,13 @@ type PlanOption = {
 
 export function CoachReviewAssignPanel({
   reviewId,
-  sport,
+  drills,
   plans,
 }: {
   reviewId: string;
-  sport: string;
+  drills: { id: string; title: string; ageBandLabel: string }[];
   plans: PlanOption[];
 }) {
-  const drills = useMemo(() => listCatalogDrillsForSport(sport), [sport]);
   const [mode, setMode] = useState<"drill" | "workout" | "program">("drill");
   const [drillState, drillAction] = useActionState(
     assignDrillFromReviewAction.bind(null, reviewId),
@@ -100,11 +98,13 @@ export function CoachReviewAssignPanel({
               defaultValue=""
             >
               <option value="" disabled>
-                Select a drill…
+                {drills.length > 0
+                  ? "Select a drill…"
+                  : "No published drills for this sport"}
               </option>
-              {drills.map(({ drill, ageBandLabel }) => (
+              {drills.map((drill) => (
                 <option key={drill.id} value={drill.id}>
-                  {drill.title} ({ageBandLabel})
+                  {drill.title} ({drill.ageBandLabel})
                 </option>
               ))}
             </select>
@@ -127,7 +127,7 @@ export function CoachReviewAssignPanel({
               placeholder="Focus on getting your feet set before the catch."
             />
           </div>
-          <Button type="submit">
+          <Button type="submit" disabled={drills.length === 0}>
             <SubmitLabel idle="Assign to athlete" busy="Assigning…" />
           </Button>
         </form>

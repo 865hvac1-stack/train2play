@@ -21,7 +21,7 @@ import {
 } from "../lib/video-reviews";
 import { VIDEO_REVIEW_STATUS } from "../lib/video-categories";
 import { DEMO_VIDEO_URL } from "../lib/videos";
-import { listCatalogDrillsForSport } from "../lib/drills";
+import { listCatalogDrillsForSport } from "../lib/catalog-drills";
 
 const prisma = createPrismaClient();
 const stamp = Date.now();
@@ -146,7 +146,7 @@ async function main() {
     },
   });
 
-  const drills = listCatalogDrillsForSport("Basketball");
+  const drills = await listCatalogDrillsForSport("Basketball");
   assert.ok(drills.length > 0);
   const plan = await assignDrillFromReview({
     reviewId: review.id,
