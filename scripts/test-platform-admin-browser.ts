@@ -116,10 +116,15 @@ async function main() {
 
     if (viewport.label === "mobile-390") {
       current = "/admin (mobile nav)";
-      await admin.page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
-      await admin.page.getByRole("button", { name: /open admin menu/i }).click();
-      await admin.page.waitForTimeout(600);
-      const navText = await admin.page.locator("body").innerText();
+      await admin.page.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
+      const trigger = admin.page.getByRole("button", {
+        name: /open admin menu/i,
+      });
+      await trigger.waitFor();
+      await trigger.click();
+      const drawer = admin.page.locator('[role="dialog"]').first();
+      await drawer.waitFor({ timeout: 10_000 });
+      const navText = await drawer.innerText();
       for (const label of [
         "Command center",
         "Users",

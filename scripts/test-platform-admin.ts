@@ -16,11 +16,51 @@ import {
   rangeStart,
 } from "../lib/admin-analytics";
 import { createPrismaClient } from "../lib/db";
+import {
+  ALLOWLIST_ENV_VARS,
+  allowlistedRoleForEmail,
+} from "../lib/role-allowlist";
 
 const prisma = createPrismaClient();
 const stamp = Date.now();
 
+function checkAllowlist() {
+  const previousAdmins = process.env.PLATFORM_ADMIN_EMAIL;
+  const previousTrainers = process.env.TRAINER_EMAILS;
+  try {
+    process.env.PLATFORM_ADMIN_EMAIL = "";
+    process.env.TRAINER_EMAILS = "";
+    assert.equal(allowlistedRoleForEmail("nobody@train2play.com"), null);
+
+    process.env.PLATFORM_ADMIN_EMAIL = " Admin@Train2Play.com , tj@t2p.com ";
+    process.env.TRAINER_EMAILS = "chase@train2play.com";
+    assert.equal(
+      allowlistedRoleForEmail("admin@train2play.com"),
+      "PLATFORM_ADMIN",
+      "allowlist must ignore case and surrounding spaces",
+    );
+    assert.equal(allowlistedRoleForEmail("TJ@t2p.com"), "PLATFORM_ADMIN");
+    assert.equal(allowlistedRoleForEmail("chase@train2play.com"), "TRAINER");
+    assert.equal(allowlistedRoleForEmail("someone@else.com"), null);
+    assert.equal(allowlistedRoleForEmail(null), null);
+
+    process.env.TRAINER_EMAILS = "admin@train2play.com";
+    assert.equal(
+      allowlistedRoleForEmail("admin@train2play.com"),
+      "PLATFORM_ADMIN",
+      "platform admin must win when an email is in both variables",
+    );
+    assert.equal(ALLOWLIST_ENV_VARS.TRAINER, "TRAINER_EMAILS");
+    assert.equal(ALLOWLIST_ENV_VARS.PLATFORM_ADMIN, "PLATFORM_ADMIN_EMAIL");
+  } finally {
+    process.env.PLATFORM_ADMIN_EMAIL = previousAdmins;
+    process.env.TRAINER_EMAILS = previousTrainers;
+  }
+}
+
 async function main() {
+  checkAllowlist();
+
   assert.equal(normalizeAdminRange(undefined), "30d");
   assert.equal(normalizeAdminRange("nonsense"), "30d");
   assert.equal(normalizeAdminRange("7d"), "7d");

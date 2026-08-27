@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 import { ensureOrganizationMembership } from "@/lib/organizations";
+import { allowlistedRoleForEmail } from "@/lib/role-allowlist";
 import { SPORTS } from "@/lib/athletes";
 
 export const signupSchema = z
@@ -57,18 +58,7 @@ function splitDisplayName(name: string) {
 }
 
 function staffRoleForEmail(email: string) {
-  const lowered = email.toLowerCase();
-  const admins = (process.env.PLATFORM_ADMIN_EMAIL ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  if (admins.includes(lowered)) return "PLATFORM_ADMIN" as const;
-  const trainers = (process.env.TRAINER_EMAILS ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  if (trainers.includes(lowered)) return "TRAINER" as const;
-  return "COACH" as const;
+  return allowlistedRoleForEmail(email) ?? ("COACH" as const);
 }
 
 export async function createUser(input: SignupInput) {

@@ -4,14 +4,22 @@ import { notFound } from "next/navigation";
 
 import {
   assignUserOrganizationAction,
-  changeUserRoleAction,
   removeUserOrganizationAction,
-  setUserActiveAction,
 } from "@/app/(admin)/admin/actions";
+import {
+  AdminActivationForm,
+  AdminAllowlistNote,
+  AdminRoleForm,
+} from "@/components/admin-account-controls";
 import { AdminShell } from "@/components/admin-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
+import {
+  ALLOWLIST_ENV_VARS,
+  allowlistedRoleForEmail,
+} from "@/lib/role-allowlist";
+import { requirePlatformAdmin } from "@/lib/session";
 
 function Panel({
   title,
@@ -38,7 +46,11 @@ function labelRole(role: string) {
     ? "Director"
     : role === "PARENT"
       ? "Guardian"
-      : role.replaceAll("_", " ");
+      : role === "PLATFORM_ADMIN"
+        ? "Platform Admin"
+        : role === "ORG_ADMIN"
+          ? "Organization Admin"
+          : role.replaceAll("_", " ");
 }
 
 export default async function AdminUserDetail({
@@ -47,6 +59,7 @@ export default async function AdminUserDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const admin = await requirePlatformAdmin();
   const [user, organizations] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
@@ -120,6 +133,9 @@ export default async function AdminUserDetail({
     }),
   ]);
   if (!user) notFound();
+
+  const isSelf = user.id === admin.id;
+  const allowlistedRole = allowlistedRoleForEmail(user.email);
 
   const sports = [
     ...(user.athleteProfile?.sports.map((sport) => sport.sport) ?? []),
@@ -351,40 +367,24 @@ export default async function AdminUserDetail({
         <aside className="space-y-5">
           <section className="rounded-2xl border border-slate-200 bg-white p-5">
             <h2 className="font-heading text-lg font-bold">Account controls</h2>
-            <form
-              action={changeUserRoleAction.bind(null, user.id)}
-              className="mt-4 space-y-2"
-            >
-              <label className="text-xs font-semibold text-slate-600">Role</label>
-              <select
-                name="role"
-                defaultValue={user.role}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
-              >
-                <option value="ATHLETE">Athlete</option>
-                <option value="COACH">Coach</option>
-                <option value="TRAINER">Director</option>
-                <option value="PARENT">Guardian</option>
-                <option value="STAFF">Staff</option>
-                <option value="ORG_ADMIN">Organization Admin</option>
-                <option value="PLATFORM_ADMIN">Platform Admin</option>
-              </select>
-              <Button type="submit" variant="outline" className="w-full">
-                Update role
-              </Button>
-            </form>
-            <form
-              action={setUserActiveAction.bind(null, user.id, !user.isActive)}
-              className="mt-3"
-            >
-              <Button
-                type="submit"
-                variant={user.isActive ? "outline" : "default"}
-                className="w-full"
-              >
-                {user.isActive ? "Deactivate account" : "Activate account"}
-              </Button>
-            </form>
+            <div className="mt-4 space-y-3">
+              {allowlistedRole ? (
+                <AdminAllowlistNote
+                  email={user.email}
+                  envVar={ALLOWLIST_ENV_VARS[allowlistedRole]}
+                  roleLabel={labelRole(allowlistedRole)}
+                />
+              ) : null}
+              <AdminRoleForm
+                userId={user.id}
+                currentRole={user.role}
+                isSelf={isSelf}
+              />
+              <AdminActivationForm
+                userId={user.id}
+                isActive={user.isActive}
+              />
+            </div>
             <p className="mt-3 text-xs text-slate-500">
               Deactivation preserves all historical training and activity and
               invalidates server-side access.

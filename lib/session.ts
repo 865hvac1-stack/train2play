@@ -9,6 +9,7 @@ import {
   isPlatformAdmin,
   isTrainer,
 } from "@/lib/roles";
+import { allowlistedRoleForEmail } from "@/lib/role-allowlist";
 import { prisma } from "@/lib/db";
 
 export async function getSession() {
@@ -88,37 +89,26 @@ export async function requirePlatformAdmin() {
   return user;
 }
 
-function splitEmails(value: string | undefined) {
-  return (value ?? "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 async function maybePromoteStaff(
   userId: string,
   email: string | null | undefined,
 ) {
-  if (!email) return;
-  const lowered = email.toLowerCase();
-  const admins = splitEmails(process.env.PLATFORM_ADMIN_EMAIL);
-  if (admins.includes(lowered)) {
+  const allowlisted = allowlistedRoleForEmail(email);
+  if (!allowlisted) return;
+  if (allowlisted === "PLATFORM_ADMIN") {
     await prisma.user.updateMany({
       where: { id: userId, role: { not: "PLATFORM_ADMIN" } },
       data: { role: "PLATFORM_ADMIN", onboardingCompletedAt: new Date() },
     });
     return;
   }
-  const trainers = splitEmails(process.env.TRAINER_EMAILS);
-  if (trainers.includes(lowered)) {
-    await prisma.user.updateMany({
-      where: {
-        id: userId,
-        role: { notIn: ["PLATFORM_ADMIN", "TRAINER"] },
-      },
-      data: { role: "TRAINER", onboardingCompletedAt: new Date() },
-    });
-  }
+  await prisma.user.updateMany({
+    where: {
+      id: userId,
+      role: { notIn: ["PLATFORM_ADMIN", "TRAINER"] },
+    },
+    data: { role: "TRAINER", onboardingCompletedAt: new Date() },
+  });
 }
 
 export async function requireCoachId() {

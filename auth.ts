@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { authConfig } from "@/auth.config";
+import { allowlistedRoleForEmail } from "@/lib/role-allowlist";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -46,24 +47,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const staffRole = (() => {
-          const lowered = user.email.toLowerCase();
-          const admins = (process.env.PLATFORM_ADMIN_EMAIL ?? "")
-            .split(",")
-            .map((value) => value.trim().toLowerCase())
-            .filter(Boolean);
-          if (admins.includes(lowered) && user.role !== "PLATFORM_ADMIN") {
-            return "PLATFORM_ADMIN" as const;
+          const allowlisted = allowlistedRoleForEmail(user.email);
+          if (allowlisted === "PLATFORM_ADMIN") {
+            return user.role === "PLATFORM_ADMIN" ? null : allowlisted;
           }
-          const trainers = (process.env.TRAINER_EMAILS ?? "")
-            .split(",")
-            .map((value) => value.trim().toLowerCase())
-            .filter(Boolean);
-          if (
-            trainers.includes(lowered) &&
-            user.role !== "PLATFORM_ADMIN" &&
-            user.role !== "TRAINER"
-          ) {
-            return "TRAINER" as const;
+          if (allowlisted === "TRAINER") {
+            return user.role === "PLATFORM_ADMIN" || user.role === "TRAINER"
+              ? null
+              : allowlisted;
           }
           return null;
         })();

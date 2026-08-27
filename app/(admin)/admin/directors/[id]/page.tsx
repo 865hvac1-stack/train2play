@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import {
   assignDirectorSportAction,
   removeDirectorSportAction,
-  setUserActiveAction,
 } from "@/app/(admin)/admin/actions";
+import { AdminActivationForm } from "@/components/admin-account-controls";
 import { AdminShell } from "@/components/admin-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -275,18 +275,13 @@ export default async function DirectorDetailPage({
                 </dd>
               </div>
             </dl>
-            <form
-              action={setUserActiveAction.bind(null, director.id, !director.isActive)}
-              className="mt-4"
-            >
-              <Button
-                type="submit"
-                variant={director.isActive ? "outline" : "default"}
-                className="w-full"
-              >
-                {director.isActive ? "Deactivate Director" : "Activate Director"}
-              </Button>
-            </form>
+            <div className="mt-4">
+              <AdminActivationForm
+                userId={director.id}
+                isActive={director.isActive}
+                label="Director"
+              />
+            </div>
           </section>
 
           <section className="rounded-2xl border bg-white p-5">

@@ -9,6 +9,10 @@ import { z } from "zod";
 import { writeAdminAudit } from "@/lib/admin-audit";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/lib/generated/prisma/client";
+import {
+  ALLOWLIST_ENV_VARS,
+  allowlistedRoleForEmail,
+} from "@/lib/role-allowlist";
 import { requirePlatformAdmin } from "@/lib/session";
 
 const USER_ROLES = [
@@ -29,22 +33,57 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-export async function setUserActiveAction(userId: string, active: boolean) {
+export type AdminAccountActionState = { error?: string; success?: string };
+
+function labelRole(role: UserRole) {
+  return role === "TRAINER"
+    ? "Director"
+    : role === "PARENT"
+      ? "Guardian"
+      : role === "PLATFORM_ADMIN"
+        ? "Platform Admin"
+        : role === "ORG_ADMIN"
+          ? "Organization Admin"
+          : role.charAt(0) + role.slice(1).toLowerCase();
+}
+
+/**
+ * The Railway allowlist re-promotes at sign-in, so a role saved here can be
+ * overwritten. Say so instead of letting the change quietly revert.
+ */
+function allowlistWarning(email: string, savedRole: UserRole) {
+  const allowlisted = allowlistedRoleForEmail(email);
+  if (!allowlisted || allowlisted === savedRole) return "";
+  return ` Heads up: ${email} is listed in ${ALLOWLIST_ENV_VARS[allowlisted]} on Railway, so this account returns to ${labelRole(allowlisted)} at its next sign-in. Remove the email from that variable to make this stick.`;
+}
+
+export async function setUserActiveAction(
+  userId: string,
+  active: boolean,
+  _previous: AdminAccountActionState,
+  _formData: FormData,
+): Promise<AdminAccountActionState> {
   const admin = await requirePlatformAdmin();
   if (userId === admin.id && !active) {
-    throw new Error("You cannot deactivate your own account.");
+    return {
+      error:
+        "You cannot deactivate your own account. Ask another Platform Admin to do it.",
+    };
   }
   const target = await prisma.user.findUnique({
     where: { id: userId },
     select: { name: true, email: true, role: true, isActive: true },
   });
-  if (!target) throw new Error("User not found");
+  if (!target) return { error: "That account no longer exists." };
   if (!active && target.role === "PLATFORM_ADMIN") {
     const activeAdmins = await prisma.user.count({
       where: { role: "PLATFORM_ADMIN", isActive: true },
     });
     if (activeAdmins <= 1) {
-      throw new Error("Train2Play must keep at least one active Platform Admin.");
+      return {
+        error:
+          "Train2Play must keep at least one active Platform Admin. Promote a second admin first.",
+      };
     }
   }
   await prisma.$transaction(async (tx) => {
@@ -70,20 +109,50 @@ export async function setUserActiveAction(userId: string, active: boolean) {
   revalidatePath("/admin");
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}`);
+  revalidatePath("/admin/directors");
+  revalidatePath(`/admin/directors/${userId}`);
+  return {
+    success: `${target.name} is now ${active ? "active" : "deactivated"}.`,
+  };
 }
 
-export async function changeUserRoleAction(userId: string, formData: FormData) {
+export async function changeUserRoleAction(
+  userId: string,
+  _previous: AdminAccountActionState,
+  formData: FormData,
+): Promise<AdminAccountActionState> {
   const admin = await requirePlatformAdmin();
-  const role = z.enum(USER_ROLES).parse(formData.get("role"));
-  if (userId === admin.id && role !== "PLATFORM_ADMIN") {
-    throw new Error("You cannot remove your own Platform Admin role.");
-  }
+  const parsed = z.enum(USER_ROLES).safeParse(formData.get("role"));
+  if (!parsed.success) return { error: "Pick a role to save." };
+  const role = parsed.data;
   const target = await prisma.user.findUnique({
     where: { id: userId },
     select: { name: true, email: true, role: true },
   });
-  if (!target) throw new Error("User not found");
-  if (target.role === role) return;
+  if (!target) return { error: "That account no longer exists." };
+
+  if (userId === admin.id && role !== "PLATFORM_ADMIN") {
+    return {
+      error:
+        "You cannot change your own role, because it would lock you out of Platform Admin. Promote a second Platform Admin and have them make the change.",
+    };
+  }
+  if (target.role === "PLATFORM_ADMIN" && role !== "PLATFORM_ADMIN") {
+    const remainingAdmins = await prisma.user.count({
+      where: { role: "PLATFORM_ADMIN", isActive: true, id: { not: userId } },
+    });
+    if (remainingAdmins === 0) {
+      return {
+        error:
+          "Train2Play must keep at least one Platform Admin. Promote a replacement first.",
+      };
+    }
+  }
+  if (target.role === role) {
+    return {
+      success: `No change — ${target.name} is already ${labelRole(role)}.${allowlistWarning(target.email, role)}`,
+    };
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
@@ -111,6 +180,11 @@ export async function changeUserRoleAction(userId: string, formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}`);
+  revalidatePath("/admin/directors");
+  revalidatePath(`/admin/directors/${userId}`);
+  return {
+    success: `${target.name} is now ${labelRole(role)}.${allowlistWarning(target.email, role)}`,
+  };
 }
 
 export async function assignUserOrganizationAction(
