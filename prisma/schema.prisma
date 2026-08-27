@@ -121,28 +121,33 @@ model Team {
 }
 
 model AthleteProfile {
-  id                     String                         @id @default(cuid())
-  userId                 String?                        @unique
-  user                   User?                          @relation("AthleteProfileUser", fields: [userId], references: [id], onDelete: SetNull)
-  firstName              String
-  lastName               String
-  dateOfBirth            DateTime?
-  graduationYear         Int?
-  avatarUrl              String?
-  primarySport           String?
-  legacyAthleteId        String?                        @unique
-  legacyAthlete          Athlete?                       @relation("LegacyAthleteProfile", fields: [legacyAthleteId], references: [id], onDelete: SetNull)
-  createdAt              DateTime                       @default(now())
-  updatedAt              DateTime                       @updatedAt
-  sports                 AthleteSport[]
-  memberships            AthleteMembership[]
-  guardianLinks          GuardianLink[]
-  metricEntries          MetricEntry[]
-  coachConnections       CoachAthleteConnection[]
-  videoReviews           VideoReview[]
-  courseItemProgress     CourseItemProgress[]
-  catalogDrillRecipients CatalogDrillAthleteRecipient[]
-  catalogDrillPushes     CatalogDrillPush[]
+  id                        String                         @id @default(cuid())
+  userId                    String?                        @unique
+  user                      User?                          @relation("AthleteProfileUser", fields: [userId], references: [id], onDelete: SetNull)
+  firstName                 String
+  lastName                  String
+  dateOfBirth               DateTime?
+  graduationYear            Int?
+  avatarUrl                 String?
+  primarySport              String?
+  legacyAthleteId           String?                        @unique
+  legacyAthlete             Athlete?                       @relation("LegacyAthleteProfile", fields: [legacyAthleteId], references: [id], onDelete: SetNull)
+  createdAt                 DateTime                       @default(now())
+  updatedAt                 DateTime                       @updatedAt
+  sports                    AthleteSport[]
+  memberships               AthleteMembership[]
+  guardianLinks             GuardianLink[]
+  metricEntries             MetricEntry[]
+  coachConnections          CoachAthleteConnection[]
+  videoReviews              VideoReview[]
+  courseItemProgress        CourseItemProgress[]
+  catalogDrillRecipients    CatalogDrillAthleteRecipient[]
+  catalogDrillPushes        CatalogDrillPush[]
+  guardianContacts          GuardianContact[]
+  consentRecords            ConsentRecord[]
+  publicVideoSharingEnabled Boolean                        @default(false)
+  publicLeaderboardOptIn    Boolean                        @default(false)
+  privacySettingsUpdatedAt  DateTime?
 
   @@index([legacyAthleteId])
 }
@@ -190,6 +195,48 @@ model GuardianLink {
 
   @@unique([guardianUserId, athleteProfileId])
   @@index([athleteProfileId])
+}
+
+/**
+ * Parent or legal-guardian contact supplied for an athlete. This does not
+ * create login access; GuardianLink remains the authorization relationship.
+ */
+model GuardianContact {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  firstName        String
+  lastName         String
+  relationship     String
+  email            String
+  phone            String?
+  isPrimary        Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([athleteProfileId])
+  @@index([email])
+}
+
+/**
+ * Append-only evidence of the choices made during signup. Public sharing
+ * choices are independent and default to denied.
+ */
+model ConsentRecord {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  grantedByUserId  String?
+  grantedByUser    User?          @relation("ConsentGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+  consentType      String
+  granted          Boolean
+  documentVersion  String
+  guardianName     String?
+  guardianEmail    String?
+  createdAt        DateTime       @default(now())
+
+  @@index([athleteProfileId, consentType, createdAt])
+  @@index([grantedByUserId])
 }
 
 /**
@@ -323,6 +370,7 @@ model User {
   notifications               AppNotification[]
   videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
   mediaUploads                MediaUpload[]
+  consentRecords              ConsentRecord[]           @relation("ConsentGrantedBy")
 
   @@index([role, isActive])
   @@index([createdAt])
@@ -335,20 +383,20 @@ model User {
  * bucket URL. Associations are resolved from those URLs for playback auth.
  */
 model MediaUpload {
-  id            String    @id @default(cuid())
-  ownerUserId   String
-  ownerUser     User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  provider      String    @default("s3")
-  storageKey    String    @unique
-  multipartId   String?
-  originalName  String
-  contentType   String
-  sizeBytes     BigInt
-  status        String    @default("PENDING")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  completedAt   DateTime?
-  expiresAt     DateTime
+  id           String    @id @default(cuid())
+  ownerUserId  String
+  ownerUser    User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  provider     String    @default("s3")
+  storageKey   String    @unique
+  multipartId  String?
+  originalName String
+  contentType  String
+  sizeBytes    BigInt
+  status       String    @default("PENDING")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  completedAt  DateTime?
+  expiresAt    DateTime
 
   @@index([ownerUserId, status])
   @@index([status, expiresAt])

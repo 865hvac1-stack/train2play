@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       </header>
       <main className="mx-auto max-w-3xl space-y-6 px-6 py-12 text-slate-700">
         <h1 className="text-3xl font-bold text-slate-900">Privacy Policy</h1>
-        <p className="text-sm text-slate-500">Last updated: August 24, 2026</p>
+        <p className="text-sm text-slate-500">Last updated: August 27, 2026</p>
 
         <p>
           {brand.name} (&quot;we&quot;, &quot;us&quot;) provides coaching tools for youth sports
@@ -38,6 +38,9 @@ export default function PrivacyPage() {
               metrics, notes, and optional location for pickup matching
             </li>
             <li>Training plans, workouts, video files you upload, and coaching annotations</li>
+            <li>
+              Parent or guardian contact details supplied for a minor athlete
+            </li>
             <li>Parent email addresses when you create family share links</li>
           </ul>
         </section>
@@ -64,9 +67,26 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-xl font-semibold text-slate-900">Youth data</h2>
           <p>
-            Athlete profiles may include information about minors. Coaches are responsible for
-            collecting and sharing that information only with appropriate parental or organizational
-            consent. Contact us if you need help removing athlete data.
+            Athlete profiles may include information about minors. A parent or
+            legal guardian must authorize a minor&apos;s self-service profile.
+            We record that authorization with the policy version and the
+            guardian identity supplied at signup. Coaches and organizations are
+            responsible for having authority to add athletes they manage.
+            Contact us to review or remove a child&apos;s information.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-xl font-semibold text-slate-900">
+            Videos and future leaderboards
+          </h2>
+          <p>
+            Training videos are private to authorized accounts and explicitly
+            shared recipients. Permission for a future public video showcase is
+            a separate, optional choice that is off by default. Permission for
+            future public leaderboards is also separate and off by default.
+            Private coaching features do not require either public-sharing
+            choice.
           </p>
         </section>
 

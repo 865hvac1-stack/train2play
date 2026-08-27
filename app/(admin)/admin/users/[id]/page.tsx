@@ -70,6 +70,8 @@ export default async function AdminUserDetail({
             sports: true,
             memberships: { include: { organization: true, team: true } },
             guardianLinks: { include: { guardianUser: true } },
+            guardianContacts: { orderBy: { createdAt: "asc" } },
+            consentRecords: { orderBy: { createdAt: "desc" } },
             coachConnections: {
               where: { status: "APPROVED" },
               include: { coachUser: true },
@@ -197,6 +199,49 @@ export default async function AdminUserDetail({
               </div>
             </dl>
           </Panel>
+
+          {user.athleteProfile ? (
+            <Panel title="Guardian & consent" icon={ShieldCheck}>
+              {user.athleteProfile.guardianContacts.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {user.athleteProfile.guardianContacts.map((guardian) => (
+                    <div key={guardian.id} className="rounded-xl bg-slate-50 p-3 text-sm">
+                      <p className="font-semibold">
+                        {guardian.firstName} {guardian.lastName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {guardian.relationship} · {guardian.email}
+                        {guardian.phone ? ` · ${guardian.phone}` : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No guardian contact was collected for this account.
+                </p>
+              )}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Badge variant="outline">
+                  Public video:{" "}
+                  {user.athleteProfile.publicVideoSharingEnabled
+                    ? "allowed"
+                    : "off"}
+                </Badge>
+                <Badge variant="outline">
+                  Public leaderboard:{" "}
+                  {user.athleteProfile.publicLeaderboardOptIn
+                    ? "allowed"
+                    : "off"}
+                </Badge>
+                <Badge variant="outline">
+                  {user.athleteProfile.consentRecords.length} recorded consent
+                  choice
+                  {user.athleteProfile.consentRecords.length === 1 ? "" : "s"}
+                </Badge>
+              </div>
+            </Panel>
+          ) : null}
 
           <Panel title="Organization" icon={Building2}>
             {user.organizationMemberships.length === 0 &&

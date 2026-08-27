@@ -37,6 +37,16 @@ export async function signupAction(
     sport: formData.get("primarySport") || formData.get("sport") || undefined,
     position: formData.get("position") || undefined,
     dateOfBirth: formData.get("dateOfBirth") || undefined,
+    acceptTerms: formData.get("acceptTerms") === "true",
+    guardianFirstName: formData.get("guardianFirstName") || undefined,
+    guardianLastName: formData.get("guardianLastName") || undefined,
+    guardianRelationship: formData.get("guardianRelationship") || undefined,
+    guardianEmail: formData.get("guardianEmail") || undefined,
+    guardianPhone: formData.get("guardianPhone") || undefined,
+    parentalConsent: formData.get("parentalConsent") === "true",
+    publicVideoConsent: formData.get("publicVideoConsent") === "true",
+    publicLeaderboardConsent:
+      formData.get("publicLeaderboardConsent") === "true",
   });
 
   if (!parsed.success) {
