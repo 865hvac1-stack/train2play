@@ -62,12 +62,32 @@ Then in the app:
 
 **Videos → Add video → Record / take video** or **Choose from gallery**
 
+## How long drills fit
+
+Phone cameras record at roughly 10 Mbps, so a 45-second clip is about 55 MB and
+a three-minute drill would be over 200 MB — too big for any plan below
+Enterprise.
+
+Train2Play compresses video **on the coach's phone before uploading**: 720p at
+about 1.8 Mbps. In practice a 53 MB clip becomes ~4 MB, and a three-minute drill
+lands near 16 MB. The form shows progress and the before/after size.
+
+Two things worth knowing:
+
+- Compressing plays the clip through, so it takes about as long as the clip.
+  Leave the screen open; the Save button waits until it finishes.
+- If a browser cannot compress, the original file is uploaded instead. Nothing
+  is ever blocked because compression failed.
+
+To lift the ceiling further, switch storage to S3/Cloudflare R2 (below), which
+has no per-file limit like Cloudinary's free plan.
+
 ## Tips
 
-- Keep clips under **100 MB**
 - Use Wi‑Fi for longer videos
 - Stay on the screen until upload finishes
 - iPhone MOV files work
+- Recording at 1080p instead of 4K makes everything faster
 
 ## Don’t paste secrets in chat
 
