@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 
 import { createPrismaClient } from "../lib/db";
 import {
+  getCatalogDrillForAthlete,
   getSuggestedDrills,
   listCatalogDrills,
 } from "../lib/catalog-drills";
@@ -127,6 +128,25 @@ async function main() {
       false,
       "unselected player must not receive the targeted drill",
     );
+
+    const allowed = await getCatalogDrillForAthlete({
+      drillId: audienceDrill.id,
+      athleteProfileId: selectedAthlete.id,
+      sports: ["Basketball"],
+    });
+    const blocked = await getCatalogDrillForAthlete({
+      drillId: audienceDrill.id,
+      athleteProfileId: otherAthlete.id,
+      sports: ["Basketball"],
+    });
+    const wrongSport = await getCatalogDrillForAthlete({
+      drillId: audienceDrill.id,
+      athleteProfileId: selectedAthlete.id,
+      sports: ["Baseball"],
+    });
+    assert.equal(allowed?.id, audienceDrill.id);
+    assert.equal(blocked, null, "unselected players cannot open the drill");
+    assert.equal(wrongSport, null, "athletes in another sport cannot open it");
   } finally {
     await prisma.catalogDrill.delete({ where: { id: audienceDrill.id } });
     if (recipientProfileIds.length > 0) {

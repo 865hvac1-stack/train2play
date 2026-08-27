@@ -244,6 +244,75 @@ export async function getSuggestedDrillsForSports(options: {
   };
 }
 
+/** One published drill an athlete is allowed to open from Recommended. */
+export async function getCatalogDrillForAthlete(options: {
+  drillId: string;
+  athleteProfileId: string;
+  sports: string[];
+}) {
+  const sports = [
+    ...new Set(options.sports.map((sport) => sport.trim()).filter(Boolean)),
+  ];
+  const sportFilter =
+    sports.length > 0
+      ? {
+          OR: sports.map((sport) => ({
+            sport: { equals: sport, mode: "insensitive" as const },
+          })),
+        }
+      : undefined;
+
+  const row = await prisma.catalogDrill.findFirst({
+    where: {
+      id: options.drillId,
+      isActive: true,
+      AND: [
+        sportFilter ?? {},
+        {
+          OR: [
+            {
+              shareWithAthletes: true,
+              athleteAudience: "ALL_SPORT",
+            },
+            {
+              shareWithAthletes: true,
+              athleteAudience: "SELECTED",
+              athleteRecipients: {
+                some: { athleteProfileId: options.athleteProfileId },
+              },
+            },
+            {
+              pushes: {
+                some: { athleteProfileId: options.athleteProfileId },
+              },
+            },
+          ],
+        },
+      ],
+    },
+    include: {
+      pushes: {
+        where: { athleteProfileId: options.athleteProfileId },
+        include: { pushedBy: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+  if (!row) return null;
+
+  const latestPush = row.pushes[0];
+  return {
+    ...toDrill(
+      row,
+      latestPush
+        ? { byName: latestPush.pushedBy?.name ?? null, at: latestPush.createdAt }
+        : undefined,
+    ),
+    ageBand: row.ageBand,
+  };
+}
+
 export async function listCatalogDrillsForSport(sport: string) {
   const rows = await prisma.catalogDrill.findMany({
     where: {

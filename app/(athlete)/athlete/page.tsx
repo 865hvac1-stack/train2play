@@ -9,7 +9,6 @@ import {
   Medal,
 } from "lucide-react";
 
-import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import {
   getAthleteDashboardData,
   requireAthleteContext,
@@ -288,9 +287,10 @@ export default async function AthleteHomePage() {
             </div>
           ) : null}
           {data.recommended.drills.map((drill) => (
-            <div
+            <Link
               key={drill.id}
-              className="rounded-2xl border border-white/10 bg-zinc-900 p-4"
+              href={`/athlete/drills/${drill.id}`}
+              className="block rounded-2xl border border-white/10 bg-zinc-900 p-4 transition hover:border-brand/50 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 {drill.sport ? (
@@ -309,14 +309,10 @@ export default async function AthleteHomePage() {
                 {drill.focus} · {drill.durationMin} min
               </p>
               <p className="mt-2 text-sm text-slate-400">{drill.coachingCue}</p>
-              {drill.videoUrl ? (
-                <InstructionVideoPlayer
-                  src={drill.videoUrl}
-                  title={`${drill.title} demo`}
-                  className="mt-3"
-                />
-              ) : null}
-            </div>
+              <p className="mt-3 text-xs font-semibold text-brand">
+                {drill.videoUrl ? "Watch demo →" : "Open drill →"}
+              </p>
+            </Link>
           ))}
         </div>
       </section>
