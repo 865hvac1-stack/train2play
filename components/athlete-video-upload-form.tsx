@@ -10,6 +10,7 @@ import {
 import { getVideoCategoriesForSport } from "@/lib/video-categories";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { videoFileSizeError } from "@/lib/video-upload-limits";
 
 type CoachOption = {
   id: string;
@@ -74,6 +75,13 @@ export function AthleteVideoUploadForm({
     if (!file) return;
     if (!file.type.startsWith("video/") && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) {
       setFileError("Please choose a video file from your camera roll.");
+      setFileName(null);
+      if (formFileRef.current) formFileRef.current.value = "";
+      return;
+    }
+    const sizeError = videoFileSizeError(file);
+    if (sizeError) {
+      setFileError(sizeError);
       setFileName(null);
       if (formFileRef.current) formFileRef.current.value = "";
       return;

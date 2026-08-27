@@ -9,8 +9,8 @@ import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { submitVideoForReview } from "@/lib/video-reviews";
 import { getVideoCategoriesForSport } from "@/lib/video-categories";
 import { prisma } from "@/lib/db";
-
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
+import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
 
 export type AthleteVideoActionState = {
   error?: string;
@@ -43,7 +43,7 @@ export async function submitAthleteVideoReviewAction(
   if (!(file instanceof File) || file.size === 0) {
     return { error: "Choose a video from your device" };
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
     return { error: "Video must be 100 MB or smaller" };
   }
   if (isProductionRuntime() && !isObjectStorageConfigured()) {
@@ -97,8 +97,11 @@ export async function submitAthleteVideoReviewAction(
       throw error;
     }
     return {
-      error:
-        error instanceof Error ? error.message : "Could not upload video",
+      error: reportVideoUploadFailure(error, {
+        surface: "athlete-video-review",
+        userId: ctx.userId,
+        file,
+      }),
     };
   }
 }

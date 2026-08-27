@@ -104,7 +104,10 @@ export async function createCatalogDrillAction(
   if (!AGE_BANDS.some((band) => band.id === parsed.data.ageBand)) {
     return { error: "Pick an age band" };
   }
-  const video = await resolveOptionalInstructionVideo(formData);
+  const video = await resolveOptionalInstructionVideo(formData, {
+    surface: "director-catalog-drill-create",
+    userId: user.id,
+  });
   if (!video.ok) return { error: video.error };
   const audience = await resolveAthleteAudience(parsed.data.sport, formData);
 
@@ -159,7 +162,10 @@ export async function updateCatalogDrillAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid drill" };
   }
-  const video = await resolveOptionalInstructionVideo(formData);
+  const video = await resolveOptionalInstructionVideo(formData, {
+    surface: "director-catalog-drill-update",
+    userId: user.id,
+  });
   if (!video.ok) return { error: video.error };
   const audience = await resolveAthleteAudience(parsed.data.sport, formData);
   await prisma.catalogDrill.update({

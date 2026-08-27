@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { videoFileSizeError } from "@/lib/video-upload-limits";
 
 const VIDEO_ACCEPT =
   "video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
@@ -37,6 +38,7 @@ export function InstructionVideoFields({
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileError = selectedFile ? videoFileSizeError(selectedFile) : null;
 
   function openPicker(pickerMode: "gallery" | "back-camera" | "front-camera") {
     const input = fileInputRef.current;
@@ -105,7 +107,13 @@ export function InstructionVideoFields({
             accept={VIDEO_ACCEPT}
             className="sr-only"
             required={required && !selectedFile}
-            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setSelectedFile(file);
+              e.currentTarget.setCustomValidity(
+                file ? (videoFileSizeError(file) ?? "") : "",
+              );
+            }}
           />
           <div className="grid gap-3 sm:grid-cols-3">
             <button
@@ -155,8 +163,13 @@ export function InstructionVideoFields({
               <p className="truncate font-medium text-slate-900">
                 {selectedFile.name}
               </p>
-              <p className="text-xs text-slate-600">
-                {formatBytes(selectedFile.size)} · ready
+              <p
+                className={cn(
+                  "text-xs",
+                  fileError ? "text-destructive" : "text-slate-600",
+                )}
+              >
+                {formatBytes(selectedFile.size)} · {fileError ?? "ready"}
               </p>
             </div>
           ) : (

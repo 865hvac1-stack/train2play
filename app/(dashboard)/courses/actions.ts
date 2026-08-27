@@ -139,7 +139,10 @@ export async function createCourseItemAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const video = await resolveOptionalInstructionVideo(formData);
+  const video = await resolveOptionalInstructionVideo(formData, {
+    surface: "course-drill-create",
+    userId: user.id,
+  });
   if (!video.ok) return { error: video.error };
 
   const count = await prisma.courseItem.count({ where: { courseId } });
@@ -198,7 +201,10 @@ export async function updateCourseItemAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const video = await resolveOptionalInstructionVideo(formData);
+  const video = await resolveOptionalInstructionVideo(formData, {
+    surface: "course-drill-update",
+    userId: user.id,
+  });
   if (!video.ok) return { error: video.error };
 
   await prisma.courseItem.update({

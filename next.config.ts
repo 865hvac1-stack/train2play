@@ -2,8 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
+    // Every protected upload route passes through proxy.ts. Next defaults its
+    // cloned request body to 10 MB, which silently truncated normal phone
+    // videos before the Server Action could validate them. Keep both limits
+    // above the app's 100 MB file limit to leave room for multipart metadata.
+    proxyClientMaxBodySize: "105mb",
     serverActions: {
-      bodySizeLimit: "100mb",
+      bodySizeLimit: "105mb",
     },
   },
   allowedDevOrigins: ["127.0.0.1"],

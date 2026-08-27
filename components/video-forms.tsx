@@ -14,16 +14,22 @@ import {
   type VideoActionState,
 } from "@/app/(dashboard)/videos/actions";
 import { cn } from "@/lib/utils";
+import { videoFileSizeError } from "@/lib/video-upload-limits";
 
 const initialState: VideoActionState = {};
 
 const VIDEO_ACCEPT =
   "video/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full sm:w-auto" size="lg" disabled={pending}>
+    <Button
+      type="submit"
+      className="w-full sm:w-auto"
+      size="lg"
+      disabled={pending || disabled}
+    >
       {pending ? "Uploading… keep this screen open" : label}
     </Button>
   );
@@ -139,6 +145,7 @@ export function UploadVideoForm({
   const [state, formAction] = useActionState(createVideoFromUploadAction, initialState);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileError = selectedFile ? videoFileSizeError(selectedFile) : null;
 
   function openPicker(mode: "gallery" | "camera") {
     const input = fileInputRef.current;
@@ -223,9 +230,7 @@ export function UploadVideoForm({
               <p className="truncate text-sm font-medium text-slate-900">{selectedFile.name}</p>
               <p className="text-xs text-slate-600">
                 {formatBytes(selectedFile.size)}
-                {selectedFile.size > 100 * 1024 * 1024
-                  ? " — too large (max 100 MB)"
-                  : " · ready to upload"}
+                {fileError ? ` — ${fileError}` : " · ready to upload"}
               </p>
             </div>
             <button
@@ -263,7 +268,7 @@ export function UploadVideoForm({
         />
       </div>
 
-      <SubmitButton label="Upload video" />
+      <SubmitButton label="Upload video" disabled={Boolean(fileError)} />
     </form>
   );
 }

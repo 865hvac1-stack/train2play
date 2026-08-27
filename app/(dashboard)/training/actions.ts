@@ -10,14 +10,17 @@ import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { requireUser } from "@/lib/session";
-
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
+import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
 
 export type TrainingActionState = {
   error?: string;
 };
 
-async function resolveInstructionVideo(formData: FormData): Promise<
+async function resolveInstructionVideo(
+  formData: FormData,
+  context: { surface: string; userId: string },
+): Promise<
   | { ok: true; url: string | null; storageKey: string | null }
   | { ok: false; error: string }
 > {
@@ -53,7 +56,7 @@ async function resolveInstructionVideo(formData: FormData): Promise<
     return { ok: false, error: "File must be a video (mp4, mov, webm)" };
   }
 
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
     return { ok: false, error: "Video must be 100 MB or smaller" };
   }
 
@@ -88,10 +91,7 @@ async function resolveInstructionVideo(formData: FormData): Promise<
   } catch (error) {
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Could not upload the workout video",
+      error: reportVideoUploadFailure(error, { ...context, file }),
     };
   }
 }
@@ -175,7 +175,10 @@ export async function createWorkoutAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const video = await resolveInstructionVideo(formData);
+  const video = await resolveInstructionVideo(formData, {
+    surface: "workout-create",
+    userId: user.id,
+  });
   if (!video.ok) {
     return { error: video.error };
   }
@@ -223,7 +226,10 @@ export async function attachWorkoutInstructionVideoAction(
     return { error: "Workout not found" };
   }
 
-  const video = await resolveInstructionVideo(formData);
+  const video = await resolveInstructionVideo(formData, {
+    surface: "workout-video-attach",
+    userId: user.id,
+  });
   if (!video.ok) {
     return { error: video.error };
   }

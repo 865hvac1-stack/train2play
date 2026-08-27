@@ -9,8 +9,8 @@ import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
 import { requireUser } from "@/lib/session";
-
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
+import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
 
 export type VideoActionState = {
   error?: string;
@@ -88,7 +88,7 @@ export async function createVideoFromUploadAction(
     return { error: "File must be a video (mp4, mov, webm)" };
   }
 
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
     return { error: "Video must be 100 MB or smaller" };
   }
 
@@ -119,19 +119,30 @@ export async function createVideoFromUploadAction(
         : ext === "webm"
           ? "video/webm"
           : "video/mp4";
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const stored = await storeVideoFile(buffer, filename, contentType);
-
-  const video = await prisma.trainingVideo.create({
-    data: {
-      coachId: user.id,
-      athleteId,
-      title,
-      description: description || null,
-      sourceType: "UPLOAD",
-      videoUrl: stored.videoUrl,
-    },
-  });
+  let video;
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const stored = await storeVideoFile(buffer, filename, contentType);
+    video = await prisma.trainingVideo.create({
+      data: {
+        coachId: user.id,
+        athleteId,
+        title,
+        description: description || null,
+        sourceType: "UPLOAD",
+        videoUrl: stored.videoUrl,
+        storageKey: stored.storageKey,
+      },
+    });
+  } catch (error) {
+    return {
+      error: reportVideoUploadFailure(error, {
+        surface: "coach-training-video",
+        userId: user.id,
+        file,
+      }),
+    };
+  }
 
   revalidatePath("/videos");
   redirect(`/videos/${video.id}`);

@@ -1,11 +1,12 @@
 import { isProductionRuntime } from "@/lib/env";
 import { isValidInstructionVideoUrl } from "@/lib/media-url";
 import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
-
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
+import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
 
 export async function resolveOptionalInstructionVideo(
   formData: FormData,
+  context: { surface: string; userId: string },
 ): Promise<
   | { ok: true; url: string | null; storageKey: string | null }
   | { ok: false; error: string }
@@ -45,7 +46,7 @@ export async function resolveOptionalInstructionVideo(
   if (!file.type.startsWith("video/") && !(hasVideoMime && looksLikeVideoExt)) {
     return { ok: false, error: "File must be a video (mp4, mov, webm)" };
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
     return { ok: false, error: "Video must be 100 MB or smaller" };
   }
   if (isProductionRuntime() && !isObjectStorageConfigured()) {
@@ -75,8 +76,7 @@ export async function resolveOptionalInstructionVideo(
   } catch (error) {
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Could not upload the video",
+      error: reportVideoUploadFailure(error, { ...context, file }),
     };
   }
 }
