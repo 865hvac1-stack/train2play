@@ -3,9 +3,6 @@ import {
   AGE_BANDS,
   ageBandFromAge,
   ageFromDateOfBirth,
-  getSuggestedDrills as getBuiltInSuggestedDrills,
-  listAllBuiltInDrills,
-  listCatalogDrillsForSport as listBuiltInCatalog,
   type AgeBandId,
   type Drill,
 } from "@/lib/drills";
@@ -13,31 +10,10 @@ import { SPORTS } from "@/lib/athletes";
 
 export const CATALOG_SPORTS = SPORTS.filter((sport) => sport !== "Other");
 
-export async function seedCatalogDrillsIfEmpty() {
-  const count = await prisma.catalogDrill.count();
-  if (count > 0) return { inserted: 0 };
-  const rows = listAllBuiltInDrills();
-  await prisma.catalogDrill.createMany({
-    data: rows.map((row, index) => ({
-      sport: row.sport,
-      ageBand: row.ageBandId,
-      title: row.drill.title,
-      focus: row.drill.focus,
-      durationMin: row.drill.durationMin,
-      equipment: row.drill.equipment,
-      howTo: row.drill.howTo,
-      coachingCue: row.drill.coachingCue,
-      sortOrder: index,
-    })),
-  });
-  return { inserted: rows.length };
-}
-
 export async function listCatalogDrills(options: {
   sport?: string;
   ageBand?: string;
 }) {
-  await seedCatalogDrillsIfEmpty();
   return prisma.catalogDrill.findMany({
     where: {
       isActive: true,
@@ -191,7 +167,6 @@ export async function getSuggestedDrills(options: {
   audience?: "coaches" | "athletes";
   athleteProfileId?: string;
 }) {
-  await seedCatalogDrillsIfEmpty();
   const age =
     options.ageBandId != null
       ? null
@@ -231,30 +206,11 @@ export async function getSuggestedDrills(options: {
         });
 
   const drills = [...directSends, ...rows.map((row) => toDrill(row))];
-  if (drills.length > 0) {
-    return {
-      band,
-      drills,
-      sportLabel: options.sport.trim() || "Multi-sport",
-    };
-  }
-
-  const catalogCount = await prisma.catalogDrill.count({
-    where: {
-      isActive: true,
-      ageBand: band.id,
-      sport: { equals: options.sport, mode: "insensitive" },
-    },
-  });
-  if (catalogCount > 0 && options.audience) {
-    return {
-      band,
-      drills: [],
-      sportLabel: options.sport.trim() || "Multi-sport",
-    };
-  }
-
-  return getBuiltInSuggestedDrills(options);
+  return {
+    band,
+    drills,
+    sportLabel: options.sport.trim() || "Multi-sport",
+  };
 }
 
 /** Suggestions for every sport on an athlete profile, two per sport. */
@@ -289,7 +245,6 @@ export async function getSuggestedDrillsForSports(options: {
 }
 
 export async function listCatalogDrillsForSport(sport: string) {
-  await seedCatalogDrillsIfEmpty();
   const rows = await prisma.catalogDrill.findMany({
     where: {
       isActive: true,
@@ -298,9 +253,6 @@ export async function listCatalogDrillsForSport(sport: string) {
     },
     orderBy: [{ ageBand: "asc" }, { sortOrder: "asc" }],
   });
-  if (rows.length === 0) {
-    return listBuiltInCatalog(sport);
-  }
   return rows.map((row) => ({
     ageBandId: row.ageBand as AgeBandId,
     ageBandLabel:

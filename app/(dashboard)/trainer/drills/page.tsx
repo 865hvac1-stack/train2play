@@ -40,7 +40,7 @@ export default async function TrainerDrillsPage({
   return (
     <DashboardShell
       title="Suggested drills"
-      description="Send each drill to coaches, every player enrolled in the sport, selected players, or nobody yet. Saving delivers it right away."
+      description="This is the complete suggested-drill library. Only drills published here can appear for players or coaches. Saving delivers a drill to its selected audience right away."
     >
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
@@ -68,8 +68,8 @@ export default async function TrainerDrillsPage({
         <div className="space-y-3">
           {drills.length === 0 ? (
             <p className="rounded-xl border border-dashed p-6 text-sm text-slate-500">
-              No drills in this filter yet. Add one on the right — the starter
-              catalog loads the first time you open this page.
+              No drills in this filter yet. Add and publish one using the form
+              on the right.
             </p>
           ) : (
             drills.map((drill) => (

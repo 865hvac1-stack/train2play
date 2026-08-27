@@ -90,9 +90,22 @@ export default async function AdminSportDetail({
       title={sport.name}
       description={`${sport.name} across every Train2Play organization.`}
       action={
-        <Badge variant={sport.isActive ? "secondary" : "outline"}>
-          {sport.isActive ? "Active" : "Inactive"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            nativeButton={false}
+            render={
+              <Link
+                href={`/trainer/drills?sport=${encodeURIComponent(sport.name)}`}
+              >
+                Manage suggested drills
+              </Link>
+            }
+          />
+          <Badge variant={sport.isActive ? "secondary" : "outline"}>
+            {sport.isActive ? "Active" : "Inactive"}
+          </Badge>
+        </div>
       }
     >
       <Button
@@ -181,7 +194,7 @@ export default async function AdminSportDetail({
         <section className="rounded-2xl border bg-white p-5 lg:col-span-2">
           <h2 className="flex items-center gap-2 font-heading text-xl font-bold">
             <Dumbbell className="size-5 text-brand" />
-            Suggested drills
+            Published suggested drills
           </h2>
           <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {drills.map((drill) => (
@@ -196,6 +209,23 @@ export default async function AdminSportDetail({
                 </p>
               </Link>
             ))}
+            {drills.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-4 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+                <p>No suggested drills are published for {sport.name}.</p>
+                <Button
+                  className="mt-3"
+                  size="sm"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href={`/trainer/drills?sport=${encodeURIComponent(sport.name)}`}
+                    >
+                      Add and publish a drill
+                    </Link>
+                  }
+                />
+              </div>
+            ) : null}
           </div>
         </section>
       </div>

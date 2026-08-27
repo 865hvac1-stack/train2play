@@ -280,6 +280,13 @@ export default async function AthleteHomePage() {
             .map((drill) => drill.id)}
         />
         <div className="space-y-3">
+          {data.recommended.drills.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4">
+              <p className="text-sm text-slate-400">
+                No suggested drills have been published for you yet.
+              </p>
+            </div>
+          ) : null}
           {data.recommended.drills.map((drill) => (
             <div
               key={drill.id}

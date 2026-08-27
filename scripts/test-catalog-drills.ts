@@ -7,34 +7,32 @@ import assert from "node:assert/strict";
 import { createPrismaClient } from "../lib/db";
 import {
   getSuggestedDrills,
-  getSuggestedDrillsForSports,
-  seedCatalogDrillsIfEmpty,
+  listCatalogDrills,
 } from "../lib/catalog-drills";
 
 const prisma = createPrismaClient();
 
 async function main() {
-  const seeded = await seedCatalogDrillsIfEmpty();
-  const count = await prisma.catalogDrill.count();
-  assert.ok(count > 0, "catalog should have starter drills");
-  const basketball = await getSuggestedDrills({
-    sport: "Basketball",
+  const countBefore = await prisma.catalogDrill.count();
+  const unpublishedSport = `Unpublished Test Sport ${Date.now()}`;
+  const emptyCatalog = await listCatalogDrills({ sport: unpublishedSport });
+  const emptySuggestions = await getSuggestedDrills({
+    sport: unpublishedSport,
     ageBandId: "11-13",
     limit: 3,
-  });
-  assert.ok(basketball.drills.length > 0);
-  assert.equal(basketball.band.id, "11-13");
-  const multiSport = await getSuggestedDrillsForSports({
-    sports: ["Baseball", "Basketball"],
-    dateOfBirth: new Date("2014-01-01T00:00:00.000Z"),
+    audience: "athletes",
     athleteProfileId: "test-profile",
   });
-  assert.ok(multiSport.drills.some((drill) => drill.sport === "Baseball"));
-  assert.ok(multiSport.drills.some((drill) => drill.sport === "Basketball"));
+  assert.deepEqual(emptyCatalog, [], "an empty catalog must stay empty");
+  assert.deepEqual(
+    emptySuggestions.drills,
+    [],
+    "unpublished sports must not fall back to hidden built-in drills",
+  );
   assert.equal(
-    multiSport.drills.length,
-    4,
-    "athletes should receive two recommendations per selected sport",
+    await prisma.catalogDrill.count(),
+    countBefore,
+    "reading suggestions must never auto-seed catalog rows",
   );
   const audienceDrill = await prisma.catalogDrill.create({
     data: {
@@ -137,9 +135,7 @@ async function main() {
       });
     }
   }
-  console.log(
-    `catalog-drill checks passed (inserted=${seeded.inserted}, total=${count})`,
-  );
+  console.log("catalog-drill checks passed (database-only publishing)");
 }
 
 main()
