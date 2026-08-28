@@ -449,8 +449,8 @@ function UploadVideoDialog({
             <DialogTitle>Video uploaded 🔥</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-zinc-400">
-            Same clip is now in Videos and on your Player Profile. It is private until you
-            feature it or change visibility.
+            Same clip is on your Player Profile. Send it from Video coaching if you want
+            coach feedback. It stays private until you feature it or change visibility.
           </p>
           <PostUploadActions
             reviewId={state.reviewId}
