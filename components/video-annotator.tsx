@@ -488,7 +488,7 @@ export function VideoAnnotator({
                 <Circle className="h-4 w-4" />
                 Circle
               </Button>
-              <Button type="button" variant="ghost" size="sm" disabled={!canDraw} onClick={clearDraft}>
+              <Button type="button" variant="ghost" size="sm" disabled={!canDraw} onClick={() => clearDraft()}>
                 Clear drawing
               </Button>
             </div>
