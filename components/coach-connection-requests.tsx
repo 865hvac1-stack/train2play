@@ -29,8 +29,13 @@ export function CoachConnectionRequests({
         Connection requests
       </h2>
       <p className="mt-1 text-sm text-slate-600">
-        Athletes who entered your Train2Play code. Approve to authorize coaching
-        — training is still assigned separately.
+        Athletes who entered your Train2Play code or requested you from Find a Coach.
+        Approve to create the existing coaching relationship — training is still assigned separately.
+      </p>
+      <p className="mt-2">
+        <a href="/dashboard/requests" className="text-sm font-semibold text-brand underline">
+          Open Athlete requests
+        </a>
       </p>
       <ul className="mt-4 space-y-3">
         {requests.map((req) => (

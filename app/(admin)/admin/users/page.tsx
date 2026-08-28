@@ -231,6 +231,14 @@ export default async function AdminUsersPage({
           select: { organization: { select: { name: true } } },
           take: 2,
         },
+        coachProfile: {
+          select: {
+            discoveryStatus: true,
+            backgroundCheckStatus: true,
+            appearInFindACoach: true,
+            acceptingAthletes: true,
+          },
+        },
         athleteProfile: {
           select: {
             primarySport: true,
@@ -250,7 +258,28 @@ export default async function AdminUsersPage({
     }),
     prisma.user.count({ where }),
   ]);
+  const connectionCounts =
+    role === "COACH" && users.length > 0
+      ? await prisma.coachAthleteConnection.groupBy({
+          by: ["coachUserId", "status"],
+          where: {
+            coachUserId: { in: users.map((user) => user.id) },
+            status: { in: ["APPROVED", "PENDING", "PENDING_COACH"] },
+          },
+          _count: { _all: true },
+        })
+      : [];
   const pages = Math.max(1, Math.ceil(total / pageSize));
+
+  function coachCounts(userId: string) {
+    const rows = connectionCounts.filter((row) => row.coachUserId === userId);
+    return {
+      active: rows.find((row) => row.status === "APPROVED")?._count._all ?? 0,
+      requests: rows
+        .filter((row) => row.status === "PENDING" || row.status === "PENDING_COACH")
+        .reduce((sum, row) => sum + row._count._all, 0),
+    };
+  }
 
   function pageHref(nextPage: number) {
     const params = new URLSearchParams();
@@ -357,6 +386,16 @@ export default async function AdminUsersPage({
                     <th className="p-3">Role</th>
                     <th className="p-3">Organization</th>
                     <th className="p-3">Sport</th>
+                    {role === "COACH" ? (
+                      <>
+                        <th className="p-3">Approval</th>
+                        <th className="p-3">Background</th>
+                        <th className="p-3">Discoverable</th>
+                        <th className="p-3">Accepting</th>
+                        <th className="p-3">Active athletes</th>
+                        <th className="p-3">Requests</th>
+                      </>
+                    ) : null}
                     <th className="p-3">Joined</th>
                     <th className="p-3">Last active</th>
                     <th className="p-3">Status</th>
@@ -397,6 +436,27 @@ export default async function AdminUsersPage({
                         <td className="p-3 text-slate-600">
                           {[...new Set(sports)].join(", ") || "—"}
                         </td>
+                        {role === "COACH" ? (
+                          <>
+                            <td className="p-3 text-slate-600">
+                              {user.coachProfile?.discoveryStatus ?? "No profile"}
+                            </td>
+                            <td className="p-3 text-slate-600">
+                              {user.coachProfile?.backgroundCheckStatus ?? "—"}
+                            </td>
+                            <td className="p-3 text-slate-600">
+                              {user.coachProfile?.discoveryStatus === "APPROVED" &&
+                              user.coachProfile.appearInFindACoach
+                                ? "Yes"
+                                : "No"}
+                            </td>
+                            <td className="p-3 text-slate-600">
+                              {user.coachProfile?.acceptingAthletes ? "Yes" : "No"}
+                            </td>
+                            <td className="p-3 text-slate-600">{coachCounts(user.id).active}</td>
+                            <td className="p-3 text-slate-600">{coachCounts(user.id).requests}</td>
+                          </>
+                        ) : null}
                         <td className="p-3 text-slate-600">
                           {user.createdAt.toLocaleDateString()}
                         </td>

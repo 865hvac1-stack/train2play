@@ -25,6 +25,8 @@ import {
   getPlatformGrowth,
   normalizeAdminRange,
 } from "@/lib/admin-analytics";
+import { prisma } from "@/lib/db";
+import { COACH_DISCOVERY_STATUS } from "@/lib/coaching/status";
 
 const RANGE_OPTIONS = [
   ["7d", "7 days"],
@@ -117,10 +119,31 @@ export default async function AdminCommandCenter({
   const range = normalizeAdminRange(query.range);
   const growthDays =
     query.growth === "90" ? 90 : query.growth === "365" ? 365 : 30;
-  const [data, growth] = await Promise.all([
-    getPlatformCommandCenter(range),
-    getPlatformGrowth(growthDays),
-  ]);
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const [data, growth, coachApps, backgroundPending, requestsMonth, approvedCoaches, acceptingCoaches] =
+    await Promise.all([
+      getPlatformCommandCenter(range),
+      getPlatformGrowth(growthDays),
+      prisma.coachProfile.count({
+        where: { discoveryStatus: { in: [COACH_DISCOVERY_STATUS.SUBMITTED, COACH_DISCOVERY_STATUS.UNDER_REVIEW] } },
+      }),
+      prisma.coachProfile.count({
+        where: { backgroundCheckStatus: { in: ["PENDING", "REVIEW_REQUIRED"] } },
+      }),
+      prisma.coachAthleteConnection.count({
+        where: { source: "DISCOVERY", requestedAt: { gte: monthStart } },
+      }),
+      prisma.coachProfile.count({ where: { discoveryStatus: COACH_DISCOVERY_STATUS.APPROVED } }),
+      prisma.coachProfile.count({
+        where: {
+          discoveryStatus: COACH_DISCOVERY_STATUS.APPROVED,
+          acceptingAthletes: true,
+          appearInFindACoach: true,
+        },
+      }),
+    ]);
   const m = data.metrics;
   const biggestDrop = [...data.conversions].sort((a, b) => b.drop - a.drop)[0];
 
@@ -311,6 +334,52 @@ export default async function AdminCommandCenter({
             detail="PRs recorded in selected period"
             icon={Trophy}
             href={`/admin/activity?type=PROGRESS&range=${range}`}
+          />
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <SectionHeading
+          eyebrow="Coach network"
+          title="Approvals and discovery"
+          description="Coach accounts are not automatically Train2Play Approved."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <MetricCard
+            label="Coach applications"
+            value={coachApps.toLocaleString()}
+            detail="Awaiting review"
+            icon={UserPlus}
+            href="/admin/coaches?status=SUBMITTED"
+            accent={coachApps > 0}
+          />
+          <MetricCard
+            label="Background checks"
+            value={backgroundPending.toLocaleString()}
+            detail="Pending / review required"
+            icon={ShieldCheck}
+            href="/admin/coaches?status=BG_PENDING"
+          />
+          <MetricCard
+            label="Coach requests"
+            value={requestsMonth.toLocaleString()}
+            detail="This month"
+            icon={Users}
+            href="/admin/coaches"
+          />
+          <MetricCard
+            label="Approved coaches"
+            value={approvedCoaches.toLocaleString()}
+            detail="Train2Play Approved"
+            icon={CheckCircle2}
+            href="/admin/coaches?status=APPROVED"
+          />
+          <MetricCard
+            label="Accepting athletes"
+            value={acceptingCoaches.toLocaleString()}
+            detail="Currently listed"
+            icon={UserPlus}
+            href="/admin/coaches?status=APPROVED"
           />
         </div>
       </section>

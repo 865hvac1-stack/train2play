@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined,
   Dumbbell,
   Home,
+  Search,
   Trophy,
   UserRound,
   Video,
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/athlete", label: "Home", icon: Home, exact: true },
   { href: "/athlete/train", label: "Train", icon: Dumbbell },
+  { href: "/athlete/coaches", label: "Coaches", icon: Search },
   { href: "/athlete/community", label: "Community", icon: Trophy },
   { href: "/athlete/progress", label: "Progress", icon: ChartNoAxesCombined },
   { href: "/athlete/videos", label: "Videos", icon: Video },
@@ -27,7 +29,7 @@ export function AthleteBottomNav() {
 
   return (
     <nav className="safe-area-pb fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-zinc-950/95 backdrop-blur-md md:hidden">
-      <ul className="safe-area-px mx-auto grid max-w-lg grid-cols-6 gap-0 px-0.5 pt-1.5">
+      <ul className="safe-area-px mx-auto grid max-w-lg grid-cols-7 gap-0 px-0.5 pt-1.5">
         {items.map(({ href, label, icon: Icon, exact }) => {
           const active = exact
             ? pathname === href

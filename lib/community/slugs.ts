@@ -46,6 +46,10 @@ export const RESERVED_PROFILE_SLUGS = new Set([
   "assets",
   "null",
   "undefined",
+  "coach",
+  "coaches",
+  "approvals",
+  "requests",
 ]);
 
 export function slugifyProfileName(value: string) {

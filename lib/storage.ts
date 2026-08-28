@@ -211,6 +211,61 @@ export async function storeVideoFile(
   };
 }
 
+export type StoredImage = {
+  imageUrl: string;
+  storageKey: string;
+};
+
+async function storeImageInCloudinary(buffer: Buffer, filename: string): Promise<StoredImage> {
+  const client = configureCloudinary();
+  if (!client) {
+    throw new Error("Cloudinary is not configured");
+  }
+  const publicId = `train2play/images/${filename.replace(/\.[^.]+$/, "")}`;
+  const result = await new Promise<{ public_id: string; secure_url: string }>(
+    (resolve, reject) => {
+      const stream = client.uploader.upload_stream(
+        {
+          resource_type: "image",
+          public_id: publicId,
+          overwrite: false,
+        },
+        (error, uploaded) => {
+          if (error || !uploaded) {
+            reject(error ?? new Error("Cloudinary upload failed"));
+            return;
+          }
+          resolve({
+            public_id: uploaded.public_id,
+            secure_url: uploaded.secure_url,
+          });
+        },
+      );
+      stream.end(buffer);
+    },
+  );
+  return { storageKey: result.public_id, imageUrl: result.secure_url };
+}
+
+export async function storeImageFile(
+  buffer: Buffer,
+  filename: string,
+  contentType: string,
+): Promise<StoredImage> {
+  if (getCloudinaryConfig()) {
+    return storeImageInCloudinary(buffer, filename);
+  }
+  if (getS3Config()) {
+    const stored = await storeVideoInS3(buffer, `images-${filename}`, contentType);
+    return { storageKey: stored.storageKey, imageUrl: stored.videoUrl };
+  }
+  const storageKey = `images/${filename}`;
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "images");
+  await mkdir(uploadDir, { recursive: true });
+  await writeFile(path.join(uploadDir, filename), buffer);
+  return { storageKey, imageUrl: `/uploads/images/${filename}` };
+}
+
 /** Store coach commentary privately; clients only receive our authorized API URL. */
 export async function storePrivateAudioFile(
   buffer: Buffer,

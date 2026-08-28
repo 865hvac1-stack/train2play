@@ -114,8 +114,10 @@ export async function approveConnectionRequestAction(connectionId: string) {
     coachUserId: coach.id,
   });
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/requests");
   revalidatePath("/athletes");
   revalidatePath("/settings");
+  revalidatePath("/athlete/coaches");
 }
 
 export async function declineConnectionRequestAction(connectionId: string) {
@@ -125,5 +127,7 @@ export async function declineConnectionRequestAction(connectionId: string) {
     coachUserId: coach.id,
   });
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/requests");
   revalidatePath("/athletes");
+  revalidatePath("/athlete/coaches");
 }

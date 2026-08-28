@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 import { AthleteConnectCoachForm } from "@/components/athlete-connect-coach-form";
+import {
+  approveGuardianCoachRequestAction,
+  cancelCoachRequestAction,
+} from "@/app/(athlete)/athlete/coaches/actions";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
 import { CONNECTION_STATUS } from "@/lib/coach-connections";
 import { prisma } from "@/lib/db";
@@ -17,7 +21,12 @@ export default async function AthleteConnectPage({
     where: {
       athleteProfileId: ctx.profileId,
       status: {
-        in: [CONNECTION_STATUS.APPROVED, CONNECTION_STATUS.PENDING],
+        in: [
+          CONNECTION_STATUS.APPROVED,
+          CONNECTION_STATUS.PENDING,
+          CONNECTION_STATUS.PENDING_COACH,
+          CONNECTION_STATUS.PENDING_GUARDIAN,
+        ],
       },
     },
     include: {
@@ -45,8 +54,11 @@ export default async function AthleteConnectPage({
           Connect with a coach
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          Enter the code your coach shared. They must approve before they can
-          assign training.
+          I already know my coach — enter their Train2Play code. Need a coach?{" "}
+          <Link href="/athlete/coaches" className="font-semibold text-brand underline">
+            Find a Coach
+          </Link>
+          .
         </p>
       </div>
 
@@ -82,9 +94,27 @@ export default async function AthleteConnectPage({
                     </p>
                   </div>
                   <span className="text-xs font-bold tracking-wide text-brand uppercase">
-                    {c.status === "APPROVED" ? "Connected" : "Pending"}
+                    {c.status === CONNECTION_STATUS.APPROVED
+                      ? "Connected"
+                      : c.status === CONNECTION_STATUS.PENDING_GUARDIAN
+                        ? "Guardian"
+                        : "Pending"}
                   </span>
                 </div>
+                {c.status === CONNECTION_STATUS.PENDING_GUARDIAN ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <form action={approveGuardianCoachRequestAction.bind(null, c.id)}>
+                      <button type="submit" className="min-h-11 rounded-lg bg-brand px-4 text-sm font-bold text-black">
+                        Confirm guardian approval
+                      </button>
+                    </form>
+                    <form action={cancelCoachRequestAction.bind(null, c.id)}>
+                      <button type="submit" className="min-h-11 rounded-lg border border-white/20 px-4 text-sm">
+                        Cancel request
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

@@ -14,6 +14,7 @@ import {
   Trophy,
   Users,
   Volleyball,
+  UserCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 const ADMIN_NAV = [
   { href: "/admin", label: "Command center", icon: Gauge, exact: true },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/coaches", label: "Coach approvals", icon: UserCheck },
   { href: "/admin/organizations", label: "Organizations", icon: Building2 },
   { href: "/admin/directors", label: "Directors", icon: ShieldCheck },
   { href: "/admin/sports", label: "Sports", icon: Volleyball },

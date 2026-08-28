@@ -142,7 +142,7 @@ export default async function DashboardPage() {
     prisma.coachAthleteConnection.findMany({
       where: {
         coachUserId: user.id,
-        status: CONNECTION_STATUS.PENDING,
+        status: { in: [CONNECTION_STATUS.PENDING, CONNECTION_STATUS.PENDING_COACH] },
       },
       include: {
         athleteProfile: {
@@ -194,6 +194,12 @@ export default async function DashboardPage() {
     attentionItems.push({
       label: "Upload your first coaching video",
       href: "/videos/new",
+    });
+  }
+  if (pendingConnections.length > 0) {
+    attentionItems.push({
+      label: `${pendingConnections.length} athlete request${pendingConnections.length === 1 ? "" : "s"} waiting`,
+      href: "/dashboard/requests",
     });
   }
 

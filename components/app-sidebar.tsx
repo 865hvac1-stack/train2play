@@ -16,6 +16,7 @@ import {
   Users,
   UserPlus,
   Trophy,
+  UserRound,
   Video,
   MapPin,
   UsersRound,
@@ -37,6 +38,8 @@ import { cn } from "@/lib/utils";
 
 const primaryNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/profile", label: "My Coach Profile", icon: UserRound },
+  { href: "/dashboard/requests", label: "Athlete requests", icon: UserPlus },
   { href: "/dashboard/community", label: "Community", icon: Trophy },
   { href: "/athletes", label: "Athletes", icon: Users },
   { href: "/training", label: "Plans & workouts", icon: ClipboardList },

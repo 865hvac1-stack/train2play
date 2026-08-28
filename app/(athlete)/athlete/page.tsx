@@ -16,7 +16,8 @@ import {
 import { NotificationFeed } from "@/components/notification-feed";
 import { SuggestedDrillSeenBeacon } from "@/components/suggested-drill-seen-beacon";
 import { formatMetricValue } from "@/lib/progress";
-import { cn } from "@/lib/utils";
+import { CONNECTION_STATUS } from "@/lib/coach-connections";
+import { prisma } from "@/lib/db";
 
 function ProgressBar({ value }: { value: number }) {
   return (
@@ -32,6 +33,9 @@ function ProgressBar({ value }: { value: number }) {
 export default async function AthleteHomePage() {
   const ctx = await requireAthleteContext();
   const data = await getAthleteDashboardData(ctx);
+  const approvedCoachCount = await prisma.coachAthleteConnection.count({
+    where: { athleteProfileId: ctx.profileId, status: CONNECTION_STATUS.APPROVED },
+  });
 
   const sportLine = [ctx.sports.join(" · "), ctx.position]
     .filter(Boolean)
@@ -50,6 +54,44 @@ export default async function AthleteHomePage() {
       </section>
 
       <NotificationFeed userId={ctx.userId} variant="athlete" />
+
+      {approvedCoachCount === 0 ? (
+        <section className="rounded-3xl border border-brand/40 bg-zinc-900 p-5">
+          <p className="text-[10px] font-bold tracking-[0.18em] text-brand uppercase">
+            Find your coach
+          </p>
+          <h2 className="font-heading mt-1 text-2xl font-bold">Ready to start training?</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Get personalized training, video feedback and development support from a Train2Play
+            Approved Coach.
+          </p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Link
+              href="/athlete/coaches"
+              className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-brand px-5 text-sm font-bold text-black"
+            >
+              Find a Coach
+            </Link>
+            <Link
+              href="/athlete/connect"
+              className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-white/20 px-5 text-sm font-bold"
+            >
+              Already have a coach? Enter coach code
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <p className="text-sm text-zinc-500">
+          Looking for another specialty?{" "}
+          <Link href="/athlete/coaches" className="font-semibold text-brand underline">
+            Find a Coach
+          </Link>
+          {" · "}
+          <Link href="/athlete/connect" className="font-semibold text-brand underline">
+            Enter a coach code
+          </Link>
+        </p>
+      )}
 
       <Link
         href="/athlete/library"
@@ -108,16 +150,16 @@ export default async function AthleteHomePage() {
             </p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               <Link
-                href="/athlete/train"
+                href="/athlete/coaches"
                 className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-black px-5 text-sm font-bold text-white"
               >
-                Browse training
+                Find a Coach
               </Link>
               <Link
                 href="/athlete/connect"
                 className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-black/20 bg-black/10 px-5 text-sm font-bold text-black"
               >
-                Connect with a coach
+                Enter coach code
               </Link>
             </div>
           </>

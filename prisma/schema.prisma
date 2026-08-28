@@ -342,19 +342,24 @@ model CoachAthleteConnection {
   athleteProfileId         String
   athleteProfile           AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
   /**
-   * PENDING | APPROVED | DECLINED | CANCELLED | REVOKED
+   * PENDING | PENDING_GUARDIAN | PENDING_COACH | APPROVED | DECLINED | CANCELLED | REVOKED | EXPIRED
+   * Coach-code requests still use PENDING. Discovery uses PENDING_GUARDIAN then PENDING_COACH.
    */
   status                   String         @default("PENDING")
   /**
-   * EMAIL_INVITE | COACH_CODE | QR_CODE | ORGANIZATION | ADMIN
+   * EMAIL_INVITE | COACH_CODE | QR_CODE | ORGANIZATION | ADMIN | DISCOVERY
    */
   source                   String         @default("COACH_CODE")
   requestedAt              DateTime       @default(now())
   approvedAt               DateTime?
   declinedAt               DateTime?
   cancelledAt              DateTime?
+  expiredAt                DateTime?
+  athleteNote              String?
+  requestedSpecialty       String?
+  coachDeclineNote         String?
   /**
-   * Future guardian gate — not enforced yet
+   * Required for minors on Find a Coach discovery requests. Coach cannot accept until set.
    */
   guardianApprovalRequired Boolean        @default(false)
   guardianApprovedAt       DateTime?
@@ -479,6 +484,8 @@ model User {
   challengesCreated           Challenge[]               @relation("ChallengeCreatedBy")
   homepageWeeksCreated        HomepageWeek[]            @relation("HomepageWeekCreatedBy")
   contentSubmissionsReviewed  AthleteContentSubmission[] @relation("ContentSubmissionReviewedBy")
+  coachProfile                CoachProfile?              @relation("CoachProfileUser")
+  coachProfilesReviewed       CoachProfile[]             @relation("CoachProfileReviewedBy")
 
   @@index([role, isActive])
   @@index([createdAt])
@@ -609,6 +616,8 @@ model TrainingVideo {
   updatedAt    DateTime          @updatedAt
   annotations  VideoAnnotation[]
   videoReviews VideoReview[]
+  featuredOnCoachProfiles CoachProfile[]     @relation("CoachFeaturedVideo")
+  coachProfileVideos      CoachProfileVideo[]
 
   @@index([coachId])
   @@index([athleteId])
@@ -1320,4 +1329,144 @@ model CompetitionStat {
   createdAt        DateTime       @default(now())
 
   @@index([athleteProfileId, season])
+}
+
+/**
+ * Professional Coach Profile. A Coach account does NOT automatically create
+ * a public/discoverable profile — discoveryStatus must be APPROVED by Admin.
+ */
+model CoachProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation("CoachProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  publicSlug    String?   @unique
+  slugUpdatedAt DateTime?
+  displayName   String?
+  bio           String?
+  avatarUrl     String?
+  coverImageUrl String?
+
+  organizationName String?
+  locationLabel    String?
+  locationCity     String?
+  locationState    String?
+  serviceArea      String?
+
+  yearsCoaching   Int?
+  experienceText  String?
+  certifications  String?
+
+  inPersonCoaching Boolean @default(true)
+  remoteCoaching   Boolean @default(false)
+  acceptingAthletes Boolean @default(false)
+  /**
+   * Coach toggle. Server still requires discoveryStatus = APPROVED to appear in Find a Coach.
+   */
+  appearInFindACoach Boolean @default(true)
+  maxActiveAthletes  Int?
+
+  featuredVideoId     String?
+  featuredVideo       TrainingVideo? @relation("CoachFeaturedVideo", fields: [featuredVideoId], references: [id], onDelete: SetNull)
+  featuredVideoPublic Boolean        @default(false)
+
+  websiteUrl       String?
+  websitePublic    Boolean @default(true)
+  instagramHandle  String?
+  instagramUrl     String?
+  instagramPublic  Boolean @default(true)
+  xHandle          String?
+  xUrl             String?
+  xPublic          Boolean @default(true)
+  tiktokHandle     String?
+  tiktokUrl        String?
+  tiktokPublic     Boolean @default(true)
+  youtubeHandle    String?
+  youtubeUrl       String?
+  youtubePublic    Boolean @default(true)
+
+  /**
+   * DRAFT | SUBMITTED | UNDER_REVIEW | APPROVED | DECLINED | SUSPENDED | REREVIEW
+   */
+  discoveryStatus     String    @default("DRAFT")
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  reviewedByUserId    String?
+  reviewedByUser      User?     @relation("CoachProfileReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  adminNote           String?
+  declineReason       String?
+  requestChangesNote  String?
+  train2playApprovedAt DateTime?
+
+  /**
+   * NOT_REQUIRED | NOT_STARTED | PENDING | CLEAR | REVIEW_REQUIRED | EXPIRED | UNAVAILABLE
+   * Status metadata only — never a fabricated background-check result.
+   */
+  backgroundCheckStatus      String    @default("NOT_STARTED")
+  backgroundCheckProvider    String?
+  backgroundCheckRequestedAt DateTime?
+  backgroundCheckCompletedAt DateTime?
+  backgroundCheckExpiresAt   DateTime?
+  backgroundCheckReference   String?
+  backgroundCheckAdminNote   String?
+
+  /**
+   * Reserved for a future marketplace. Unused in this release.
+   */
+  marketplaceJson String?
+  /**
+   * Reserved for future athlete/guardian reviews. Unused in this release.
+   */
+  reviewsJson     String?
+
+  sports CoachProfileSport[]
+  videos CoachProfileVideo[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discoveryStatus, appearInFindACoach, acceptingAthletes])
+  @@index([locationState])
+  @@index([publicSlug])
+  @@index([reviewedByUserId])
+}
+
+model CoachProfileSport {
+  id             String       @id @default(cuid())
+  coachProfileId String
+  coachProfile   CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  sport          String
+  isPrimary      Boolean      @default(false)
+  specialties    String[]     @default([])
+  positions      String[]     @default([])
+  ageGroups      String[]     @default([])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([coachProfileId, sport])
+  @@index([sport])
+  @@index([coachProfileId])
+}
+
+/**
+ * Showcase clip on a Coach Profile. Reuses TrainingVideo — no second media store.
+ */
+model CoachProfileVideo {
+  id              String        @id @default(cuid())
+  coachProfileId  String
+  coachProfile    CoachProfile  @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  trainingVideoId String
+  trainingVideo   TrainingVideo @relation(fields: [trainingVideoId], references: [id], onDelete: Cascade)
+  /**
+   * TRAINING | DRILL | INTRODUCTION
+   */
+  kind            String        @default("TRAINING")
+  title           String?
+  publicEligible  Boolean       @default(false)
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([coachProfileId, trainingVideoId])
+  @@index([coachProfileId, publicEligible, sortOrder])
 }

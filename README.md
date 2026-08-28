@@ -117,6 +117,7 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 - Player profiles with velo vs system averages
 - Athlete Player Profile (`/athlete/profile`) + shareable `/p/{slug}` with privacy controls
 - Player Profile video upload uses the existing Videos pipeline (R2/Cloudinary + `VideoReview`). Featured, Highlights, and Submit to Train2Play (`/admin/community/content`) reference the same record.
+- Coach Profiles + Find a Coach: coaches apply for Train2Play approval, Admin reviews (background-check status is a separate layer), athletes browse `/athlete/coaches` and request to connect. Public profiles live at `/coach/{slug}`. Coach codes still work.
 - Community: Player of the Week, leaderboards, most improved, weekly challenges
 - Platform Admin command center weekly homepage modules (`/admin/community`)
 - Pickup players + zip-based matching + email alerts
