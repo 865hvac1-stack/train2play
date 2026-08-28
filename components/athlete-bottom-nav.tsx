@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined,
   Dumbbell,
   Home,
+  Trophy,
   UserRound,
   Video,
 } from "lucide-react";
@@ -14,7 +15,8 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/athlete", label: "Home", icon: Home, exact: true },
-  { href: "/athlete/train", label: "My plan", icon: Dumbbell },
+  { href: "/athlete/train", label: "Train", icon: Dumbbell },
+  { href: "/athlete/community", label: "Community", icon: Trophy },
   { href: "/athlete/progress", label: "Progress", icon: ChartNoAxesCombined },
   { href: "/athlete/videos", label: "Videos", icon: Video },
   { href: "/athlete/profile", label: "Profile", icon: UserRound },
@@ -25,7 +27,7 @@ export function AthleteBottomNav() {
 
   return (
     <nav className="safe-area-pb fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-zinc-950/95 backdrop-blur-md md:hidden">
-      <ul className="safe-area-px mx-auto grid max-w-lg grid-cols-5 gap-0 px-1 pt-1.5">
+      <ul className="safe-area-px mx-auto grid max-w-lg grid-cols-6 gap-0 px-0.5 pt-1.5">
         {items.map(({ href, label, icon: Icon, exact }) => {
           const active = exact
             ? pathname === href
@@ -36,7 +38,7 @@ export function AthleteBottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-semibold tracking-wide uppercase",
+                  "flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 text-[9px] font-semibold tracking-wide uppercase",
                   active ? "text-brand" : "text-slate-400 hover:text-white",
                 )}
               >

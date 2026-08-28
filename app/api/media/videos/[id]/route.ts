@@ -7,6 +7,45 @@ import { isCoachPortalRole, isLibraryEditor } from "@/lib/roles";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function publicShowcaseVideoAccess(url: string) {
+  const review = await prisma.videoReview.findFirst({
+    where: {
+      trainingVideo: { videoUrl: url },
+      OR: [
+        {
+          featuredOnProfiles: {
+            some: {
+              profileVisibility: "PUBLIC",
+              publicVideoSharingEnabled: true,
+            },
+          },
+        },
+        {
+          showcaseItems: {
+            some: {
+              athleteProfile: {
+                profileVisibility: "PUBLIC",
+                publicVideoSharingEnabled: true,
+              },
+            },
+          },
+        },
+        {
+          playerOfTheWeek: {
+            some: {
+              published: true,
+              startDate: { lte: new Date() },
+              endDate: { gte: new Date() },
+            },
+          },
+        },
+      ],
+    },
+    select: { id: true },
+  });
+  return Boolean(review);
+}
+
 async function validFamilyShare(url: string, token: string | null) {
   if (!token) return false;
   const link = await prisma.parentShareLink.findFirst({
@@ -195,7 +234,8 @@ export async function GET(
     (session?.user?.id &&
       (session.user.id === media.ownerUserId ||
         (await authenticatedAccess(url, session.user.id)))) ||
-    (await validFamilyShare(url, requestUrl.searchParams.get("shareToken")));
+    (await validFamilyShare(url, requestUrl.searchParams.get("shareToken"))) ||
+    (await publicShowcaseVideoAccess(url));
   if (!allowed) return new Response("Not found", { status: 404 });
 
   try {

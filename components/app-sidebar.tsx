@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Users,
   UserPlus,
+  Trophy,
   Video,
   MapPin,
   UsersRound,
@@ -36,6 +37,7 @@ import { cn } from "@/lib/utils";
 
 const primaryNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/community", label: "Community", icon: Trophy },
   { href: "/athletes", label: "Athletes", icon: Users },
   { href: "/training", label: "Plans & workouts", icon: ClipboardList },
   { href: "/courses", label: "My courses", icon: BookOpen },
@@ -49,6 +51,7 @@ const primaryNav = [
 
 const trainerNav = [
   { href: "/trainer", label: "Program health", icon: LayoutDashboard, exact: true },
+  { href: "/trainer/community", label: "Community", icon: Trophy },
   { href: "/library", label: "Content library", icon: Library },
   { href: "/trainer/drills", label: "Suggested drills", icon: Dumbbell },
 ];

@@ -115,6 +115,9 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 - Synchronized trainer voice-over reviews (see `docs/SYNCHRONIZED-VOICE-REVIEWS.md`)
 - Video coaching — upload MP4, draw on frames, timestamped notes
 - Player profiles with velo vs system averages
+- Athlete Player Profile (`/athlete/profile`) + shareable `/p/{slug}` with privacy controls
+- Community: Player of the Week, leaderboards, most improved, weekly challenges
+- Platform Admin command center weekly homepage modules (`/admin/community`)
 - Pickup players + zip-based matching + email alerts
 - Centralized brand config in `lib/brand.ts`
 

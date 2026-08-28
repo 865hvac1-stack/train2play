@@ -7,6 +7,7 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { HomepageCommunitySections } from "@/components/homepage-community-sections";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
@@ -178,6 +179,8 @@ export default async function HomePage() {
             </p>
           </div>
         </section>
+
+        <HomepageCommunitySections />
 
         <section className="relative overflow-hidden bg-brand px-4 py-16 text-black sm:px-6 sm:py-20">
           <div

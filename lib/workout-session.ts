@@ -256,5 +256,10 @@ export async function finishWorkoutSession(options: {
     data: { completed: true, completedAt: new Date() },
   });
 
+  const { syncTrainingAchievements } = await import("@/lib/community/achievements");
+  const { refreshAthleteChallenges } = await import("@/lib/community/challenges");
+  await syncTrainingAchievements(profile.id);
+  await refreshAthleteChallenges(profile.id);
+
   return updated;
 }

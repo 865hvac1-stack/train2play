@@ -29,7 +29,11 @@ export async function getBestMetricValue(
   if (!def) return null;
 
   const entries = await prisma.metricEntry.findMany({
-    where: { athleteProfileId, metricDefinitionId },
+    where: {
+      athleteProfileId,
+      metricDefinitionId,
+      resultStatus: { in: ["ACTIVE"] },
+    },
     select: { value: true },
   });
   if (entries.length === 0) return null;
@@ -83,12 +87,32 @@ export async function recordPerformanceMetric(options: {
       metricDefinitionId: def.id,
       value: options.value,
       source: MetricSource.SELF_REPORTED,
+      verificationType: "SELF_REPORTED",
+      resultStatus: "ACTIVE",
+      resultSource: "SELF_REPORTED",
       enteredByUserId: options.enteredByUserId,
       notes: options.notes?.trim() || null,
       legacyMetricId: legacy.id,
       recordedAt: new Date(),
     },
   });
+
+  if (pr && previousBest != null) {
+    const { awardAchievement } = await import("@/lib/community/achievements");
+    await awardAchievement({
+      athleteProfileId: options.athleteProfileId,
+      key: "NEW_PR",
+      occurrenceKey: `NEW_PR:${def.id}:${entry.id}`,
+      metadata: {
+        metric: def.name,
+        value: options.value,
+        unit: def.unit,
+      },
+    });
+  }
+
+  const { invalidateRankingCache } = await import("@/lib/community/ranking");
+  invalidateRankingCache();
 
   return {
     metricEntryId: entry.id,

@@ -5,6 +5,7 @@ export async function replaceAthleteSports(options: {
   sports: string[];
   primarySport: string;
   position?: string | null;
+  secondaryPosition?: string | null;
   legacyAthleteId?: string | null;
 }) {
   const sports = [...new Set(options.sports.filter(Boolean))];
@@ -39,7 +40,10 @@ export async function replaceAthleteSports(options: {
         update: {
           isPrimary: sport === primarySport,
           ...(sport === primarySport
-            ? { position: options.position ?? undefined }
+            ? {
+                position: options.position ?? undefined,
+                secondaryPosition: options.secondaryPosition ?? undefined,
+              }
             : {}),
         },
         create: {
@@ -47,6 +51,8 @@ export async function replaceAthleteSports(options: {
           sport,
           isPrimary: sport === primarySport,
           position: sport === primarySport ? options.position ?? null : null,
+          secondaryPosition:
+            sport === primarySport ? options.secondaryPosition ?? null : null,
         },
       });
     }

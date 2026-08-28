@@ -37,6 +37,60 @@ enum MetricSource {
   VERIFIED
 }
 
+enum ProfileVisibility {
+  PRIVATE
+  AUTHENTICATED
+  ORGANIZATION
+  PUBLIC
+}
+
+enum VerificationType {
+  SELF_REPORTED
+  COACH
+  TRAIN2PLAY
+}
+
+enum ResultStatus {
+  ACTIVE
+  FLAGGED
+  INVALIDATED
+  HIDDEN
+}
+
+enum HomepageModuleKind {
+  PLAYER_OF_THE_WEEK
+  TOP_PERFORMANCE
+  MOST_IMPROVED
+  TRAINING_LEADER
+  CURRENT_CHALLENGE
+  CUSTOM
+}
+
+enum ChallengeScoringType {
+  WORKOUT_COUNT
+  TRAINING_DAYS
+  PROGRAM_COMPLETION
+  SPECIFIC_WORKOUT
+  SPECIFIC_DRILL
+  PR_ACHIEVEMENT
+  METRIC_IMPROVEMENT
+}
+
+enum ChallengeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RankingType {
+  METRIC
+  MOST_IMPROVED
+  TRAINING_DAYS
+  WORKOUTS_COMPLETED
+  PROGRAM_COMPLETION
+  CONSISTENCY
+}
+
 model Organization {
   id                  String                    @id @default(cuid())
   name                String
@@ -130,6 +184,33 @@ model AthleteProfile {
   graduationYear            Int?
   avatarUrl                 String?
   primarySport              String?
+  displayName               String?
+  publicSlug                String?                        @unique
+  bio                       String?
+  coverImageUrl             String?
+  locationState             String?
+  instagramHandle           String?
+  instagramUrl              String?
+  instagramPublic           Boolean                        @default(false)
+  xHandle                   String?
+  xUrl                      String?
+  xPublic                   Boolean                        @default(false)
+  tiktokHandle              String?
+  tiktokUrl                 String?
+  tiktokPublic              Boolean                        @default(false)
+  youtubeHandle             String?
+  youtubeUrl                String?
+  youtubePublic             Boolean                        @default(false)
+  profileVisibility         ProfileVisibility              @default(PRIVATE)
+  featuredVideoReviewId     String?
+  featuredVideoReview       VideoReview?                   @relation("AthleteFeaturedVideo", fields: [featuredVideoReviewId], references: [id], onDelete: SetNull)
+  featuredMetricIds         String[]                       @default([])
+  recruitingStatus          String?
+  collegeInterest           String?
+  academicNotes             String?
+  awardsNotes               String?
+  contactPreference         String?
+  slugUpdatedAt             DateTime?
   legacyAthleteId           String?                        @unique
   legacyAthlete             Athlete?                       @relation("LegacyAthleteProfile", fields: [legacyAthleteId], references: [id], onDelete: SetNull)
   createdAt                 DateTime                       @default(now())
@@ -148,17 +229,26 @@ model AthleteProfile {
   publicVideoSharingEnabled Boolean                        @default(false)
   publicLeaderboardOptIn    Boolean                        @default(false)
   privacySettingsUpdatedAt  DateTime?
+  showcaseVideos            AthleteProfileVideoShowcase[]
+  achievements              AthleteAchievement[]
+  playerOfTheWeekWins       PlayerOfTheWeek[]
+  challengeEntries          ChallengeEntry[]
+  competitionStats          CompetitionStat[]
 
   @@index([legacyAthleteId])
+  @@index([profileVisibility])
+  @@index([locationState])
+  @@index([primarySport])
 }
 
 model AthleteSport {
-  id               String         @id @default(cuid())
-  athleteProfileId String
-  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
-  sport            String
-  position         String?
-  isPrimary        Boolean        @default(false)
+  id                String         @id @default(cuid())
+  athleteProfileId  String
+  athleteProfile    AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  sport             String
+  position          String?
+  secondaryPosition String?
+  isPrimary         Boolean        @default(false)
 
   @@unique([athleteProfileId, sport])
 }
@@ -298,26 +388,36 @@ model MetricDefinition {
 }
 
 model MetricEntry {
-  id                 String           @id @default(cuid())
+  id                 String            @id @default(cuid())
   athleteProfileId   String
-  athleteProfile     AthleteProfile   @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  athleteProfile     AthleteProfile    @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
   metricDefinitionId String
-  metricDefinition   MetricDefinition @relation(fields: [metricDefinitionId], references: [id], onDelete: Restrict)
+  metricDefinition   MetricDefinition  @relation(fields: [metricDefinitionId], references: [id], onDelete: Restrict)
   value              Float
-  recordedAt         DateTime         @default(now())
-  source             MetricSource     @default(COACH_ENTERED)
+  recordedAt         DateTime          @default(now())
+  source             MetricSource      @default(COACH_ENTERED)
   verifiedAt         DateTime?
+  verifiedByUserId   String?
+  verifiedByUser     User?             @relation("MetricEntryVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  verificationType   VerificationType  @default(SELF_REPORTED)
+  resultStatus       ResultStatus      @default(ACTIVE)
+  resultSource       String?
+  flaggedAt          DateTime?
+  flaggedReason      String?
   enteredByUserId    String?
-  enteredByUser      User?            @relation("MetricEntryEnteredBy", fields: [enteredByUserId], references: [id], onDelete: SetNull)
+  enteredByUser      User?             @relation("MetricEntryEnteredBy", fields: [enteredByUserId], references: [id], onDelete: SetNull)
   notes              String?
-  legacyMetricId     String?          @unique
-  legacyMetric       ProgressMetric?  @relation("LegacyMetricEntry", fields: [legacyMetricId], references: [id], onDelete: SetNull)
-  createdAt          DateTime         @default(now())
+  legacyMetricId     String?           @unique
+  legacyMetric       ProgressMetric?   @relation("LegacyMetricEntry", fields: [legacyMetricId], references: [id], onDelete: SetNull)
+  createdAt          DateTime          @default(now())
   exerciseResult     ExerciseResult?
 
   @@index([athleteProfileId])
   @@index([metricDefinitionId])
   @@index([athleteProfileId, recordedAt])
+  @@index([resultStatus, recordedAt])
+  @@index([verificationType, resultStatus])
+  @@index([metricDefinitionId, resultStatus, recordedAt])
 }
 
 model User {
@@ -357,6 +457,7 @@ model User {
   coachedAthleteMemberships   AthleteMembership[]       @relation("AthleteMembershipCoach")
   guardianLinks               GuardianLink[]            @relation("GuardianUser")
   metricEntriesEntered        MetricEntry[]             @relation("MetricEntryEnteredBy")
+  metricEntriesVerified       MetricEntry[]             @relation("MetricEntryVerifiedBy")
   athleteInvitesSent          AthleteInvite[]           @relation("AthleteInviteSender")
   workoutSessions             WorkoutSession[]          @relation("WorkoutSessionAthleteUser")
   coachConnections            CoachAthleteConnection[]  @relation("CoachConnectionCoach")
@@ -371,6 +472,9 @@ model User {
   videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
   mediaUploads                MediaUpload[]
   consentRecords              ConsentRecord[]           @relation("ConsentGrantedBy")
+  playerOfTheWeekCreated      PlayerOfTheWeek[]         @relation("PlayerOfTheWeekCreatedBy")
+  challengesCreated           Challenge[]               @relation("ChallengeCreatedBy")
+  homepageWeeksCreated        HomepageWeek[]            @relation("HomepageWeekCreatedBy")
 
   @@index([role, isActive])
   @@index([createdAt])
@@ -553,6 +657,9 @@ model VideoReview {
   updatedAt          DateTime                  @updatedAt
   trainingLinks      VideoReviewTrainingLink[]
   voiceReview        VoiceReview?
+  featuredOnProfiles AthleteProfile[]              @relation("AthleteFeaturedVideo")
+  showcaseItems      AthleteProfileVideoShowcase[]
+  playerOfTheWeek    PlayerOfTheWeek[]
 
   @@index([coachUserId, status])
   @@index([athleteProfileId, status])
@@ -997,4 +1104,167 @@ model CatalogDrillPush {
   @@index([catalogDrillId, source])
   @@index([athleteProfileId])
   @@index([pushedByUserId])
+}
+
+/**
+ * Explicit opt-in for a video to appear on the shareable Player Profile.
+ * Coaching film is never public unless the athlete adds it here.
+ */
+model AthleteProfileVideoShowcase {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  videoReviewId    String
+  videoReview      VideoReview    @relation(fields: [videoReviewId], references: [id], onDelete: Cascade)
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+
+  @@unique([athleteProfileId, videoReviewId])
+  @@index([athleteProfileId, sortOrder])
+  @@index([videoReviewId])
+}
+
+model AthleteAchievement {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  key              String
+  occurrenceKey    String
+  title            String
+  description      String?
+  earnedAt         DateTime       @default(now())
+  shareable        Boolean        @default(true)
+  metadataJson     String?
+  createdAt        DateTime       @default(now())
+
+  @@unique([athleteProfileId, occurrenceKey])
+  @@index([athleteProfileId, earnedAt])
+  @@index([key])
+}
+
+model PlayerOfTheWeek {
+  id                    String           @id @default(cuid())
+  athleteProfileId      String
+  athleteProfile        AthleteProfile   @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  sport                 String?
+  featuredVideoReviewId String?
+  featuredVideoReview   VideoReview?     @relation(fields: [featuredVideoReviewId], references: [id], onDelete: SetNull)
+  highlight             String?
+  description           String
+  startDate             DateTime
+  endDate               DateTime
+  published             Boolean          @default(false)
+  publishedAt           DateTime?
+  createdByUserId       String
+  createdByUser         User             @relation("PlayerOfTheWeekCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  homepageModules       HomepageModule[]
+
+  @@index([published, startDate, endDate])
+  @@index([athleteProfileId])
+}
+
+model Challenge {
+  id                 String               @id @default(cuid())
+  name               String
+  description        String
+  sport              String?
+  scoringType        ChallengeScoringType
+  targetValue        Int?
+  metricDefinitionId String?
+  workoutTitle       String?
+  catalogDrillId     String?
+  startAt            DateTime
+  endAt              DateTime
+  status             ChallengeStatus      @default(DRAFT)
+  rewardBadgeKey     String               @default("CHALLENGE_COMPLETE")
+  createdByUserId    String
+  createdByUser      User                 @relation("ChallengeCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  entries            ChallengeEntry[]
+  homepageModules    HomepageModule[]
+
+  @@index([status, startAt, endAt])
+  @@index([sport, status])
+}
+
+model ChallengeEntry {
+  id               String         @id @default(cuid())
+  challengeId      String
+  challenge        Challenge      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  progressValue    Float          @default(0)
+  completedAt      DateTime?
+  winner           Boolean        @default(false)
+  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime       @default(now())
+
+  @@unique([challengeId, athleteProfileId])
+  @@index([challengeId, progressValue])
+  @@index([athleteProfileId])
+}
+
+/**
+ * Command-center editorial pack for the public homepage each week.
+ */
+model HomepageWeek {
+  id              String           @id @default(cuid())
+  weekOf          DateTime
+  headline        String?
+  published       Boolean          @default(false)
+  publishedAt     DateTime?
+  createdByUserId String
+  createdByUser   User             @relation("HomepageWeekCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  modules         HomepageModule[]
+
+  @@unique([weekOf])
+  @@index([published, weekOf])
+}
+
+model HomepageModule {
+  id                 String             @id @default(cuid())
+  weekId             String
+  week               HomepageWeek       @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  slot               Int
+  kind               HomepageModuleKind
+  published          Boolean            @default(true)
+  title              String?
+  subtitle           String?
+  body               String?
+  playerOfTheWeekId  String?
+  playerOfTheWeek    PlayerOfTheWeek?   @relation(fields: [playerOfTheWeekId], references: [id], onDelete: SetNull)
+  challengeId        String?
+  challenge          Challenge?         @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+  metricDefinitionId String?
+  sport              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([weekId, slot])
+  @@index([weekId, published, slot])
+}
+
+/**
+ * Future competition (GameChanger, etc.) stays separate from training metrics.
+ * No importer in V1 — schema only so recruiting/profile can grow in place.
+ */
+model CompetitionStat {
+  id               String         @id @default(cuid())
+  athleteProfileId String
+  athleteProfile   AthleteProfile @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  source           String         @default("MANUAL")
+  season           String?
+  statKey          String
+  statLabel        String
+  statValue        Float
+  unit             String?
+  recordedAt       DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+
+  @@index([athleteProfileId, season])
 }
