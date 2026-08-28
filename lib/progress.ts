@@ -26,9 +26,12 @@ export const progressMetricSchema = z.object({
 export type ProgressMetricInput = z.infer<typeof progressMetricSchema>;
 
 export function formatMetricValue(value: number, unit: string) {
-  const formatted =
-    unit === "%" ? value.toFixed(1) : Number.isInteger(value) ? String(value) : value.toFixed(2);
-  return `${formatted} ${unit}`;
+  return `${formatMetricNumber(value, unit)} ${unit}`;
+}
+
+export function formatMetricNumber(value: number, unit: string) {
+  if (unit === "%") return value.toFixed(1);
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 export function formatMetricDate(date: Date) {
@@ -37,4 +40,19 @@ export function formatMetricDate(date: Date) {
     day: "numeric",
     year: "numeric",
   }).format(date);
+}
+
+export function formatRelativeActivityDate(date: Date, now = new Date()) {
+  const startOfDay = (value: Date) => {
+    const d = new Date(value);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
+  const diffDays = Math.round(
+    (startOfDay(now) - startOfDay(date)) / (24 * 60 * 60 * 1000),
+  );
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`;
+  return formatMetricDate(date);
 }
