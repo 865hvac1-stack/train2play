@@ -18,6 +18,7 @@ import { SuggestedDrillSeenBeacon } from "@/components/suggested-drill-seen-beac
 import { formatMetricValue } from "@/lib/progress";
 import { CONNECTION_STATUS } from "@/lib/coach-connections";
 import { prisma } from "@/lib/db";
+import { cn } from "@/lib/utils";
 
 function ProgressBar({ value }: { value: number }) {
   return (

@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/db";
 import {
-  BACKGROUND_CHECK_STATUS,
   COACH_DISCOVERY_STATUS,
   isBackgroundCheckPublicBadge,
   isTrain2PlayApproved,
 } from "@/lib/coaching/status";
 import { isTrainer } from "@/lib/roles";
+import type { Prisma, UserRole } from "@/lib/generated/prisma/client";
 
 export function isDiscoverableCoach(profile: {
   discoveryStatus: string;
@@ -95,12 +95,12 @@ export async function searchDiscoverableCoaches(filters: FindCoachFilters) {
           ? { inPersonCoaching: true, remoteCoaching: true }
           : {};
 
-  const where = {
+  const where: Prisma.CoachProfileWhereInput = {
     discoveryStatus: COACH_DISCOVERY_STATUS.APPROVED,
     appearInFindACoach: true,
     user: {
       isActive: true,
-      role: { in: ["COACH", "STAFF", "ORG_ADMIN"] as const },
+      role: { in: ["COACH", "STAFF", "ORG_ADMIN"] as UserRole[] },
     },
     ...sportFilter,
     ...locationFilter,

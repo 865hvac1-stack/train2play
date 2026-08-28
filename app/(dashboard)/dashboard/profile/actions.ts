@@ -26,7 +26,7 @@ function revalidateCoach(slug?: string | null) {
   if (slug) revalidatePath(`/coach/${slug}`);
 }
 
-async function storeImageFromForm(file: FormDataEntryValue | null, userId: string) {
+async function storeImageFromForm(file: FormDataEntryValue | null) {
   if (!(file instanceof File) || file.size === 0) return null;
   if (!file.type.startsWith("image/")) {
     return { error: "Choose a photo (JPG, PNG, or WebP)." };
@@ -62,9 +62,9 @@ export async function saveCoachProfileAction(
   const socials = applyCoachSocialsFromForm(formData);
   if ("error" in socials && socials.error) return { error: socials.error };
 
-  const avatar = await storeImageFromForm(formData.get("avatarFile"), coach.id);
+  const avatar = await storeImageFromForm(formData.get("avatarFile"));
   if (avatar && "error" in avatar) return { error: avatar.error };
-  const cover = await storeImageFromForm(formData.get("coverFile"), coach.id);
+  const cover = await storeImageFromForm(formData.get("coverFile"));
   if (cover && "error" in cover) return { error: cover.error };
 
   const sports = formData

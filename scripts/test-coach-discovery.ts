@@ -199,7 +199,10 @@ async function main() {
     status: BACKGROUND_CHECK_STATUS.CLEAR,
   });
   const withBg = await getPublicCoachProfile(`tj-hurst-${stamp}`);
-  assert.equal(withBg.status, "ok" && withBg.profile.backgroundCheckCompleted);
+  assert.equal(withBg.status, "ok");
+  if (withBg.status === "ok") {
+    assert.equal(withBg.profile.backgroundCheckCompleted, true);
+  }
 
   const adultRequest = await requestCoachConnection({
     athleteProfileId: adultProfile.id,

@@ -8,7 +8,7 @@ import {
   submitCoachProfileFormAction,
   uploadCoachProfileVideoAction,
   type CoachProfileActionState,
-} from "@/app/(dashboard)/profile/actions";
+} from "@/app/(dashboard)/dashboard/profile/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

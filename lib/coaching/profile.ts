@@ -185,7 +185,7 @@ const profileInclude = {
       lookingForSport: true,
     },
   },
-} as const;
+};
 
 export async function getCoachProfileByUserId(userId: string) {
   await ensureCoachProfile(userId);
