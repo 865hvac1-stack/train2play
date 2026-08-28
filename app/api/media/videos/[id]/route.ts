@@ -1,8 +1,10 @@
 import { auth } from "@/auth";
 import { canViewAthlete } from "@/lib/authz";
+import { CONNECTION_STATUS } from "@/lib/coach-connections";
 import { prisma } from "@/lib/db";
 import { getPrivateVideoPlaybackUrl, privateVideoPath } from "@/lib/r2-video";
 import { isCoachPortalRole, isLibraryEditor } from "@/lib/roles";
+import { VIDEO_SHOWCASE_VISIBILITY } from "@/lib/video-categories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +13,8 @@ async function publicShowcaseVideoAccess(url: string) {
   const review = await prisma.videoReview.findFirst({
     where: {
       trainingVideo: { videoUrl: url },
+      showcaseVisibility: "PUBLIC_PROFILE",
+      status: { not: "ARCHIVED" },
       OR: [
         {
           featuredOnProfiles: {
@@ -206,6 +210,33 @@ async function authenticatedAccess(url: string, userId: string) {
     if (drill.pushes.length > 0 || drill.athleteRecipients.length > 0) return true;
     if (drill.athleteAudience === "ALL_SPORT" && athleteSports.has(drill.sport)) {
       return true;
+    }
+  }
+
+  const showcaseReviews = await prisma.videoReview.findMany({
+    where: { trainingVideo: { videoUrl: url } },
+    select: {
+      showcaseVisibility: true,
+      athleteProfileId: true,
+    },
+  });
+  for (const review of showcaseReviews) {
+    if (
+      review.showcaseVisibility === VIDEO_SHOWCASE_VISIBILITY.TRAIN2PLAY ||
+      review.showcaseVisibility === VIDEO_SHOWCASE_VISIBILITY.PUBLIC_PROFILE
+    ) {
+      return true;
+    }
+    if (review.showcaseVisibility === VIDEO_SHOWCASE_VISIBILITY.COACHES) {
+      const connected = await prisma.coachAthleteConnection.findFirst({
+        where: {
+          athleteProfileId: review.athleteProfileId,
+          coachUserId: userId,
+          status: CONNECTION_STATUS.APPROVED,
+        },
+        select: { id: true },
+      });
+      if (connected) return true;
     }
   }
 

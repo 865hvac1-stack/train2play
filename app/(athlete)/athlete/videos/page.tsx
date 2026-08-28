@@ -19,15 +19,22 @@ export default async function AthleteVideosPage() {
   const ctx = await requireAthleteContext();
 
   const reviews = await prisma.videoReview.findMany({
-    where: { athleteProfileId: ctx.profileId },
+    where: {
+      athleteProfileId: ctx.profileId,
+      status: { not: VIDEO_REVIEW_STATUS.ARCHIVED },
+    },
     include: {
       coachUser: { select: { name: true } },
+      trainingVideo: { select: { videoUrl: true } },
       trainingLinks: { select: { id: true }, take: 1 },
       voiceReview: { select: { status: true } },
     },
     orderBy: { submittedAt: "desc" },
     take: 40,
   });
+  const libraryReviews = reviews.filter(
+    (review) => review.status === VIDEO_REVIEW_STATUS.LIBRARY,
+  );
 
   const planVideos = ctx.athleteId
     ? await prisma.workout.findMany({
@@ -56,17 +63,67 @@ export default async function AthleteVideosPage() {
             My videos
           </h1>
         </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+        <Link
+          href="/athlete/profile?upload=1"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-2xl border border-white/20 px-4 text-sm font-bold text-white"
+        >
+          Profile upload
+        </Link>
         <Link
           href="/athlete/videos/new"
           className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-2xl bg-brand px-4 text-sm font-bold text-black"
         >
-          Upload video
+          Send for review
         </Link>
+        </div>
       </div>
+
+      {libraryReviews.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="font-heading text-xl font-bold">Profile clips</h2>
+          <p className="text-sm text-zinc-400">
+            Same videos as your Player Profile. Featured, highlights, and Submit to Train2Play
+            live on{" "}
+            <Link href="/athlete/profile" className="font-semibold text-brand underline">
+              Profile
+            </Link>
+            . This workspace is for coach review.
+          </p>
+          <ul className="space-y-3">
+            {libraryReviews.map((review) => (
+              <li
+                key={review.id}
+                className="space-y-2 rounded-2xl border border-white/10 bg-zinc-900 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-white">{review.title}</p>
+                    <p className="text-xs text-slate-400">
+                      {review.sport} · {review.category} · {formatDate(review.submittedAt)}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/athlete/videos/reviews/${review.id}`}
+                    className="shrink-0 text-xs font-bold tracking-wide text-brand uppercase"
+                  >
+                    Watch
+                  </Link>
+                </div>
+                <InstructionVideoPlayer
+                  src={review.trainingVideo.videoUrl}
+                  title={review.title}
+                  tone="dark"
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="font-heading text-xl font-bold">Submitted for review</h2>
-        {reviews.length === 0 ? (
+        {reviews.filter((review) => review.status !== VIDEO_REVIEW_STATUS.LIBRARY).length === 0 ? (
           <div className="space-y-3 rounded-2xl border border-dashed border-white/15 p-5">
             <p className="text-sm text-slate-400">
               Upload game film or a skills clip and send it to a connected coach.
@@ -80,7 +137,9 @@ export default async function AthleteVideosPage() {
           </div>
         ) : (
           <ul className="space-y-2">
-            {reviews.map((review) => (
+            {reviews
+              .filter((review) => review.status !== VIDEO_REVIEW_STATUS.LIBRARY)
+              .map((review) => (
               <li key={review.id}>
                 <Link
                   href={`/athlete/videos/reviews/${review.id}`}

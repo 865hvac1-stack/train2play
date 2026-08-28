@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { InstructionVideoPlayer } from "@/components/instruction-video-player";
 import { formatMetricValue } from "@/lib/progress";
@@ -119,9 +120,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function FeaturedVideoShowcase({
   src,
   title,
+  actions,
 }: {
   src: string;
   title: string;
+  actions?: ReactNode;
 }) {
   return (
     <section className="overflow-hidden rounded-3xl border border-brand/40 bg-black">
@@ -132,6 +135,7 @@ export function FeaturedVideoShowcase({
       </div>
       <div className="p-4 pt-3">
         <InstructionVideoPlayer src={src} title={title} tone="dark" />
+        {actions ? <div className="mt-3 flex flex-wrap gap-2">{actions}</div> : null}
       </div>
     </section>
   );

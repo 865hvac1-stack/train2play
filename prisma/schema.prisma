@@ -234,6 +234,7 @@ model AthleteProfile {
   playerOfTheWeekWins       PlayerOfTheWeek[]
   challengeEntries          ChallengeEntry[]
   competitionStats          CompetitionStat[]
+  contentSubmissions        AthleteContentSubmission[]
 
   @@index([legacyAthleteId])
   @@index([profileVisibility])
@@ -411,6 +412,8 @@ model MetricEntry {
   legacyMetric       ProgressMetric?   @relation("LegacyMetricEntry", fields: [legacyMetricId], references: [id], onDelete: SetNull)
   createdAt          DateTime          @default(now())
   exerciseResult     ExerciseResult?
+  videoReviews       VideoReview[]
+  contentSubmissions AthleteContentSubmission[]
 
   @@index([athleteProfileId])
   @@index([metricDefinitionId])
@@ -475,6 +478,7 @@ model User {
   playerOfTheWeekCreated      PlayerOfTheWeek[]         @relation("PlayerOfTheWeekCreatedBy")
   challengesCreated           Challenge[]               @relation("ChallengeCreatedBy")
   homepageWeeksCreated        HomepageWeek[]            @relation("HomepageWeekCreatedBy")
+  contentSubmissionsReviewed  AthleteContentSubmission[] @relation("ContentSubmissionReviewedBy")
 
   @@index([role, isActive])
   @@index([createdAt])
@@ -644,9 +648,24 @@ model VideoReview {
   athleteNote        String?
   coachFeedback      String?
   /**
-   * AWAITING_REVIEW | IN_REVIEW | REVIEWED
+   * AWAITING_REVIEW | IN_REVIEW | REVIEWED | LIBRARY | ARCHIVED
+   * LIBRARY = athlete profile/showcase clip, not sitting in a coach review queue.
+   * ARCHIVED = removed from the Player Profile showcase; coaching reviews stay REVIEWED.
    */
   status             String                    @default("AWAITING_REVIEW")
+  /**
+   * REVIEW = sent to a coach. LIBRARY = same TrainingVideo/VideoReview record, profile-owned.
+   */
+  purpose            String                    @default("REVIEW")
+  /**
+   * PRIVATE | COACHES | TRAIN2PLAY | PUBLIC_PROFILE
+   * Public Player Profile still also requires publicVideoSharingEnabled + featured/highlight selection.
+   */
+  showcaseVisibility String                    @default("PRIVATE")
+  metricEntryId      String?
+  metricEntry        MetricEntry?              @relation(fields: [metricEntryId], references: [id], onDelete: SetNull)
+  achievementId      String?
+  achievement        AthleteAchievement?       @relation(fields: [achievementId], references: [id], onDelete: SetNull)
   submittedAt        DateTime                  @default(now())
   reviewedAt         DateTime?
   /**
@@ -660,11 +679,14 @@ model VideoReview {
   featuredOnProfiles AthleteProfile[]              @relation("AthleteFeaturedVideo")
   showcaseItems      AthleteProfileVideoShowcase[]
   playerOfTheWeek    PlayerOfTheWeek[]
+  contentSubmissions AthleteContentSubmission[]
 
   @@index([coachUserId, status])
   @@index([athleteProfileId, status])
   @@index([trainingVideoId])
   @@index([submittedAt])
+  @@index([purpose])
+  @@index([showcaseVisibility])
 }
 
 /**
@@ -1124,6 +1146,36 @@ model AthleteProfileVideoShowcase {
   @@index([videoReviewId])
 }
 
+/**
+ * Athlete submits an existing VideoReview to the Train2Play admin content queue.
+ * Does not copy the file — Admin receives the same video + live Player Profile data.
+ */
+model AthleteContentSubmission {
+  id                      String          @id @default(cuid())
+  athleteProfileId        String
+  athleteProfile          AthleteProfile  @relation(fields: [athleteProfileId], references: [id], onDelete: Cascade)
+  videoReviewId           String
+  videoReview             VideoReview     @relation(fields: [videoReviewId], references: [id], onDelete: Cascade)
+  category                String
+  note                    String?
+  featurePermission       Boolean         @default(false)
+  socialMediaPermission   Boolean         @default(false)
+  guardianApproved        Boolean         @default(false)
+  status                  String          @default("PENDING")
+  metricEntryId           String?
+  metricEntry             MetricEntry?    @relation(fields: [metricEntryId], references: [id], onDelete: SetNull)
+  adminNote               String?
+  reviewedAt              DateTime?
+  reviewedByUserId        String?
+  reviewedByUser          User?           @relation("ContentSubmissionReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([athleteProfileId])
+  @@index([videoReviewId])
+}
+
 model AthleteAchievement {
   id               String         @id @default(cuid())
   athleteProfileId String
@@ -1136,6 +1188,7 @@ model AthleteAchievement {
   shareable        Boolean        @default(true)
   metadataJson     String?
   createdAt        DateTime       @default(now())
+  videoReviews     VideoReview[]
 
   @@unique([athleteProfileId, occurrenceKey])
   @@index([athleteProfileId, earnedAt])

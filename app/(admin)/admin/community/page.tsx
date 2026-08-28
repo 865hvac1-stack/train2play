@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flag, LayoutGrid, Medal, Trophy, Sparkles } from "lucide-react";
+import { Flag, LayoutGrid, Medal, Trophy, Sparkles, Clapperboard } from "lucide-react";
 
 import { AdminShell } from "@/components/admin-shell";
 import { requirePlatformAdmin } from "@/lib/session";
@@ -9,11 +9,12 @@ import { getPublishedHomepageWeek } from "@/lib/community/homepage";
 
 export default async function AdminCommunityPage() {
   await requirePlatformAdmin();
-  const [potw, flagged, challenges, week] = await Promise.all([
+  const [potw, flagged, challenges, week, pendingContent] = await Promise.all([
     getCurrentPlayerOfTheWeek(),
     prisma.metricEntry.count({ where: { resultStatus: "FLAGGED" } }),
     prisma.challenge.count({ where: { status: "PUBLISHED" } }),
     getPublishedHomepageWeek(),
+    prisma.athleteContentSubmission.count({ where: { status: "PENDING" } }),
   ]);
 
   const cards = [
@@ -44,6 +45,12 @@ export default async function AdminCommunityPage() {
       icon: Flag,
       title: "Verification & flags",
       detail: `${flagged} flagged results`,
+    },
+    {
+      href: "/admin/community/content",
+      icon: Clapperboard,
+      title: "Athlete content queue",
+      detail: `${pendingContent} pending submissions`,
     },
     {
       href: "/admin/community/leaderboards",

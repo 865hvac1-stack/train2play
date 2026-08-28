@@ -1,9 +1,15 @@
 import Link from "next/link";
 
 import { PlayerProfileCustomizeForm } from "@/components/player-profile-customize-form";
+import { ProfileVideoWorkspace } from "@/components/profile-video-workspace";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
 import { ensurePublicSlug } from "@/lib/community/profile";
+import {
+  mapProfileMetricOptions,
+  mapProfileVideos,
+} from "@/lib/community/profile-video-map";
 import { isProfileEditSection } from "@/lib/community/profile-edit-sections";
+import { isMinor } from "@/lib/consent";
 import { prisma } from "@/lib/db";
 
 export default async function EditPlayerProfilePage({
@@ -30,12 +36,30 @@ export default async function EditPlayerProfilePage({
   if (!profile) return null;
 
   const slug = await ensurePublicSlug(profile);
-  const videos = await prisma.videoReview.findMany({
-    where: { athleteProfileId: profile.id },
-    select: { id: true, title: true },
+  const reviews = await prisma.videoReview.findMany({
+    where: {
+      athleteProfileId: profile.id,
+      status: { not: "ARCHIVED" },
+    },
+    include: {
+      trainingVideo: { select: { videoUrl: true } },
+      metricEntry: { include: { metricDefinition: true } },
+      contentSubmissions: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { status: true },
+      },
+    },
     orderBy: { submittedAt: "desc" },
     take: 40,
   });
+  const mappedVideos = mapProfileVideos({
+    reviews,
+    featuredId: profile.featuredVideoReviewId,
+    highlightIds: profile.showcaseVideos.map((row) => row.videoReviewId),
+    metricHistory: profile.metricEntries,
+  });
+  const videos = reviews.map((row) => ({ id: row.id, title: row.title }));
   const metricOptions = [
     ...new Map(
       profile.metricEntries.map((entry) => [
@@ -81,6 +105,16 @@ export default async function EditPlayerProfilePage({
         secondaryPosition={primary?.secondaryPosition ?? null}
         showcaseIds={profile.showcaseVideos.map((row) => row.videoReviewId)}
         initialSection={initialSection}
+        videoWorkspace={
+          <ProfileVideoWorkspace
+            videos={mappedVideos}
+            featured={mappedVideos.find((video) => video.featured) ?? null}
+            metrics={mapProfileMetricOptions(profile.metricEntries)}
+            defaultSport={ctx.sport}
+            sports={ctx.sports}
+            isMinor={profile.dateOfBirth ? isMinor(profile.dateOfBirth) : true}
+          />
+        }
       />
     </div>
   );

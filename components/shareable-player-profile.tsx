@@ -186,6 +186,8 @@ export function ShareablePlayerProfile({
         </div>
       </section>
 
+      <HighlightVideos videos={highlights} />
+
       <section>
         <h2 className="font-heading text-xl font-bold">Training</h2>
         <div className="mt-3">
@@ -202,8 +204,6 @@ export function ShareablePlayerProfile({
           />
         </div>
       </section>
-
-      <HighlightVideos videos={highlights} />
     </div>
   );
 }

@@ -255,3 +255,31 @@ export async function saveHomepageWeekForm(formData: FormData) {
 export async function verifyMetricEntryForm(formData: FormData) {
   await verifyMetricEntryAction({}, formData);
 }
+
+export async function reviewContentSubmissionForm(formData: FormData) {
+  const admin = await requirePlatformAdmin();
+  const id = String(formData.get("id") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+  const adminNote = String(formData.get("adminNote") ?? "").trim() || null;
+  if (!id || (status !== "APPROVED" && status !== "REJECTED" && status !== "PENDING")) {
+    return;
+  }
+  await prisma.athleteContentSubmission.update({
+    where: { id },
+    data: {
+      status,
+      adminNote,
+      reviewedAt: status === "PENDING" ? null : new Date(),
+      reviewedByUserId: status === "PENDING" ? null : admin.id,
+    },
+  });
+  await writeAdminAudit({
+    actorUserId: admin.id,
+    action: "CONTENT_SUBMISSION_REVIEW",
+    entityType: "AthleteContentSubmission",
+    entityId: id,
+    summary: `Content submission ${status}`,
+  });
+  revalidatePath("/admin/community");
+  revalidatePath("/admin/community/content");
+}

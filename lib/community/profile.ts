@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { ageFromDateOfBirth } from "@/lib/drills";
-import { isMinor } from "@/lib/consent";
 import { ageGroupFromAge } from "@/lib/community/age-groups";
 import {
   allocateUniqueSlug,
@@ -10,6 +9,7 @@ import {
 } from "@/lib/community/slugs";
 import { collectSocialLinks, publicSocialLinks } from "@/lib/community/privacy";
 import { buildSafeIdentity, profileVisibleToViewer, type ProfileViewer } from "@/lib/community/privacy";
+import { isEligibleForPublicProfileVideo } from "@/lib/community/profile-videos";
 
 export async function ensurePublicSlug(profile: {
   id: string;
@@ -41,7 +41,8 @@ export const PROFILE_COMPLETION_HREFS = {
   cover: "/athlete/profile/edit?section=profile",
   bio: "/athlete/profile/edit?section=profile",
   position: "/athlete/profile/edit?section=athletic",
-  video: "/athlete/profile/edit?section=videos",
+  video: "/athlete/profile?upload=1",
+  featured: "/athlete/profile?choose=1",
   social: "/athlete/profile/edit?section=social",
   metric: "/athlete/progress",
 } as const;
@@ -57,7 +58,9 @@ export function profileCompletion(profile: {
   youtubeUrl: string | null;
   sports: { position: string | null }[];
   metricCount: number;
+  videoCount?: number;
 }) {
+  const videoCount = profile.videoCount ?? 0;
   const items = [
     {
       id: "photo" as const,
@@ -73,9 +76,10 @@ export function profileCompletion(profile: {
     },
     {
       id: "video" as const,
-      label: "Add featured video",
+      label: videoCount === 0 ? "Add your first video" : "Add featured video",
       done: Boolean(profile.featuredVideoReviewId),
-      href: PROFILE_COMPLETION_HREFS.video,
+      href:
+        videoCount === 0 ? PROFILE_COMPLETION_HREFS.video : PROFILE_COMPLETION_HREFS.featured,
     },
     {
       id: "social" as const,
@@ -165,10 +169,15 @@ export async function getShareablePlayerProfile(
     previewAsPublic: ownerPreview,
   });
 
-  const canShowVideo =
-    profile.publicVideoSharingEnabled &&
-    Boolean(profile.featuredVideoReview) &&
-    (profile.dateOfBirth ? !isMinor(profile.dateOfBirth) || profile.publicVideoSharingEnabled : false);
+  const canShareVideos = profile.publicVideoSharingEnabled;
+  const featuredAllowed =
+    canShareVideos &&
+    profile.featuredVideoReview &&
+    profile.featuredVideoReview.status !== "ARCHIVED" &&
+    isEligibleForPublicProfileVideo({
+      publicVideoSharingEnabled: profile.publicVideoSharingEnabled,
+      showcaseVisibility: profile.featuredVideoReview.showcaseVisibility,
+    });
 
   const featuredMetricIds = profile.featuredMetricIds;
   const metricWhere = {
@@ -214,16 +223,25 @@ export async function getShareablePlayerProfile(
     };
   });
 
-  const showcase = canShowVideo
-    ? profile.showcaseVideos.map((row) => ({
-        id: row.videoReviewId,
-        title: row.videoReview.title,
-        url: row.videoReview.trainingVideo.videoUrl,
-      }))
+  const showcase = canShareVideos
+    ? profile.showcaseVideos
+        .filter(
+          (row) =>
+            row.videoReview.status !== "ARCHIVED" &&
+            isEligibleForPublicProfileVideo({
+              publicVideoSharingEnabled: profile.publicVideoSharingEnabled,
+              showcaseVisibility: row.videoReview.showcaseVisibility,
+            }),
+        )
+        .map((row) => ({
+          id: row.videoReviewId,
+          title: row.videoReview.title,
+          url: row.videoReview.trainingVideo.videoUrl,
+        }))
     : [];
 
   const featuredVideo =
-    canShowVideo && profile.featuredVideoReview
+    featuredAllowed && profile.featuredVideoReview
       ? {
           id: profile.featuredVideoReview.id,
           title: profile.featuredVideoReview.title,

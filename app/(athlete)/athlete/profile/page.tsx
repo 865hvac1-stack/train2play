@@ -3,8 +3,6 @@ import { Pencil, Eye } from "lucide-react";
 
 import { AchievementBadges } from "@/components/achievement-badges";
 import {
-  FeaturedVideoShowcase,
-  HighlightVideos,
   PerformanceMetricCards,
   ProfileEmptyState,
   TrainingStatsGrid,
@@ -12,17 +10,23 @@ import {
 import { ShareProfileControls } from "@/components/share-profile-controls";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SocialLinkIcons } from "@/components/social-link-icons";
+import { ProfileVideoWorkspace } from "@/components/profile-video-workspace";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { brand } from "@/lib/brand";
 import { CONNECTION_STATUS } from "@/lib/coach-connections";
 import { collectSocialLinks } from "@/lib/community/social";
 import { buildSafeIdentity } from "@/lib/community/privacy";
+import { isMinor } from "@/lib/consent";
 import {
   ensurePublicSlug,
   getAthleteTrainingStats,
   profileCompletion,
 } from "@/lib/community/profile";
+import {
+  mapProfileMetricOptions,
+  mapProfileVideos,
+} from "@/lib/community/profile-video-map";
 import { getAthleteRank, listLeaderboardMetrics } from "@/lib/community/ranking";
 import { listAthleteAchievements, syncTrainingAchievements } from "@/lib/community/achievements";
 import { prisma } from "@/lib/db";
@@ -30,10 +34,10 @@ import { prisma } from "@/lib/db";
 export default async function AthleteProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; upload?: string; choose?: string }>;
 }) {
   const ctx = await requireAthleteContext();
-  const { saved } = await searchParams;
+  const { saved, upload, choose } = await searchParams;
   await syncTrainingAchievements(ctx.profileId);
 
   const profile = await prisma.athleteProfile.findUnique({
@@ -70,9 +74,27 @@ export default async function AthleteProfilePage({
   const slug = await ensurePublicSlug(profile);
   const identity = buildSafeIdentity(profile);
   const shareUrl = `${getAppBaseUrl()}/p/${slug}`;
+  const reviews = await prisma.videoReview.findMany({
+    where: {
+      athleteProfileId: profile.id,
+      status: { not: "ARCHIVED" },
+    },
+    include: {
+      trainingVideo: { select: { videoUrl: true } },
+      metricEntry: { include: { metricDefinition: true } },
+      contentSubmissions: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { status: true },
+      },
+    },
+    orderBy: { submittedAt: "desc" },
+    take: 40,
+  });
   const completion = profileCompletion({
     ...profile,
     metricCount: profile.metricEntries.length,
+    videoCount: reviews.length,
   });
   const socials = collectSocialLinks(profile);
   const publicSocials = socials.filter((link) => link.public);
@@ -146,13 +168,15 @@ export default async function AthleteProfilePage({
     .filter(Boolean)
     .join(" • ");
 
-  const highlights = profile.showcaseVideos
-    .filter((row) => row.videoReviewId !== profile.featuredVideoReviewId)
-    .map((row) => ({
-      id: row.videoReviewId,
-      title: row.videoReview.title,
-      url: row.videoReview.trainingVideo.videoUrl,
-    }));
+  const mappedVideos = mapProfileVideos({
+    reviews,
+    featuredId: profile.featuredVideoReviewId,
+    highlightIds: profile.showcaseVideos.map((row) => row.videoReviewId),
+    metricHistory: profile.metricEntries,
+  });
+  const featuredVideo = mappedVideos.find((video) => video.featured) ?? null;
+  const metricOptions = mapProfileMetricOptions(profile.metricEntries);
+  const athleteIsMinor = profile.dateOfBirth ? isMinor(profile.dateOfBirth) : true;
 
   return (
     <div className="space-y-6">
@@ -252,7 +276,7 @@ export default async function AthleteProfilePage({
               <li key={item.id}>
                 <Link
                   href={item.href}
-                  className="inline-flex min-h-9 items-center rounded-full border border-white/15 px-3 py-1 text-[11px] font-semibold tracking-wide text-zinc-200 uppercase hover:border-brand hover:text-brand"
+                  className="relative z-10 inline-flex min-h-10 items-center rounded-full border border-brand/40 bg-brand/10 px-3 py-1 text-[11px] font-semibold tracking-wide text-brand uppercase hover:bg-brand hover:text-black"
                 >
                   {item.label}
                 </Link>
@@ -290,24 +314,16 @@ export default async function AthleteProfilePage({
         </div>
       </section>
 
-      {profile.featuredVideoReview ? (
-        <FeaturedVideoShowcase
-          src={profile.featuredVideoReview.trainingVideo.videoUrl}
-          title={profile.featuredVideoReview.title}
-        />
-      ) : (
-        <section>
-          <h2 className="font-heading text-xl font-bold">Featured video</h2>
-          <div className="mt-3">
-            <ProfileEmptyState
-              title="Choose a video to showcase your game."
-              body="Featured Video is the main clip on your profile and shareable page."
-              href="/athlete/profile/edit?section=videos"
-              cta="Choose video"
-            />
-          </div>
-        </section>
-      )}
+      <ProfileVideoWorkspace
+        videos={mappedVideos}
+        featured={featuredVideo}
+        metrics={metricOptions}
+        defaultSport={ctx.sport}
+        sports={ctx.sports}
+        isMinor={athleteIsMinor}
+        autoOpenUpload={upload === "1"}
+        autoOpenChoose={choose === "1"}
+      />
 
       <section>
         <h2 className="font-heading text-xl font-bold">Training</h2>
@@ -322,8 +338,6 @@ export default async function AthleteProfilePage({
           <AchievementBadges achievements={achievements} />
         </div>
       </section>
-
-      <HighlightVideos videos={highlights} />
 
       {socials.length === 0 ? (
         <section>

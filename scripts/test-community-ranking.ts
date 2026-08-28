@@ -193,8 +193,8 @@ assert(
 );
 assert(
   completion.missing.find((item) => item.id === "video")?.href ===
-    "/athlete/profile/edit?section=videos",
-  "video completion links to edit videos section",
+    "/athlete/profile?upload=1",
+  "video completion links to profile upload",
 );
 
 assert(ageGroupFromAge(12) === "12U", "12 year old is 12U");

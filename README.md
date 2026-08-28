@@ -116,6 +116,7 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 - Video coaching — upload MP4, draw on frames, timestamped notes
 - Player profiles with velo vs system averages
 - Athlete Player Profile (`/athlete/profile`) + shareable `/p/{slug}` with privacy controls
+- Player Profile video upload uses the existing Videos pipeline (R2/Cloudinary + `VideoReview`). Featured, Highlights, and Submit to Train2Play (`/admin/community/content`) reference the same record.
 - Community: Player of the Week, leaderboards, most improved, weekly challenges
 - Platform Admin command center weekly homepage modules (`/admin/community`)
 - Pickup players + zip-based matching + email alerts

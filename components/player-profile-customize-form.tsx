@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 
 import {
   updatePlayerProfileAction,
@@ -42,6 +42,7 @@ export function PlayerProfileCustomizeForm({
   secondaryPosition,
   showcaseIds,
   initialSection = "profile",
+  videoWorkspace,
 }: {
   profile: {
     displayName: string | null;
@@ -75,6 +76,7 @@ export function PlayerProfileCustomizeForm({
   secondaryPosition: string | null;
   showcaseIds: string[];
   initialSection?: string;
+  videoWorkspace?: ReactNode;
 }) {
   const [state, action, pending] = useActionState(
     updatePlayerProfileAction,
@@ -294,8 +296,9 @@ export function PlayerProfileCustomizeForm({
           <section className={section === "videos" ? "space-y-4" : "hidden"} aria-hidden={section !== "videos"}>
             <SectionIntro
               title="Videos"
-              body="Featured Video is the main clip on your profile. Highlights are extra clips on the shareable page. Private coaching film stays private unless you explicitly select it here and enable public video sharing in Privacy."
+              body="Upload from here or choose Featured / Highlights. Featured Video is the main clip. Highlights are extra clips. Private coaching film stays private unless you explicitly select it and enable public video sharing in Privacy."
             />
+            {videoWorkspace}
             <div className="space-y-2">
               <Label htmlFor="featuredVideoReviewId" className="text-slate-300">
                 Featured video
@@ -315,7 +318,9 @@ export function PlayerProfileCustomizeForm({
               </select>
             </div>
             {videos.length === 0 ? (
-              <p className="text-sm text-zinc-500">Upload a video first to feature it or add highlights.</p>
+              <p className="text-sm text-zinc-500">
+                Upload a video above, then save if you also change Featured or Highlights here.
+              </p>
             ) : (
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-slate-200">Highlights</p>
