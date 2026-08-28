@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { requireCoach } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { isProductionRuntime } from "@/lib/env";
-import { isObjectStorageConfigured, storeImageFile, storeVideoFile } from "@/lib/storage";
+import { isObjectStorageConfigured, storeVideoFile } from "@/lib/storage";
+import { storeProfileImageFromForm } from "@/lib/profile-images";
 import { reportVideoUploadFailure } from "@/lib/video-upload-errors";
 import { MAX_VIDEO_UPLOAD_BYTES } from "@/lib/video-upload-limits";
 import { allCoachingSports, isKnownAgeGroup, specialtiesForSport } from "@/lib/coaching/specialties";
@@ -17,39 +18,11 @@ import { isKnownSport } from "@/lib/athletes";
 
 export type CoachProfileActionState = { error?: string; success?: string };
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-
 function revalidateCoach(slug?: string | null) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard/profile/edit");
   if (slug) revalidatePath(`/coach/${slug}`);
-}
-
-async function storeImageFromForm(file: FormDataEntryValue | null) {
-  if (!(file instanceof File) || file.size === 0) return null;
-  if (!file.type.startsWith("image/")) {
-    return { error: "Choose a photo (JPG, PNG, or WebP)." };
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    return { error: "Photos must be 5 MB or smaller." };
-  }
-  if (isProductionRuntime() && !isObjectStorageConfigured()) {
-    return { error: "Photo uploads need Cloudinary or R2." };
-  }
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  try {
-    const stored = await storeImageFile(
-      Buffer.from(await file.arrayBuffer()),
-      `${crypto.randomUUID()}.${ext}`,
-      file.type || "image/jpeg",
-    );
-    return { url: stored.imageUrl };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Could not upload photo.",
-    };
-  }
 }
 
 export async function saveCoachProfileAction(
@@ -62,9 +35,9 @@ export async function saveCoachProfileAction(
   const socials = applyCoachSocialsFromForm(formData);
   if ("error" in socials && socials.error) return { error: socials.error };
 
-  const avatar = await storeImageFromForm(formData.get("avatarFile"));
+  const avatar = await storeProfileImageFromForm(formData, "avatarFile");
   if (avatar && "error" in avatar) return { error: avatar.error };
-  const cover = await storeImageFromForm(formData.get("coverFile"));
+  const cover = await storeProfileImageFromForm(formData, "coverFile");
   if (cover && "error" in cover) return { error: cover.error };
 
   const sports = formData

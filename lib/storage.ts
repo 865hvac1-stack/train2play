@@ -229,6 +229,7 @@ async function storeImageInCloudinary(buffer: Buffer, filename: string): Promise
           resource_type: "image",
           public_id: publicId,
           overwrite: false,
+          format: "jpg",
         },
         (error, uploaded) => {
           if (error || !uploaded) {

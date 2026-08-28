@@ -7,6 +7,7 @@ import { replaceAthleteSports } from "@/lib/athlete-sports";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
 import { prisma } from "@/lib/db";
 import { AGE_OF_MAJORITY, ageOn } from "@/lib/consent";
+import { storeProfileImageFromForm } from "@/lib/profile-images";
 import {
   allocateUniqueSlug,
   isReservedProfileSlug,
@@ -69,8 +70,12 @@ export async function updatePlayerProfileAction(
 
   const displayName = String(formData.get("displayName") ?? "").trim() || null;
   const bio = String(formData.get("bio") ?? "").trim().slice(0, 600) || null;
-  const avatarUrl = String(formData.get("avatarUrl") ?? "").trim() || null;
-  const coverImageUrl = String(formData.get("coverImageUrl") ?? "").trim() || null;
+  const avatarUpload = await storeProfileImageFromForm(formData, "avatarFile");
+  if (avatarUpload && "error" in avatarUpload) return { error: avatarUpload.error };
+  const coverUpload = await storeProfileImageFromForm(formData, "coverFile");
+  if (coverUpload && "error" in coverUpload) return { error: coverUpload.error };
+  const avatarUrl = avatarUpload?.url ?? profile.avatarUrl;
+  const coverImageUrl = coverUpload?.url ?? profile.coverImageUrl;
   const graduationYearRaw = String(formData.get("graduationYear") ?? "").trim();
   const graduationYear = graduationYearRaw ? Number(graduationYearRaw) : null;
   const locationState = normalizeStateCode(String(formData.get("locationState") ?? ""));

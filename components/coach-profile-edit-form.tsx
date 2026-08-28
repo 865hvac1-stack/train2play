@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProfilePhotoPicker } from "@/components/profile-photo-picker";
 import { COACH_EDIT_SECTIONS, COACH_VIDEO_KIND, type CoachEditSectionId } from "@/lib/coaching/status";
 import { allCoachingSports, COACHING_AGE_GROUPS, specialtiesForSport } from "@/lib/coaching/specialties";
 import { US_STATES } from "@/lib/community/age-groups";
@@ -103,8 +104,20 @@ export function CoachProfileEditForm({
       <form action={action} className="space-y-5" encType="multipart/form-data">
         <section className={section === "profile" ? "space-y-4" : "hidden"}>
           <Field label="Display name" name="displayName" defaultValue={profile.displayName ?? ""} />
-          <FileField name="avatarFile" label="Profile photo" />
-          <FileField name="coverFile" label="Cover image" />
+          <ProfilePhotoPicker
+            name="avatarFile"
+            label="Profile photo"
+            currentUrl={profile.avatarUrl}
+            preview="avatar"
+            capture="user"
+          />
+          <ProfilePhotoPicker
+            name="coverFile"
+            label="Cover image"
+            currentUrl={profile.coverImageUrl}
+            preview="cover"
+            capture="environment"
+          />
           <div className="space-y-2">
             <Label className="text-slate-300">Bio</Label>
             <Textarea name="bio" defaultValue={profile.bio ?? ""} className="min-h-28 border-white/15 bg-black/30 text-white" />
@@ -324,20 +337,6 @@ function Field({
         defaultValue={defaultValue}
         placeholder={placeholder}
         className="h-11 border-white/15 bg-black/30 text-white"
-      />
-    </div>
-  );
-}
-
-function FileField({ name, label }: { name: string; label: string }) {
-  return (
-    <div className="space-y-2">
-      <Label className="text-slate-300">{label}</Label>
-      <input
-        type="file"
-        name={name}
-        accept="image/jpeg,image/png,image/webp"
-        className="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:font-semibold file:text-black"
       />
     </div>
   );

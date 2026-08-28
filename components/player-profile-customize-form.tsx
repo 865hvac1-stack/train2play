@@ -6,7 +6,7 @@ import {
   updatePlayerProfileAction,
   type AthleteProfileActionState,
 } from "@/app/(athlete)/athlete/profile-actions";
-import { ProfileImageUrlField } from "@/components/profile-image-url-field";
+import { ProfilePhotoPicker } from "@/components/profile-photo-picker";
 import { SportPicker } from "@/components/sport-picker";
 import { SOCIAL_NETWORK_ICONS } from "@/components/social-link-icons";
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,7 @@ export function PlayerProfileCustomizeForm({
     : RECRUITING_STATUSES;
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-5" encType="multipart/form-data">
       <div className="md:hidden">
         <Label htmlFor="edit-section" className="text-slate-300">
           Section
@@ -156,19 +156,19 @@ export function PlayerProfileCustomizeForm({
               defaultValue={profile.displayName ?? ""}
               hint="Adults can use a nickname. Minors still appear as First Last-initial on public pages."
             />
-            <ProfileImageUrlField
-              name="avatarUrl"
-              label="Profile photo URL"
-              defaultValue={profile.avatarUrl ?? ""}
+            <ProfilePhotoPicker
+              name="avatarFile"
+              label="Profile photo"
+              currentUrl={profile.avatarUrl}
               preview="avatar"
-              hint="Paste a photo URL. Train2Play uses the same profile photo field already on your account — no separate image library."
+              capture="user"
             />
-            <ProfileImageUrlField
-              name="coverImageUrl"
-              label="Cover image URL"
-              defaultValue={profile.coverImageUrl ?? ""}
+            <ProfilePhotoPicker
+              name="coverFile"
+              label="Cover image"
+              currentUrl={profile.coverImageUrl}
               preview="cover"
-              hint="Wide image that appears behind your name."
+              capture="environment"
             />
             <div className="space-y-2">
               <Label htmlFor="bio" className="text-slate-300">
