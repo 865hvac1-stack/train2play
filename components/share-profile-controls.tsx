@@ -51,7 +51,7 @@ export function ShareProfileControls({
       <Button
         type="button"
         variant="outline"
-        className="border-white/20 bg-black/30 text-white hover:bg-white/10"
+        className="min-h-11 border-white/20 bg-black/30 px-3 text-white hover:bg-white/10"
         onClick={copy}
       >
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
@@ -59,7 +59,7 @@ export function ShareProfileControls({
       </Button>
       <Button
         type="button"
-        className="bg-brand text-black hover:bg-brand/90"
+        className="min-h-11 bg-brand px-3 text-black hover:bg-brand/90"
         onClick={nativeShare}
       >
         <Share2 className="size-4" />
@@ -71,7 +71,7 @@ export function ShareProfileControls({
             <Button
               type="button"
               variant="outline"
-              className="border-white/20 bg-black/30 text-white hover:bg-white/10"
+              className="min-h-11 border-white/20 bg-black/30 px-3 text-white hover:bg-white/10"
             />
           }
         >

@@ -17,6 +17,7 @@ import {
   suggestedProfileSlug,
 } from "../lib/community/slugs";
 import { parseSocialInput } from "../lib/community/social";
+import { profileCompletion } from "../lib/community/profile";
 import { publicSocialLinks, safeDisplayName } from "../lib/community/privacy";
 import { ageGroupFromAge } from "../lib/community/age-groups";
 
@@ -160,6 +161,41 @@ const privateSocial = publicSocialLinks({
   profileVisibility: "PRIVATE",
 });
 assert(privateSocial.length === 0, "private profiles expose no socials");
+
+const ownerPreviewSocial = publicSocialLinks({
+  links: shown,
+  dateOfBirth: new Date("2012-05-18"),
+  profileVisibility: "PRIVATE",
+  previewAsPublic: true,
+});
+assert(ownerPreviewSocial.length === 1, "owner preview can show opted-in socials without publishing");
+
+const completion = profileCompletion({
+  avatarUrl: null,
+  coverImageUrl: null,
+  bio: null,
+  featuredVideoReviewId: null,
+  instagramUrl: null,
+  xUrl: null,
+  tiktokUrl: null,
+  youtubeUrl: null,
+  sports: [{ position: null }],
+  metricCount: 0,
+});
+assert(
+  completion.missing.find((item) => item.id === "social")?.href ===
+    "/athlete/profile/edit?section=social",
+  "social completion links to edit social section",
+);
+assert(
+  completion.missing.find((item) => item.id === "metric")?.href === "/athlete/progress",
+  "metric completion links to progress",
+);
+assert(
+  completion.missing.find((item) => item.id === "video")?.href ===
+    "/athlete/profile/edit?section=videos",
+  "video completion links to edit videos section",
+);
 
 assert(ageGroupFromAge(12) === "12U", "12 year old is 12U");
 assert(ageGroupFromAge(19) === "19+", "adult age group");

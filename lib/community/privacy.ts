@@ -70,14 +70,11 @@ export function publicSocialLinks(options: {
   links: SocialLink[];
   dateOfBirth: Date | null;
   profileVisibility: ProfileVisibility;
+  /** Owner preview of the shareable card without making a private profile public. */
+  previewAsPublic?: boolean;
 }): SocialLink[] {
-  if (options.profileVisibility !== "PUBLIC") return [];
-  const minor = options.dateOfBirth ? isMinor(options.dateOfBirth) : true;
-  return options.links.filter((link) => {
-    if (!link.public) return false;
-    if (minor && !link.public) return false;
-    return true;
-  });
+  if (options.profileVisibility !== "PUBLIC" && !options.previewAsPublic) return [];
+  return options.links.filter((link) => link.public);
 }
 
 export function neverPublicFields() {

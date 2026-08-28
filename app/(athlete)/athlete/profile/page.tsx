@@ -1,9 +1,14 @@
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { Pencil, Eye } from "lucide-react";
 
 import { AchievementBadges } from "@/components/achievement-badges";
-import { InstructionVideoPlayer } from "@/components/instruction-video-player";
-import { PlayerProfileCustomizeForm } from "@/components/player-profile-customize-form";
+import {
+  FeaturedVideoShowcase,
+  HighlightVideos,
+  PerformanceMetricCards,
+  ProfileEmptyState,
+  TrainingStatsGrid,
+} from "@/components/player-profile-view";
 import { ShareProfileControls } from "@/components/share-profile-controls";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SocialLinkIcons } from "@/components/social-link-icons";
@@ -21,10 +26,14 @@ import {
 import { getAthleteRank, listLeaderboardMetrics } from "@/lib/community/ranking";
 import { listAthleteAchievements, syncTrainingAchievements } from "@/lib/community/achievements";
 import { prisma } from "@/lib/db";
-import { formatMetricValue } from "@/lib/progress";
 
-export default async function AthleteProfilePage() {
+export default async function AthleteProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const ctx = await requireAthleteContext();
+  const { saved } = await searchParams;
   await syncTrainingAchievements(ctx.profileId);
 
   const profile = await prisma.athleteProfile.findUnique({
@@ -41,7 +50,14 @@ export default async function AthleteProfilePage() {
       featuredVideoReview: {
         include: { trainingVideo: { select: { videoUrl: true, title: true } } },
       },
-      showcaseVideos: { select: { videoReviewId: true } },
+      showcaseVideos: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          videoReview: {
+            include: { trainingVideo: { select: { videoUrl: true, title: true } } },
+          },
+        },
+      },
       metricEntries: {
         include: { metricDefinition: true },
         orderBy: { recordedAt: "asc" },
@@ -59,24 +75,7 @@ export default async function AthleteProfilePage() {
     metricCount: profile.metricEntries.length,
   });
   const socials = collectSocialLinks(profile);
-  const videos = await prisma.videoReview.findMany({
-    where: { athleteProfileId: profile.id },
-    select: { id: true, title: true },
-    orderBy: { submittedAt: "desc" },
-    take: 40,
-  });
-  const metricOptions = [
-    ...new Map(
-      profile.metricEntries.map((entry) => [
-        entry.metricDefinitionId,
-        {
-          id: entry.metricDefinitionId,
-          name: entry.metricDefinition.name,
-          unit: entry.metricDefinition.unit,
-        },
-      ]),
-    ).values(),
-  ];
+  const publicSocials = socials.filter((link) => link.public);
   const training = await getAthleteTrainingStats(profile.id, profile.legacyAthleteId);
   const achievements = await listAthleteAchievements(profile.id);
   const headlineMetrics = await listLeaderboardMetrics(identity.sport);
@@ -139,10 +138,30 @@ export default async function AthleteProfilePage() {
     orderBy: { requestedAt: "desc" },
   });
 
-  const primary = profile.sports.find((row) => row.isPrimary) ?? profile.sports[0];
+  const headerMeta = [
+    identity.sport,
+    identity.position,
+    profile.graduationYear ? `Class of ${profile.graduationYear}` : identity.ageGroup,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
+  const highlights = profile.showcaseVideos
+    .filter((row) => row.videoReviewId !== profile.featuredVideoReviewId)
+    .map((row) => ({
+      id: row.videoReviewId,
+      title: row.videoReview.title,
+      url: row.videoReview.trainingVideo.videoUrl,
+    }));
 
   return (
     <div className="space-y-6">
+      {saved ? (
+        <p className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300">
+          Saved successfully. This is your athlete profile.
+        </p>
+      ) : null}
+
       <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900">
         <div
           className="h-28 bg-gradient-to-r from-brand/70 via-black to-zinc-900 sm:h-36"
@@ -178,15 +197,35 @@ export default async function AthleteProfilePage() {
               <h1 className="font-heading truncate text-3xl font-bold tracking-tight">
                 {identity.displayName}
               </h1>
-              <p className="truncate text-sm text-zinc-400">
-                {[identity.sport, identity.position, identity.ageGroup, identity.location]
-                  .filter(Boolean)
-                  .join(" • ")}
-              </p>
+              <p className="truncate text-sm text-zinc-400">{headerMeta || "Athlete"}</p>
+              {identity.organizationName ? (
+                <p className="truncate text-sm text-zinc-300">{identity.organizationName}</p>
+              ) : null}
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <SocialLinkIcons links={socials} />
+          {profile.bio ? (
+            <p className="mt-4 text-sm leading-relaxed text-zinc-300">{profile.bio}</p>
+          ) : null}
+          {publicSocials.length > 0 ? (
+            <div className="mt-4">
+              <SocialLinkIcons links={publicSocials} />
+            </div>
+          ) : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={`/p/${slug}`}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-white/20 bg-black/40 px-4 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              <Eye className="size-4" />
+              View public profile
+            </Link>
+            <Link
+              href="/athlete/profile/edit"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-brand px-4 text-sm font-semibold text-black hover:bg-brand/90"
+            >
+              <Pencil className="size-4" />
+              Edit profile
+            </Link>
             <ShareProfileControls
               url={shareUrl}
               title={`${identity.displayName} | ${brand.name}`}
@@ -210,11 +249,13 @@ export default async function AthleteProfilePage() {
         {completion.missing.length > 0 ? (
           <ul className="mt-3 flex flex-wrap gap-2">
             {completion.missing.slice(0, 4).map((item) => (
-              <li
-                key={item.id}
-                className="rounded-full border border-white/10 px-3 py-1 text-[11px] text-zinc-400"
-              >
-                {item.label}
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  className="inline-flex min-h-9 items-center rounded-full border border-white/15 px-3 py-1 text-[11px] font-semibold tracking-wide text-zinc-200 uppercase hover:border-brand hover:text-brand"
+                >
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -226,79 +267,52 @@ export default async function AthleteProfilePage() {
           <p className="text-[10px] font-bold tracking-[0.18em] text-brand uppercase">
             Your ranking
           </p>
-          <p className="font-heading mt-1 text-2xl font-bold">
-            #{yourRank.rank} National
-          </p>
+          <p className="font-heading mt-1 text-2xl font-bold">#{yourRank.rank} National</p>
           <p className="text-sm text-zinc-400">
             {identity.ageGroup} {identity.sport} · {headlineMetrics[0]?.name}
           </p>
         </section>
       ) : null}
 
-      {profile.featuredVideoReview ? (
-        <section className="space-y-2">
-          <h2 className="font-heading text-xl font-bold">Featured video</h2>
-          <InstructionVideoPlayer
-            src={profile.featuredVideoReview.trainingVideo.videoUrl}
-            title={profile.featuredVideoReview.title}
-            tone="dark"
-          />
-        </section>
-      ) : null}
-
       <section>
         <h2 className="font-heading text-xl font-bold">Performance</h2>
-        {performance.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-400">
-            Record metrics to show your development story.
-          </p>
-        ) : (
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {performance.map((card) => (
-              <div key={card.name} className="rounded-2xl border border-white/10 bg-zinc-900 p-4">
-                <p className="text-[10px] font-bold tracking-[0.14em] text-zinc-500 uppercase">
-                  {card.name}
-                </p>
-                <p className="font-heading mt-1 text-3xl font-bold">
-                  {formatMetricValue(card.value, card.unit)}
-                </p>
-                {card.delta != null ? (
-                  <p className="text-sm font-semibold text-brand">
-                    {card.delta > 0 ? "+" : ""}
-                    {formatMetricValue(card.delta, card.unit)}
-                  </p>
-                ) : null}
-                {card.verified ? (
-                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
-                    <CheckCircle2 className="size-3.5" />
-                    {card.verificationType === "TRAIN2PLAY"
-                      ? "Train2Play verified"
-                      : "Coach verified"}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-[11px] text-zinc-500">Self reported</p>
-                )}
-                {card.history.length > 1 ? (
-                  <p className="mt-2 text-xs tracking-wide text-zinc-400">
-                    {card.history.map((value) => value).join(" → ")} {card.unit}
-                  </p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="mt-3">
+          {performance.length === 0 ? (
+            <ProfileEmptyState
+              title="No performance metrics yet."
+              body="Record a result to start your development story."
+              href="/athlete/progress"
+              cta="Record a metric"
+            />
+          ) : (
+            <PerformanceMetricCards cards={performance} />
+          )}
+        </div>
       </section>
+
+      {profile.featuredVideoReview ? (
+        <FeaturedVideoShowcase
+          src={profile.featuredVideoReview.trainingVideo.videoUrl}
+          title={profile.featuredVideoReview.title}
+        />
+      ) : (
+        <section>
+          <h2 className="font-heading text-xl font-bold">Featured video</h2>
+          <div className="mt-3">
+            <ProfileEmptyState
+              title="Choose a video to showcase your game."
+              body="Featured Video is the main clip on your profile and shareable page."
+              href="/athlete/profile/edit?section=videos"
+              cta="Choose video"
+            />
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="font-heading text-xl font-bold">Training</h2>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <Stat label="Workouts completed" value={String(training.workoutsCompleted)} />
-          <Stat label="Training days" value={String(training.trainingDays)} />
-          <Stat label="Training streak" value={`${training.streak} days`} />
-          <Stat
-            label="Current program"
-            value={training.currentProgram ?? "—"}
-          />
+        <div className="mt-3">
+          <TrainingStatsGrid training={training} />
         </div>
       </section>
 
@@ -309,22 +323,21 @@ export default async function AthleteProfilePage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-zinc-900 p-5">
-        <h2 className="font-heading text-xl font-bold">Customize profile</h2>
-        <p className="mt-1 mb-4 text-sm text-zinc-400">
-          Control what your shareable Player Profile looks like. Sensitive details never go public.
-        </p>
-        <PlayerProfileCustomizeForm
-          profile={{ ...profile, publicSlug: slug }}
-          videos={videos}
-          metrics={metricOptions}
-          sports={ctx.sports}
-          primarySport={ctx.sport}
-          position={primary?.position ?? ctx.position}
-          secondaryPosition={primary?.secondaryPosition ?? null}
-          showcaseIds={profile.showcaseVideos.map((row) => row.videoReviewId)}
-        />
-      </section>
+      <HighlightVideos videos={highlights} />
+
+      {socials.length === 0 ? (
+        <section>
+          <h2 className="font-heading text-xl font-bold">Social links</h2>
+          <div className="mt-3">
+            <ProfileEmptyState
+              title="Add your social profiles."
+              body="Instagram, X, TikTok, and YouTube can appear when you enable them."
+              href="/athlete/profile/edit?section=social"
+              cta="Edit profile"
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -373,15 +386,6 @@ export default async function AthleteProfilePage() {
         {brand.name} · {brand.subtagline}
       </p>
       <SignOutButton />
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4">
-      <p className="text-[10px] font-bold tracking-[0.14em] text-zinc-500 uppercase">{label}</p>
-      <p className="font-heading mt-1 truncate text-xl font-bold">{value}</p>
     </div>
   );
 }

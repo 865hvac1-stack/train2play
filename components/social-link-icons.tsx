@@ -45,6 +45,13 @@ function TikTokIcon({ className }: { className?: string }) {
   );
 }
 
+export const SOCIAL_NETWORK_ICONS = {
+  instagram: InstagramIcon,
+  youtube: YoutubeIcon,
+  x: XIcon,
+  tiktok: TikTokIcon,
+} as const;
+
 export function SocialLinkIcons({
   links,
   className,
@@ -64,10 +71,10 @@ export function SocialLinkIcons({
           aria-label={link.label}
           className="inline-flex size-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white transition hover:border-brand hover:text-brand"
         >
-          {link.network === "instagram" ? <InstagramIcon className="size-4" /> : null}
-          {link.network === "youtube" ? <YoutubeIcon className="size-4" /> : null}
-          {link.network === "x" ? <XIcon className="size-4" /> : null}
-          {link.network === "tiktok" ? <TikTokIcon className="size-4" /> : null}
+          {(() => {
+            const Icon = SOCIAL_NETWORK_ICONS[link.network];
+            return <Icon className="size-4" />;
+          })()}
         </a>
       ))}
     </div>

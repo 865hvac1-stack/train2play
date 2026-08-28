@@ -72,7 +72,29 @@ async function main() {
 
   await prisma.athleteProfile.update({
     where: { id: profile.id },
-    data: { profileVisibility: "PUBLIC" },
+    data: { instagramPublic: true },
+  });
+  const ownerPreview = await getShareablePlayerProfile(slug, {
+    kind: "self",
+    userId: athlete.id,
+  });
+  if (ownerPreview.status !== "ok") {
+    throw new Error("owner must preview a private profile without publishing it");
+  }
+  if (!ownerPreview.profile.ownerPreview) {
+    throw new Error("owner preview flag missing");
+  }
+  if (ownerPreview.profile.socials.length !== 1) {
+    throw new Error("owner preview should show opted-in socials");
+  }
+  const stillHidden = await getShareablePlayerProfile(slug, { kind: "public" });
+  if (stillHidden.status !== "not_found") {
+    throw new Error("owner preview must not make a private profile public");
+  }
+
+  await prisma.athleteProfile.update({
+    where: { id: profile.id },
+    data: { profileVisibility: "PUBLIC", instagramPublic: false },
   });
 
   const metric = await prisma.metricDefinition.findFirst({

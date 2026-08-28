@@ -44,6 +44,7 @@ export async function updateAthleteSportsAction(
 
   revalidatePath("/athlete");
   revalidatePath("/athlete/profile");
+  revalidatePath("/athlete/profile/edit");
   revalidatePath("/athlete/videos/new");
   revalidatePath("/athlete/library");
   return { success: "Sports saved." };
@@ -231,7 +232,8 @@ export async function updatePlayerProfileAction(
 
   revalidatePath("/athlete");
   revalidatePath("/athlete/profile");
+  revalidatePath("/athlete/profile/edit");
   revalidatePath("/athlete/community");
   if (publicSlug) revalidatePath(`/p/${publicSlug}`);
-  return { success: "Player profile saved." };
+  return { success: "Saved successfully." };
 }

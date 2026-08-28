@@ -36,6 +36,16 @@ export async function ensurePublicSlug(profile: {
   return slug;
 }
 
+export const PROFILE_COMPLETION_HREFS = {
+  photo: "/athlete/profile/edit?section=profile",
+  cover: "/athlete/profile/edit?section=profile",
+  bio: "/athlete/profile/edit?section=profile",
+  position: "/athlete/profile/edit?section=athletic",
+  video: "/athlete/profile/edit?section=videos",
+  social: "/athlete/profile/edit?section=social",
+  metric: "/athlete/progress",
+} as const;
+
 export function profileCompletion(profile: {
   avatarUrl: string | null;
   coverImageUrl: string | null;
@@ -49,19 +59,50 @@ export function profileCompletion(profile: {
   metricCount: number;
 }) {
   const items = [
-    { id: "photo", label: "Add profile photo", done: Boolean(profile.avatarUrl) },
-    { id: "position", label: "Add position", done: profile.sports.some((row) => row.position) },
-    { id: "video", label: "Add featured video", done: Boolean(profile.featuredVideoReviewId) },
     {
-      id: "social",
+      id: "photo" as const,
+      label: "Add profile photo",
+      done: Boolean(profile.avatarUrl),
+      href: PROFILE_COMPLETION_HREFS.photo,
+    },
+    {
+      id: "position" as const,
+      label: "Add position",
+      done: profile.sports.some((row) => row.position),
+      href: PROFILE_COMPLETION_HREFS.position,
+    },
+    {
+      id: "video" as const,
+      label: "Add featured video",
+      done: Boolean(profile.featuredVideoReviewId),
+      href: PROFILE_COMPLETION_HREFS.video,
+    },
+    {
+      id: "social" as const,
       label: "Add a social profile",
       done: Boolean(
         profile.instagramUrl || profile.xUrl || profile.tiktokUrl || profile.youtubeUrl,
       ),
+      href: PROFILE_COMPLETION_HREFS.social,
     },
-    { id: "metric", label: "Record first performance metric", done: profile.metricCount > 0 },
-    { id: "bio", label: "Write a short bio", done: Boolean(profile.bio?.trim()) },
-    { id: "cover", label: "Add a cover image", done: Boolean(profile.coverImageUrl) },
+    {
+      id: "metric" as const,
+      label: "Record first performance metric",
+      done: profile.metricCount > 0,
+      href: PROFILE_COMPLETION_HREFS.metric,
+    },
+    {
+      id: "bio" as const,
+      label: "Write a short bio",
+      done: Boolean(profile.bio?.trim()),
+      href: PROFILE_COMPLETION_HREFS.bio,
+    },
+    {
+      id: "cover" as const,
+      label: "Add a cover image",
+      done: Boolean(profile.coverImageUrl),
+      href: PROFILE_COMPLETION_HREFS.cover,
+    },
   ];
   const done = items.filter((item) => item.done).length;
   const percent = Math.round((done / items.length) * 100);
@@ -116,10 +157,12 @@ export async function getShareablePlayerProfile(
   }
 
   const identity = buildSafeIdentity(profile);
+  const ownerPreview = viewer.kind === "self";
   const socials = publicSocialLinks({
     links: collectSocialLinks(profile),
     dateOfBirth: profile.dateOfBirth,
     profileVisibility: profile.profileVisibility,
+    previewAsPublic: ownerPreview,
   });
 
   const canShowVideo =
@@ -188,6 +231,8 @@ export async function getShareablePlayerProfile(
         }
       : null;
 
+  const training = await getAthleteTrainingStats(profile.id, profile.legacyAthleteId);
+
   return {
     status: "ok" as const,
     profile: {
@@ -201,9 +246,11 @@ export async function getShareablePlayerProfile(
       featuredVideo,
       showcase,
       performance,
+      training,
       achievements: profile.achievements,
       playerOfTheWeek: profile.playerOfTheWeekWins[0] ?? null,
       visibility: profile.profileVisibility,
+      ownerPreview,
       age: profile.dateOfBirth ? ageFromDateOfBirth(profile.dateOfBirth) : null,
       ageGroup: ageGroupFromAge(ageFromDateOfBirth(profile.dateOfBirth)),
     },
