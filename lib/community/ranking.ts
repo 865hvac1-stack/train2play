@@ -10,7 +10,7 @@ import {
   type RankedRow,
   type VerificationFilter,
 } from "@/lib/community/ranking-core";
-import { ResultStatus, type Prisma } from "@/lib/generated/prisma/client";
+import { type Prisma } from "@/lib/generated/prisma/client";
 import { safeDisplayName } from "@/lib/community/privacy";
 
 export type RankingScope = {
@@ -172,7 +172,7 @@ export async function rankMetricResults(
   const entries = await prisma.metricEntry.findMany({
     where: {
       metricDefinitionId: metric.id,
-      resultStatus: ResultStatus.ACTIVE,
+      resultStatus: "ACTIVE" as const,
       ...(since ? { recordedAt: { gte: since } } : {}),
       ...(verifiedOnly
         ? { verificationType: { in: ["COACH", "TRAIN2PLAY"] } }
@@ -264,7 +264,7 @@ export async function rankMostImproved(
   const entries = await prisma.metricEntry.findMany({
     where: {
       metricDefinitionId: metric.id,
-      resultStatus: ResultStatus.ACTIVE,
+      resultStatus: "ACTIVE" as const,
       recordedAt: { gte: since! },
       ...(verifiedOnly
         ? { verificationType: { in: ["COACH", "TRAIN2PLAY"] } }

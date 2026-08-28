@@ -10,7 +10,6 @@ import {
 } from "@/lib/community/slugs";
 import { collectSocialLinks, publicSocialLinks } from "@/lib/community/privacy";
 import { buildSafeIdentity, profileVisibleToViewer, type ProfileViewer } from "@/lib/community/privacy";
-import { ResultStatus } from "@/lib/generated/prisma/client";
 
 export async function ensurePublicSlug(profile: {
   id: string;
@@ -131,7 +130,7 @@ export async function getShareablePlayerProfile(
   const featuredMetricIds = profile.featuredMetricIds;
   const metricWhere = {
     athleteProfileId: profile.id,
-    resultStatus: ResultStatus.ACTIVE,
+    resultStatus: "ACTIVE" as const,
     metricDefinition: { isSensitive: false },
     ...(featuredMetricIds.length > 0
       ? { metricDefinitionId: { in: featuredMetricIds } }

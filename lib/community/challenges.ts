@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { awardAchievement } from "@/lib/community/achievements";
 import { creditedTrainingDays } from "@/lib/community/ranking-core";
-import { ResultStatus, type Challenge, type ChallengeScoringType } from "@/lib/generated/prisma/client";
+import type { Challenge, ChallengeScoringType } from "@/lib/generated/prisma/client";
 import { invalidateRankingCache } from "@/lib/community/ranking";
 
 export async function getActiveChallenges(sport?: string | null) {
@@ -99,7 +99,7 @@ export async function computeChallengeProgress(
       where: {
         athleteProfileId,
         metricDefinitionId: challenge.metricDefinitionId,
-        resultStatus: ResultStatus.ACTIVE,
+        resultStatus: "ACTIVE" as const,
         recordedAt: { gte: challenge.startAt, lte: challenge.endAt },
       },
       orderBy: { recordedAt: "asc" },

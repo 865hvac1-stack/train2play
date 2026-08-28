@@ -14,7 +14,6 @@ import {
   rankTrainingLeaders,
 } from "@/lib/community/ranking";
 import { listAthleteAchievements } from "@/lib/community/achievements";
-import { ResultStatus } from "@/lib/generated/prisma/client";
 
 export async function getAthleteCommunity(options: {
   athleteProfileId: string;
@@ -32,7 +31,7 @@ export async function getAthleteCommunity(options: {
       getActiveChallenges(options.sport),
       prisma.metricEntry.findMany({
         where: {
-          resultStatus: ResultStatus.ACTIVE,
+          resultStatus: "ACTIVE" as const,
           notes: { contains: "Personal record", mode: "insensitive" },
           athleteProfile: options.sport
             ? {
