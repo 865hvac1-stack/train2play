@@ -43,7 +43,9 @@ export type LeaderboardEntry = RankedRow<{
   slug: string | null;
   unit?: string;
   verified?: boolean;
+  verificationType?: string | null;
   previous?: number | null;
+  latest?: number | null;
   history?: number[];
 }>;
 
@@ -143,7 +145,7 @@ function toEntry(
       displayName: profile.displayName,
       dateOfBirth: profile.dateOfBirth,
     }),
-    sport: profile.primarySport,
+    sport: extra.sport ?? profile.primarySport,
     ageGroup: ageGroupFromAge(ageFromDateOfBirth(profile.dateOfBirth)),
     location: profile.locationState,
     slug: profile.publicSlug,
@@ -206,6 +208,7 @@ export async function rankMetricResults(
     {
       value: number;
       verified: boolean;
+      verificationType: string;
       profile: (typeof entries)[number]["athleteProfile"];
     }
   >();
@@ -223,6 +226,7 @@ export async function rankMetricResults(
       best.set(entry.athleteProfileId, {
         value: entry.value,
         verified: isVerifiedType(entry.verificationType),
+        verificationType: entry.verificationType,
         profile: entry.athleteProfile,
       });
     }
@@ -241,6 +245,8 @@ export async function rankMetricResults(
     return toEntry(row, meta.profile, {
       unit: metric.unit,
       verified: meta.verified,
+      verificationType: meta.verificationType,
+      sport: scope.sport ?? meta.profile.primarySport,
     });
   });
   writeCache({ ...scope, rankingType: "METRIC" }, result);
@@ -275,6 +281,7 @@ export async function rankMostImproved(
       athleteProfileId: true,
       value: true,
       recordedAt: true,
+      verificationType: true,
       athleteProfile: {
         select: {
           id: true,
@@ -305,7 +312,9 @@ export async function rankMostImproved(
     athleteProfileId: string;
     value: number;
     previous: number;
+    latest: number;
     history: number[];
+    verificationType: string;
     profile: (typeof entries)[number]["athleteProfile"];
   }> = [];
 
@@ -323,7 +332,9 @@ export async function rankMostImproved(
       athleteProfileId,
       value: Number(delta.toFixed(3)),
       previous: first.value,
+      latest: latest.value,
       history: list.map((row) => row.value),
+      verificationType: latest.verificationType,
       profile: latest.athleteProfile,
     });
   }
@@ -342,7 +353,10 @@ export async function rankMostImproved(
     return toEntry(row, meta.profile, {
       unit: metric.unit,
       previous: meta.previous,
+      latest: meta.latest,
       history: meta.history,
+      verificationType: meta.verificationType,
+      sport: scope.sport ?? meta.profile.primarySport,
     });
   });
   writeCache({ ...scope, rankingType: "MOST_IMPROVED" }, result);
@@ -432,6 +446,7 @@ export async function rankTrainingLeaders(
     const meta = byId.get(row.athleteProfileId)!;
     return toEntry(row, meta.profile, {
       unit: type === "WORKOUTS_COMPLETED" ? "workouts" : "days",
+      sport: scope.sport ?? meta.profile.primarySport,
     });
   });
   writeCache({ ...scope, rankingType: type }, result);

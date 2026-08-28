@@ -20,6 +20,16 @@ import { parseSocialInput } from "../lib/community/social";
 import { profileCompletion } from "../lib/community/profile";
 import { publicSocialLinks, safeDisplayName } from "../lib/community/privacy";
 import { ageGroupFromAge } from "../lib/community/age-groups";
+import {
+  mostImprovedEmptyCopy,
+  resolveAthleteCommunityFilters,
+  topPerformancesEmptyCopy,
+} from "../lib/community/athlete-community";
+import {
+  isCommunityPublicMetric,
+  isCommunityPublicProfile,
+  verificationLabel,
+} from "../lib/community/verification";
 
 function assert(cond: unknown, message: string) {
   if (!cond) throw new Error(message);
@@ -199,5 +209,82 @@ assert(
 
 assert(ageGroupFromAge(12) === "12U", "12 year old is 12U");
 assert(ageGroupFromAge(19) === "19+", "adult age group");
+
+const resolved = resolveAthleteCommunityFilters({
+  query: {},
+  sports: ["Baseball", "Basketball"],
+  primarySport: "Baseball",
+  ageGroup: "12U",
+  organizations: [],
+  locationState: "TN",
+});
+assert(resolved.sport === "Baseball", "default sport is my sport");
+assert(resolved.metricSport === "Baseball", "metric sport follows selected sport");
+assert(resolved.ageGroup === "12U", "default age group is my cohort");
+assert(resolved.state === null, "state defaults to all eligible");
+
+const basketball = resolveAthleteCommunityFilters({
+  query: { sport: "Basketball", ageGroup: "all" },
+  sports: ["Baseball", "Basketball"],
+  primarySport: "Baseball",
+  ageGroup: "12U",
+  organizations: [],
+  locationState: "TN",
+});
+assert(basketball.sport === "Basketball", "multi-sport athletes can switch sports");
+assert(basketball.metricSport === "Basketball", "do not mix baseball metrics into basketball");
+assert(basketball.ageGroup === null, "all eligible age groups is explicit");
+
+const allSports = resolveAthleteCommunityFilters({
+  query: { sport: "all" },
+  sports: ["Baseball", "Basketball"],
+  primarySport: "Baseball",
+  ageGroup: "12U",
+  organizations: [],
+  locationState: null,
+});
+assert(allSports.sport === null, "all eligible sports drops the sport filter");
+assert(
+  allSports.metricSport === "Baseball",
+  "metric boards stay on my sport so baseball is never ranked against basketball",
+);
+
+assert(verificationLabel("COACH") === "Coach verified", "coach verification label");
+assert(
+  verificationLabel("TRAIN2PLAY") === "Train2Play verified",
+  "train2play verification label",
+);
+assert(verificationLabel("SELF_REPORTED") === "Self reported", "self-reported is labeled");
+assert(
+  isCommunityPublicProfile({
+    profileVisibility: "PRIVATE",
+    publicLeaderboardOptIn: true,
+  }) === false,
+  "private profiles stay off community boards",
+);
+assert(
+  isCommunityPublicProfile({
+    profileVisibility: "PUBLIC",
+    publicLeaderboardOptIn: false,
+  }) === false,
+  "leaderboard opt-out is honored",
+);
+assert(
+  isCommunityPublicMetric({ isSensitive: true, publicLeaderboardEligible: true }) ===
+    false,
+  "sensitive metrics never appear",
+);
+assert(
+  mostImprovedEmptyCopy(0).includes("over time"),
+  "zero-result empty copy explains how improvement appears",
+);
+assert(
+  mostImprovedEmptyCopy(1).includes("Nice start"),
+  "one-result empty copy is context-aware",
+);
+assert(
+  topPerformancesEmptyCopy("Baseball").includes("Baseball"),
+  "top performances empty copy uses the selected sport",
+);
 
 console.log("community ranking/privacy tests passed");

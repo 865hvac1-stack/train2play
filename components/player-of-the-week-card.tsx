@@ -16,8 +16,10 @@ export function PlayerOfTheWeekCard({
       sport: string | null;
       ageGroup: string | null;
       location: string | null;
+      organizationName?: string | null;
     };
     slug: string | null;
+    avatarUrl?: string | null;
     description: string;
     highlight: string | null;
     videoUrl: string | null;
@@ -27,6 +29,13 @@ export function PlayerOfTheWeekCard({
 }) {
   const dark = tone === "dark";
   const profileUrl = potw.slug ? `${getAppBaseUrl()}/p/${potw.slug}` : null;
+  const meta = [
+    potw.identity.sport,
+    potw.identity.ageGroup,
+    potw.identity.organizationName,
+    potw.identity.location,
+  ].filter(Boolean);
+
   return (
     <article
       className={
@@ -36,16 +45,28 @@ export function PlayerOfTheWeekCard({
       }
     >
       <p className="text-[11px] font-bold tracking-[0.2em] text-brand uppercase">
-        Train2Play Player of the Week
+        Player of the Week
       </p>
-      <h2 className="font-heading mt-2 text-3xl font-bold tracking-tight">
-        {potw.identity.displayName}
-      </h2>
-      <p className={dark ? "mt-1 text-zinc-400" : "mt-1 text-zinc-600"}>
-        {[potw.identity.sport, potw.identity.ageGroup, potw.identity.location]
-          .filter(Boolean)
-          .join(" • ")}
-      </p>
+      <div className="mt-3 flex items-start gap-4">
+        {potw.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={potw.avatarUrl}
+            alt=""
+            className="size-16 shrink-0 rounded-2xl object-cover sm:size-20"
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <h2 className="font-heading text-3xl font-bold tracking-tight">
+            {potw.identity.displayName}
+          </h2>
+          {meta.length > 0 ? (
+            <p className={dark ? "mt-1 text-zinc-400" : "mt-1 text-zinc-600"}>
+              {meta.join(" • ")}
+            </p>
+          ) : null}
+        </div>
+      </div>
       {potw.videoUrl ? (
         <div className="mt-4 overflow-hidden rounded-2xl">
           <InstructionVideoPlayer
@@ -67,7 +88,7 @@ export function PlayerOfTheWeekCard({
             href={`/p/${potw.slug}`}
             className="inline-flex min-h-11 items-center rounded-2xl bg-brand px-4 text-sm font-bold text-black"
           >
-            View player profile
+            View player profile →
           </Link>
         ) : null}
         {profileUrl ? (

@@ -75,10 +75,12 @@ export async function unpublishPlayerOfTheWeek(id: string) {
 
 export function playerOfTheWeekCard(row: NonNullable<Awaited<ReturnType<typeof getCurrentPlayerOfTheWeek>>>) {
   const identity = buildSafeIdentity(row.athleteProfile);
+  const publicSafe = row.athleteProfile.profileVisibility === "PUBLIC";
   return {
     id: row.id,
     identity,
-    slug: row.athleteProfile.publicSlug,
+    slug: publicSafe ? row.athleteProfile.publicSlug : null,
+    avatarUrl: publicSafe ? row.athleteProfile.avatarUrl : null,
     description: row.description,
     highlight: row.highlight,
     sport: row.sport || identity.sport,
