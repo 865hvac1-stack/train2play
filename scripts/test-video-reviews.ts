@@ -19,9 +19,40 @@ import {
   completeVideoReview,
   submitVideoForReview,
 } from "../lib/video-reviews";
-import { VIDEO_REVIEW_STATUS } from "../lib/video-categories";
+import { VIDEO_REVIEW_STATUS, formatAthleteVideoReviewStatus, hasAthleteReviewFeedback, athleteReviewFeedbackTypes } from "../lib/video-categories";
 import { DEMO_VIDEO_URL } from "../lib/videos";
 import { listCatalogDrillsForSport } from "../lib/catalog-drills";
+
+assert.equal(
+  formatAthleteVideoReviewStatus({ status: VIDEO_REVIEW_STATUS.AWAITING_REVIEW }),
+  "Submitted",
+);
+assert.equal(
+  formatAthleteVideoReviewStatus({ status: VIDEO_REVIEW_STATUS.IN_REVIEW }),
+  "In review",
+);
+assert.equal(
+  formatAthleteVideoReviewStatus({
+    status: VIDEO_REVIEW_STATUS.REVIEWED,
+    voiceReviewReady: true,
+  }),
+  "Feedback Ready",
+);
+assert.equal(
+  hasAthleteReviewFeedback({ status: VIDEO_REVIEW_STATUS.REVIEWED }),
+  false,
+);
+assert.equal(
+  formatAthleteVideoReviewStatus({ status: VIDEO_REVIEW_STATUS.REVIEWED }),
+  "Reviewed",
+);
+assert.deepEqual(
+  athleteReviewFeedbackTypes({
+    voiceReviewReady: true,
+    trainingAssigned: true,
+  }),
+  ["Voice Feedback", "Training assigned"],
+);
 
 const prisma = createPrismaClient();
 const stamp = Date.now();

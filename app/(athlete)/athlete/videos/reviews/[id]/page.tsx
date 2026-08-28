@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { VideoAnnotator } from "@/components/video-annotator";
 import { SynchronizedVoiceReviewPlayer } from "@/components/synchronized-voice-review-player";
 import { requireAthleteContext } from "@/lib/athlete-dashboard";
-import { formatVideoReviewStatus } from "@/lib/video-categories";
+import {
+  formatAthleteVideoReviewStatus,
+  hasAthleteReviewFeedback,
+  VIDEO_REVIEW_STATUS,
+} from "@/lib/video-categories";
 import { prisma } from "@/lib/db";
 import { voiceTimelineSchema } from "@/lib/voice-timeline";
 
@@ -91,7 +95,20 @@ export default async function AthleteVideoReviewDetailPage({
 
       <div>
         <p className="text-xs font-bold tracking-[0.18em] text-brand uppercase">
-          {formatVideoReviewStatus(review.status)}
+          {formatAthleteVideoReviewStatus({
+            status: review.status,
+            coachFeedback: review.coachFeedback,
+            voiceReviewReady: review.voiceReview?.status === "READY",
+            annotationCount: review.trainingVideo.annotations.length,
+          })}
+          {hasAthleteReviewFeedback({
+            status: review.status,
+            coachFeedback: review.coachFeedback,
+            voiceReviewReady: review.voiceReview?.status === "READY",
+            annotationCount: review.trainingVideo.annotations.length,
+          })
+            ? " ✓"
+            : ""}
         </p>
         <h1 className="font-heading text-3xl font-bold tracking-tight">
           {review.title}
@@ -99,6 +116,17 @@ export default async function AthleteVideoReviewDetailPage({
         <p className="mt-1 text-sm text-slate-400">
           {review.sport} · {review.category} · {review.coachUser.name}
         </p>
+        {review.status === VIDEO_REVIEW_STATUS.AWAITING_REVIEW ? (
+          <p className="mt-2 text-sm text-zinc-400">
+            Sent to {review.coachUser.name} for review.
+          </p>
+        ) : null}
+        {review.status === VIDEO_REVIEW_STATUS.IN_REVIEW ? (
+          <p className="mt-2 text-sm text-zinc-400">
+            {review.coachUser.name} is reviewing your video. We&apos;ll notify you
+            when feedback is ready.
+          </p>
+        ) : null}
       </div>
 
       {review.athleteNote ? (
@@ -160,7 +188,7 @@ export default async function AthleteVideoReviewDetailPage({
       {assigned ? (
         <section className="space-y-3 rounded-2xl border border-white/10 bg-zinc-900 p-4">
           <p className="text-xs font-bold tracking-[0.16em] text-brand uppercase">
-            Your next step
+            Coach assigned new training
           </p>
           <h2 className="font-heading text-2xl font-bold">
             {assigned.trainingPlan.title}
@@ -195,7 +223,7 @@ export default async function AthleteVideoReviewDetailPage({
               href="/athlete/train"
               className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand px-5 text-sm font-bold text-black"
             >
-              START TRAINING
+              VIEW TRAINING
             </Link>
           )}
         </section>
@@ -205,7 +233,7 @@ export default async function AthleteVideoReviewDetailPage({
         href="/athlete/videos"
         className="block text-center text-sm text-slate-400 underline-offset-2 hover:underline"
       >
-        Back to videos
+        Back to video coaching
       </Link>
     </div>
   );

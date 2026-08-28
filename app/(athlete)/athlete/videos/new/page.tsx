@@ -33,13 +33,13 @@ export default async function AthleteVideoUploadPage() {
     <div className="space-y-6">
       <div>
         <p className="text-xs font-bold tracking-[0.18em] text-brand uppercase">
-          Videos
+          Video coaching
         </p>
         <h1 className="font-heading text-3xl font-bold tracking-tight">
-          Upload video
+          Send to coach for review
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          Send film to a connected coach for review, feedback, and training.
+          Send film to one connected coach for review, feedback, and training.
         </p>
       </div>
 
@@ -59,7 +59,7 @@ export default async function AthleteVideoUploadPage() {
         href="/athlete/videos"
         className="block text-center text-sm text-slate-400 underline-offset-2 hover:underline"
       >
-        Back to videos
+        Back to video coaching
       </Link>
     </div>
   );

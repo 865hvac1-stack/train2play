@@ -38,7 +38,7 @@ function SubmitButton({
       disabled={pending || disabled}
       className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-brand px-6 text-base font-bold text-black disabled:opacity-60"
     >
-      {compressing ? "COMPRESSING…" : pending ? "Sending…" : "SEND FOR REVIEW"}
+      {compressing ? "COMPRESSING…" : pending ? "Sending…" : "Send to coach for review"}
     </button>
   );
 }
@@ -102,16 +102,27 @@ export function AthleteVideoUploadForm({
   if (coaches.length === 0) {
     return (
       <div className="space-y-3 rounded-2xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
-        <p>
-          Connect with a coach before sending video for review. Only approved
-          coaches can receive your film.
+        <p className="font-heading text-lg font-bold text-white">
+          Connect with a coach first
         </p>
-        <a
-          href="/athlete/connect"
-          className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-brand px-5 text-sm font-bold text-black"
-        >
-          Connect with a coach
-        </a>
+        <p>
+          Connect with your existing coach or find a Train2Play Approved Coach
+          to begin video coaching. Only an approved coach can receive your film.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <a
+            href="/athlete/connect"
+            className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-brand px-5 text-sm font-bold text-black"
+          >
+            Enter coach code
+          </a>
+          <a
+            href="/athlete/coaches"
+            className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-white/20 px-5 text-sm font-bold text-white"
+          >
+            Find a coach
+          </a>
+        </div>
       </div>
     );
   }

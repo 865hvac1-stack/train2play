@@ -96,6 +96,52 @@ export function formatVideoReviewStatus(status: string) {
   }
 }
 
+export type AthleteReviewFeedbackSignals = {
+  status: string;
+  coachFeedback?: string | null;
+  voiceReviewReady?: boolean;
+  annotationCount?: number;
+};
+
+export function hasAthleteReviewFeedback(review: AthleteReviewFeedbackSignals) {
+  if (review.status !== VIDEO_REVIEW_STATUS.REVIEWED) return false;
+  return Boolean(
+    review.coachFeedback?.trim() ||
+      review.voiceReviewReady ||
+      (review.annotationCount ?? 0) > 0,
+  );
+}
+
+/** Athlete-facing status. Coach UI keeps formatVideoReviewStatus. */
+export function formatAthleteVideoReviewStatus(
+  review: AthleteReviewFeedbackSignals,
+) {
+  switch (review.status) {
+    case VIDEO_REVIEW_STATUS.AWAITING_REVIEW:
+      return "Submitted";
+    case VIDEO_REVIEW_STATUS.IN_REVIEW:
+      return "In review";
+    case VIDEO_REVIEW_STATUS.REVIEWED:
+      return hasAthleteReviewFeedback(review) ? "Feedback Ready" : "Reviewed";
+    default:
+      return formatVideoReviewStatus(review.status);
+  }
+}
+
+export function athleteReviewFeedbackTypes(review: {
+  coachFeedback?: string | null;
+  voiceReviewReady?: boolean;
+  annotationCount?: number;
+  trainingAssigned?: boolean;
+}) {
+  const types: string[] = [];
+  if (review.voiceReviewReady) types.push("Voice Feedback");
+  if (review.coachFeedback?.trim()) types.push("Written Feedback");
+  if ((review.annotationCount ?? 0) > 0) types.push("Drawings");
+  if (review.trainingAssigned) types.push("Training assigned");
+  return types;
+}
+
 export const VIDEO_PURPOSE = {
   REVIEW: "REVIEW",
   LIBRARY: "LIBRARY",
