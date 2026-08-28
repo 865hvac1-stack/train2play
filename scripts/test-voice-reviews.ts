@@ -15,7 +15,7 @@ import {
   saveVoiceReview,
   currentAudioStorageProvider,
 } from "../lib/voice-reviews";
-import { voiceTimelineSchema } from "../lib/voice-timeline";
+import { voiceTimelineSchema, strokesFromTimelineEvent } from "../lib/voice-timeline";
 import {
   deletePrivateAudioFile,
   getPrivateAudioResponse,
@@ -42,6 +42,47 @@ async function main() {
     },
   ];
   assert.equal(voiceTimelineSchema.parse(timeline).length, 6);
+
+  const drawing = [
+    {
+      tool: "arrow" as const,
+      color: "#FF6600",
+      width: 4,
+      points: [
+        { x: 0.2, y: 0.2 },
+        { x: 0.8, y: 0.8 },
+      ],
+    },
+  ];
+  const withStrokes = voiceTimelineSchema.parse([
+    { reviewTimeMs: 0, videoTimeMs: 1000, type: "video_pause" as const },
+    {
+      reviewTimeMs: 400,
+      videoTimeMs: 1000,
+      type: "annotation_show" as const,
+      strokes: JSON.stringify(drawing),
+    },
+  ]);
+  assert.deepEqual(
+    strokesFromTimelineEvent(withStrokes[1]!, []),
+    drawing,
+    "playback must use strokes saved on the timeline even without an annotation row",
+  );
+  assert.deepEqual(
+    strokesFromTimelineEvent(
+      {
+        type: "annotation_show",
+        annotationId: "ann_test",
+      },
+      [{ id: "ann_test", strokes: JSON.stringify(drawing) }],
+    ),
+    drawing,
+    "legacy timelines that only stored an annotation id must still resolve",
+  );
+  assert.deepEqual(
+    strokesFromTimelineEvent({ type: "annotation_clear" }, []),
+    [],
+  );
   assert.throws(() =>
     voiceTimelineSchema.parse([
       timeline[1],

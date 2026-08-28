@@ -49,9 +49,11 @@ remain in use. The drawing renderer was extracted to the shared
 `drawVideoStrokes` helper so both the existing coach annotator and synchronized
 athlete player render exactly the same normalized strokes.
 
-While voice recording is active, showing/clearing saved annotations is added to
-the timeline. A newly drawn annotation is replayed from the moment drawing
-started and cleared when the coach cleared/saved it.
+While voice recording is active, drawings are saved onto the timeline as
+the actual strokes, not just a later database lookup. Saving a coaching note
+keeps the drawing visible so the athlete still sees it while the coach talks.
+The drawing clears when the coach plays the video or clears the frame. Any
+drawing still on the frame when recording starts or finishes is captured too.
 
 ## STORAGE
 

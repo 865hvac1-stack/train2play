@@ -25,7 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { VoiceTimelineEventInput } from "@/lib/voice-timeline";
+import type {
+  PendingVoiceDrawing,
+  VoiceTimelineEventInput,
+} from "@/lib/voice-timeline";
 
 type Annotation = {
   id: string;
@@ -52,6 +55,7 @@ type VideoAnnotatorProps = {
     paused: boolean;
     playbackRate: number;
   }) => void;
+  onPendingDrawingChange?: (drawing: PendingVoiceDrawing | null) => void;
   forcePauseToken?: number;
 };
 
@@ -64,6 +68,7 @@ export function VideoAnnotator({
   readOnly = false,
   onTimelineEvent,
   onVideoState,
+  onPendingDrawingChange,
   forcePauseToken = 0,
   getReviewTimeMs,
 }: VideoAnnotatorProps) {
@@ -120,6 +125,21 @@ export function VideoAnnotator({
     if (forcePauseToken > 0) videoRef.current?.pause();
   }, [forcePauseToken]);
 
+  function reportPendingDrawing(
+    strokes: VideoStroke[],
+    startedAtMs: number | null = annotationStartedAtRef.current,
+    annotationId?: string | null,
+  ) {
+    const videoTimeMs = Math.floor(
+      (videoRef.current?.currentTime ?? 0) * 1000,
+    );
+    onPendingDrawingChange?.(
+      strokes.length > 0
+        ? { strokes, videoTimeMs, startedAtMs, annotationId }
+        : null,
+    );
+  }
+
   function reportVideoState() {
     const video = videoRef.current;
     if (!video) return;
@@ -157,6 +177,7 @@ export function VideoAnnotator({
       points: [point],
     };
     setActiveStroke(stroke);
+    reportPendingDrawing([...draftStrokes, stroke]);
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -174,19 +195,26 @@ export function VideoAnnotator({
     if (canvas) {
       redraw(canvas, [...draftStrokes, updated]);
     }
+    reportPendingDrawing([...draftStrokes, updated]);
   }
 
   function handlePointerUp() {
     if (!activeStroke) return;
-    setDraftStrokes((current) => [...current, activeStroke]);
+    setDraftStrokes((current) => {
+      const next = [...current, activeStroke];
+      reportPendingDrawing(next);
+      return next;
+    });
     setActiveStroke(null);
   }
 
-  function clearDraft() {
+  function clearDraft(options?: { emit?: boolean }) {
     setDraftStrokes([]);
     setActiveStroke(null);
+    reportPendingDrawing([]);
     const canvas = canvasRef.current;
     if (canvas) redraw(canvas, []);
+    if (options?.emit === false) return;
     const videoTimeMs = Math.floor(
       (videoRef.current?.currentTime ?? 0) * 1000,
     );
@@ -206,10 +234,12 @@ export function VideoAnnotator({
       const strokes = parseStrokes(annotation.strokes);
       redraw(canvas, strokes);
       setDraftStrokes(strokes);
+      reportPendingDrawing(strokes, getReviewTimeMs?.() ?? null, annotation.id);
       onTimelineEvent?.({
         type: "annotation_show",
         videoTimeMs: ms,
         annotationId: annotation.id,
+        strokes: annotation.strokes,
       });
     }
   }
@@ -267,16 +297,29 @@ export function VideoAnnotator({
       setLabel("");
       setNote("");
       setIsDrawing(false);
-      clearDraft();
       if (result.annotationId) {
-        onTimelineEvent?.({
-          type: "annotation_show",
-          videoTimeMs: Math.floor(video.currentTime * 1000),
-          annotationId: result.annotationId,
-        }, annotationStartedAtRef.current ?? undefined);
+        reportPendingDrawing(
+          draftStrokes,
+          annotationStartedAtRef.current,
+          result.annotationId,
+        );
+        onTimelineEvent?.(
+          {
+            type: "annotation_show",
+            videoTimeMs: Math.floor(video.currentTime * 1000),
+            annotationId: result.annotationId,
+            strokes: JSON.stringify(draftStrokes),
+          },
+          annotationStartedAtRef.current ?? undefined,
+        );
       }
       annotationStartedAtRef.current = null;
-      router.refresh();
+      // Refreshing during a live voice recording remounts this workspace and
+      // can drop the in-progress timeline. The saved drawing is already on
+      // the canvas and in the timeline.
+      if (getReviewTimeMs?.() == null) {
+        router.refresh();
+      }
     });
   }
 

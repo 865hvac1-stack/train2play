@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Maximize, Pause, Play, RotateCcw } from "lucide-react";
 
-import { drawVideoStrokes, parseStrokes } from "@/lib/videos";
-import type { VoiceTimelineEvent } from "@/lib/voice-timeline";
+import { drawVideoStrokes } from "@/lib/videos";
+import {
+  strokesFromTimelineEvent,
+  type VoiceTimelineEvent,
+} from "@/lib/voice-timeline";
 
 type Annotation = {
   id: string;
@@ -37,6 +40,9 @@ export function SynchronizedVoiceReviewPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const eventIndexRef = useRef(0);
   const desiredPlayingRef = useRef(false);
+  const visibleStrokesRef = useRef<ReturnType<typeof strokesFromTimelineEvent>>(
+    [],
+  );
   const playbackAnchorRef = useRef({
     reviewTimeMs: 0,
     videoTimeMs: 0,
@@ -53,6 +59,7 @@ export function SynchronizedVoiceReviewPlayer({
     if (!container || !canvas) return;
     canvas.width = container.clientWidth;
     canvas.height = (container.clientWidth * 9) / 16;
+    drawVideoStrokes(canvas, visibleStrokesRef.current);
   }, []);
 
   useEffect(() => {
@@ -95,18 +102,12 @@ export function SynchronizedVoiceReviewPlayer({
           playbackRate: event.playbackRate ?? 1,
         };
       } else if (event.type === "annotation_clear" && canvas) {
+        visibleStrokesRef.current = [];
         drawVideoStrokes(canvas, []);
-      } else if (
-        event.type === "annotation_show" &&
-        event.annotationId &&
-        canvas
-      ) {
-        const annotation = annotations.find(
-          (item) => item.id === event.annotationId,
-        );
-        if (annotation) {
-          drawVideoStrokes(canvas, parseStrokes(annotation.strokes));
-        }
+      } else if (event.type === "annotation_show" && canvas) {
+        const strokes = strokesFromTimelineEvent(event, annotations);
+        visibleStrokesRef.current = strokes;
+        drawVideoStrokes(canvas, strokes);
       }
     },
     [annotations],
@@ -121,6 +122,7 @@ export function SynchronizedVoiceReviewPlayer({
 
       eventIndexRef.current = 0;
       desiredPlayingRef.current = false;
+      visibleStrokesRef.current = [];
       video.pause();
       video.playbackRate = 1;
       if (canvas) drawVideoStrokes(canvas, []);

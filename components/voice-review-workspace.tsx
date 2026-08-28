@@ -21,6 +21,7 @@ import {
   describeMicrophoneError,
   findMicrophoneBlocker,
   pickSupportedAudioMimeType,
+  type PendingVoiceDrawing,
   type VoiceTimelineEvent,
   type VoiceTimelineEventInput,
 } from "@/lib/voice-timeline";
@@ -124,6 +125,7 @@ export function VoiceReviewWorkspace({
     paused: true,
     playbackRate: 1,
   });
+  const pendingDrawingRef = useRef<PendingVoiceDrawing | null>(null);
 
   const [phase, setPhaseState] = useState<RecordingPhase>("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -200,6 +202,20 @@ export function VoiceReviewWorkspace({
     },
     [getReviewElapsedMs],
   );
+
+  function captureVisibleDrawing(reviewTimeOverrideMs?: number) {
+    const drawing = pendingDrawingRef.current;
+    if (!drawing || drawing.strokes.length === 0) return;
+    handleTimelineEvent(
+      {
+        type: "annotation_show",
+        videoTimeMs: drawing.videoTimeMs,
+        annotationId: drawing.annotationId ?? undefined,
+        strokes: JSON.stringify(drawing.strokes),
+      },
+      reviewTimeOverrideMs ?? drawing.startedAtMs ?? undefined,
+    );
+  }
 
   async function startRecording() {
     setMessage(null);
@@ -284,6 +300,7 @@ export function VoiceReviewWorkspace({
       if (recorder.mimeType.includes("webm")) recorder.start(1000);
       else recorder.start();
       setPhase("recording");
+      captureVisibleDrawing(0);
     } catch (error) {
       setPhase("idle");
       streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -309,6 +326,7 @@ export function VoiceReviewWorkspace({
   function finishRecording() {
     const recorder = recorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
+    captureVisibleDrawing();
     setForcePauseToken((value) => value + 1);
     if (phaseRef.current === "paused") {
       pausedTotalRef.current += performance.now() - pausedAtRef.current;
@@ -359,8 +377,9 @@ export function VoiceReviewWorkspace({
             Record voice review
           </h2>
           <p className="text-sm text-slate-600">
-            Talk through the athlete&apos;s video while you play, pause, rewind,
-            change speed, and use the existing annotation tools.
+              Talk through the athlete&apos;s video while you play, pause, rewind,
+              change speed, and draw on the frame. Drawings stay in the review
+              the athlete watches back.
           </p>
         </div>
 
@@ -485,6 +504,9 @@ export function VoiceReviewWorkspace({
         getReviewTimeMs={getReviewElapsedMs}
         onVideoState={(state) => {
           currentVideoStateRef.current = state;
+        }}
+        onPendingDrawingChange={(drawing) => {
+          pendingDrawingRef.current = drawing;
         }}
         forcePauseToken={forcePauseToken}
       />

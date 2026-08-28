@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { parseStrokes, type VideoStroke } from "@/lib/videos";
+
 export const voiceTimelineEventSchema = z.object({
   reviewTimeMs: z.number().int().min(0).max(30 * 60 * 1000),
   videoTimeMs: z.number().int().min(0).max(24 * 60 * 60 * 1000),
@@ -13,6 +15,8 @@ export const voiceTimelineEventSchema = z.object({
   ]),
   playbackRate: z.number().min(0.1).max(4).optional(),
   annotationId: z.string().max(200).optional(),
+  /** Normalized drawing JSON so playback does not depend on a later annotation lookup. */
+  strokes: z.string().min(2).max(400_000).optional(),
 });
 
 export const voiceTimelineSchema = z
@@ -36,6 +40,25 @@ export type VoiceTimelineEventInput = Omit<
   VoiceTimelineEvent,
   "reviewTimeMs"
 >;
+
+export type PendingVoiceDrawing = {
+  strokes: VideoStroke[];
+  videoTimeMs: number;
+  startedAtMs: number | null;
+  annotationId?: string | null;
+};
+
+/** Prefer strokes saved on the timeline so drawings survive even if the annotation row is missing. */
+export function strokesFromTimelineEvent(
+  event: Pick<VoiceTimelineEvent, "type" | "annotationId" | "strokes">,
+  annotations: { id: string; strokes: string }[],
+): VideoStroke[] {
+  if (event.type === "annotation_clear") return [];
+  if (event.type !== "annotation_show") return [];
+  if (event.strokes) return parseStrokes(event.strokes);
+  const match = annotations.find((item) => item.id === event.annotationId);
+  return match ? parseStrokes(match.strokes) : [];
+}
 
 export function pickSupportedAudioMimeType() {
   if (typeof MediaRecorder === "undefined") return null;
