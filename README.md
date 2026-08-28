@@ -21,7 +21,7 @@
 - Athlete: `athlete@example.com` / `password123` (Hudson Reed)
 
 New coach signups go through a short onboarding (zip + sport) before the Coach Portal.
-Athlete accounts are created via coach invite (`/accept-invite`) or the demo seed.
+Parents create the player account for anyone under 18 — parent email is the login, and the player profile is created in the same step. Players 18+ can sign up as Athlete. Coaches can still invite athletes with `/accept-invite`.
 
 ---
 

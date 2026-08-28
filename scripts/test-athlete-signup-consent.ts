@@ -27,10 +27,55 @@ async function main() {
     "minor signup must require guardian details and consent",
   );
 
+  const adultOnParentPath = signupSchema.safeParse({
+    name: "Adult Player",
+    email: "parent-of-adult@example.com",
+    password: "Password123",
+    accountType: "ATHLETE",
+    signupRole: "PARENT",
+    sports: ["Basketball"],
+    dateOfBirth: "2000-01-15",
+    acceptTerms: true,
+    guardianFirstName: "Pat",
+    guardianLastName: "Parent",
+    guardianRelationship: "Parent",
+    guardianEmail: "parent-of-adult@example.com",
+    parentalConsent: true,
+  });
+  assert.equal(
+    adultOnParentPath.success,
+    false,
+    "parent signup must reject players 18 and older",
+  );
+
+  const parentEmailMismatch = signupSchema.safeParse({
+    name: "Kid Player",
+    email: "parent-login@example.com",
+    password: "Password123",
+    accountType: "ATHLETE",
+    signupRole: "PARENT",
+    sports: ["Basketball"],
+    dateOfBirth: "2012-05-10",
+    acceptTerms: true,
+    guardianFirstName: "Pat",
+    guardianLastName: "Parent",
+    guardianRelationship: "Parent",
+    guardianEmail: "other-guardian@example.com",
+    parentalConsent: true,
+  });
+  assert.equal(
+    parentEmailMismatch.success,
+    false,
+    "parent signup login email must match guardian email",
+  );
+
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const email = `consent-${suffix}@example.com`;
+  const parentEmail = `parent-${suffix}@example.com`;
   let userId: string | null = null;
   let profileId: string | null = null;
+  let parentUserId: string | null = null;
+  let parentProfileId: string | null = null;
 
   try {
     const user = await createUser({
@@ -79,8 +124,58 @@ async function main() {
       ),
     );
 
+    const parentCreated = await createUser({
+      name: "Jordan Reed",
+      email: parentEmail,
+      password: "Password123",
+      accountType: "ATHLETE",
+      signupRole: "PARENT",
+      sports: ["Baseball"],
+      sport: "Baseball",
+      position: "Pitcher",
+      dateOfBirth: "2013-08-02",
+      acceptTerms: true,
+      guardianFirstName: "Alex",
+      guardianLastName: "Reed",
+      guardianRelationship: "Parent",
+      guardianEmail: parentEmail,
+      guardianPhone: "555-0199",
+      parentalConsent: true,
+      publicVideoConsent: false,
+      publicLeaderboardConsent: false,
+    });
+    parentUserId = parentCreated.id;
+
+    assert.equal(parentCreated.email, parentEmail);
+    assert.equal(parentCreated.name, "Jordan Reed");
+    assert.equal(parentCreated.role, "ATHLETE");
+
+    const parentProfile = await prisma.athleteProfile.findUniqueOrThrow({
+      where: { userId: parentCreated.id },
+      include: { guardianContacts: true, consentRecords: true },
+    });
+    parentProfileId = parentProfile.id;
+    assert.equal(parentProfile.firstName, "Jordan");
+    assert.equal(parentProfile.lastName, "Reed");
+    assert.equal(parentProfile.guardianContacts.length, 1);
+    assert.equal(parentProfile.guardianContacts[0]?.email, parentEmail);
+    assert.equal(parentProfile.guardianContacts[0]?.firstName, "Alex");
+    assert.equal(
+      parentProfile.consentRecords.some(
+        (record) =>
+          record.consentType === CONSENT_TYPE.PARENTAL_DATA && record.granted,
+      ),
+      true,
+    );
+
     console.log("athlete signup guardian and consent checks passed");
   } finally {
+    if (parentProfileId) {
+      await prisma.athleteProfile.delete({ where: { id: parentProfileId } });
+    }
+    if (parentUserId) {
+      await prisma.user.delete({ where: { id: parentUserId } });
+    }
     if (profileId) {
       await prisma.athleteProfile.delete({ where: { id: profileId } });
     }

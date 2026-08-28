@@ -22,6 +22,7 @@ export const signupSchema = z
       .regex(/[A-Za-z]/, "Password must include a letter")
       .regex(/[0-9]/, "Password must include a number"),
     accountType: z.enum(["COACH", "ATHLETE"]).default("COACH"),
+    signupRole: z.enum(["PLAYER", "PARENT", "COACH"]).optional(),
     sports: z.array(z.string()).optional(),
     sport: z.string().optional(),
     position: z.string().optional(),
@@ -83,6 +84,28 @@ export const signupSchema = z
           path: ["dateOfBirth"],
         });
         return;
+      }
+      if (data.signupRole === "PARENT" && !isMinor(dateOfBirth)) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Players 18 and older should sign up as an Athlete with their own email.",
+          path: ["dateOfBirth"],
+        });
+        return;
+      }
+      if (data.signupRole === "PARENT") {
+        const loginEmail = data.email.trim().toLowerCase();
+        const guardianEmail = data.guardianEmail?.trim().toLowerCase();
+        if (guardianEmail && guardianEmail !== loginEmail) {
+          ctx.addIssue({
+            code: "custom",
+            message:
+              "The parent email is the login for this player account.",
+            path: ["guardianEmail"],
+          });
+          return;
+        }
       }
       if (isMinor(dateOfBirth)) {
         const requiredGuardianFields = [

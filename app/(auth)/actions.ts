@@ -28,11 +28,18 @@ export async function signupAction(
     return { error: "Please agree to the Terms of Service and Privacy Policy." };
   }
 
+  const signupRole = String(formData.get("signupRole") || "").trim();
+  const email = formData.get("email");
+  const guardianEmail =
+    formData.get("guardianEmail") ||
+    (signupRole === "PARENT" ? email : undefined);
+
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
-    email: formData.get("email"),
+    email,
     password: formData.get("password"),
     accountType: formData.get("accountType") || "COACH",
+    signupRole: signupRole || undefined,
     sports: formData.getAll("sports"),
     sport: formData.get("primarySport") || formData.get("sport") || undefined,
     position: formData.get("position") || undefined,
@@ -41,7 +48,7 @@ export async function signupAction(
     guardianFirstName: formData.get("guardianFirstName") || undefined,
     guardianLastName: formData.get("guardianLastName") || undefined,
     guardianRelationship: formData.get("guardianRelationship") || undefined,
-    guardianEmail: formData.get("guardianEmail") || undefined,
+    guardianEmail,
     guardianPhone: formData.get("guardianPhone") || undefined,
     parentalConsent: formData.get("parentalConsent") === "true",
     publicVideoConsent: formData.get("publicVideoConsent") === "true",
@@ -71,8 +78,14 @@ export async function signupAction(
     const homePath = accountType === "ATHLETE" ? "/athlete" : "/dashboard";
     await sendWelcomeEmail({
       to: parsed.data.email.toLowerCase(),
-      name: parsed.data.name,
+      name:
+        parsed.data.signupRole === "PARENT"
+          ? parsed.data.guardianFirstName || parsed.data.name
+          : parsed.data.name,
       accountType,
+      createdByParent: parsed.data.signupRole === "PARENT",
+      playerName:
+        parsed.data.signupRole === "PARENT" ? parsed.data.name : undefined,
       loginUrl: `${getAppUrl()}${homePath}`,
     });
   } catch {

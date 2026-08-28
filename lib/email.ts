@@ -284,6 +284,8 @@ export type WelcomeEmailInput = {
   name: string;
   accountType: "COACH" | "ATHLETE";
   loginUrl: string;
+  createdByParent?: boolean;
+  playerName?: string;
 };
 
 export async function sendWelcomeEmail(input: WelcomeEmailInput) {
@@ -291,8 +293,21 @@ export async function sendWelcomeEmail(input: WelcomeEmailInput) {
     input.name.trim().split(/\s+/).filter(Boolean)[0] || "there",
   );
   const isAthlete = input.accountType === "ATHLETE";
+  const playerName = escapeHtml(input.playerName?.trim() || "your player");
 
-  const bodyHtml = isAthlete
+  const bodyHtml = input.createdByParent
+    ? `
+      <p style="margin:0 0 12px;">Hi ${firstName},</p>
+      <p style="margin:0 0 12px;">You created a <strong>${escapeHtml(brand.name)}</strong> player account for <strong>${playerName}</strong>. Sign in with this email to open their training.</p>
+      <p style="margin:0 0 8px;font-weight:700;">What to do next</p>
+      <ol style="margin:0 0 12px;padding-left:20px;color:#334155;">
+        <li style="margin-bottom:6px;">Sign in on your phone with this parent email</li>
+        <li style="margin-bottom:6px;">Complete the player profile and add a photo</li>
+        <li style="margin-bottom:6px;">Connect with a coach so training can be assigned</li>
+      </ol>
+      <p style="margin:0;color:#64748b;font-size:14px;">Keep this login. It is the parent-controlled account for ${playerName}.</p>
+    `
+    : isAthlete
     ? `
       <p style="margin:0 0 12px;">Hi ${firstName},</p>
       <p style="margin:0 0 12px;">Welcome to <strong>${escapeHtml(brand.name)}</strong>. Your athlete account is ready.</p>
@@ -318,12 +333,18 @@ export async function sendWelcomeEmail(input: WelcomeEmailInput) {
     `;
 
   const html = emailShell({
-    preheader: isAthlete
-      ? `Your athlete account is ready — ${brand.tagline}`
-      : `Your coach portal is ready — ${brand.tagline}`,
+    preheader: input.createdByParent
+      ? `Player account ready for ${input.playerName?.trim() || "your player"} — ${brand.tagline}`
+      : isAthlete
+        ? `Your athlete account is ready — ${brand.tagline}`
+        : `Your coach portal is ready — ${brand.tagline}`,
     title: `Welcome to ${brand.name}`,
     bodyHtml,
-    ctaLabel: isAthlete ? "Open athlete home" : "Open coach portal",
+    ctaLabel: input.createdByParent
+      ? "Open player home"
+      : isAthlete
+        ? "Open athlete home"
+        : "Open coach portal",
     ctaUrl: input.loginUrl,
   });
 
