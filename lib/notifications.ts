@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { deliverOutOfAppAlert } from "@/lib/notification-delivery";
 
 export const NOTIFICATION_TYPE = {
   VIDEO_SUBMITTED: "VIDEO_SUBMITTED",
@@ -22,7 +23,7 @@ export async function createNotification(options: {
   entityId?: string;
   entityType?: string;
 }) {
-  return prisma.appNotification.create({
+  const notification = await prisma.appNotification.create({
     data: {
       userId: options.userId,
       type: options.type,
@@ -33,6 +34,14 @@ export async function createNotification(options: {
       entityType: options.entityType ?? null,
     },
   });
+
+  try {
+    await deliverOutOfAppAlert(notification);
+  } catch (error) {
+    console.error("[train2play] out-of-app alert delivery failed", error);
+  }
+
+  return notification;
 }
 
 export async function listNotificationsForUser(userId: string, take = 30) {

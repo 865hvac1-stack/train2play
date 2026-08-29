@@ -1,3 +1,4 @@
+import { AlertPreferences } from "@/components/alert-preferences";
 import { InstallTrain2Play } from "@/components/install-train2play";
 import { CoachConnectionCodePanel } from "@/components/coach-connection-code-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -70,6 +71,11 @@ export default async function SettingsPage() {
           }}
         />
         <InstallTrain2Play variant="settings" tone="light" />
+        <AlertPreferences
+          phoneE164={user.phoneE164}
+          smsEnabled={user.smsAlertsEnabled}
+          tone="light"
+        />
 
         <PasswordSettingsForm />
 

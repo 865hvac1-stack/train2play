@@ -8,6 +8,7 @@ import {
   TrainingStatsGrid,
 } from "@/components/player-profile-view";
 import { ShareProfileControls } from "@/components/share-profile-controls";
+import { AlertPreferences } from "@/components/alert-preferences";
 import { InstallTrain2Play } from "@/components/install-train2play";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SocialLinkIcons } from "@/components/social-link-icons";
@@ -39,6 +40,10 @@ export default async function AthleteProfilePage({
 }) {
   const ctx = await requireAthleteContext();
   const { saved, upload, choose } = await searchParams;
+  const alertUser = await prisma.user.findUnique({
+    where: { id: ctx.userId },
+    select: { phoneE164: true, smsAlertsEnabled: true },
+  });
   await syncTrainingAchievements(ctx.profileId);
 
   const profile = await prisma.athleteProfile.findUnique({
@@ -401,6 +406,11 @@ export default async function AthleteProfilePage({
         {brand.name} · {brand.subtagline}
       </p>
       <InstallTrain2Play variant="settings" tone="dark" />
+      <AlertPreferences
+        phoneE164={alertUser?.phoneE164 ?? null}
+        smsEnabled={alertUser?.smsAlertsEnabled ?? false}
+        tone="dark"
+      />
       <SignOutButton />
     </div>
   );

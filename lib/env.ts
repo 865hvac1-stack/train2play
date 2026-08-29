@@ -96,5 +96,23 @@ export function getProductionWarnings() {
     );
   }
 
+  if (!process.env.VAPID_PRIVATE_KEY || !(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY)) {
+    warnings.push(
+      "Web Push is not configured — add VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT to send lock-screen alerts.",
+    );
+  }
+
+  if (
+    !(
+      process.env.TWILIO_ACCOUNT_SID &&
+      process.env.TWILIO_AUTH_TOKEN &&
+      process.env.TWILIO_FROM_NUMBER
+    )
+  ) {
+    warnings.push(
+      "SMS alerts are not configured — add Twilio TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER.",
+    );
+  }
+
   return warnings;
 }

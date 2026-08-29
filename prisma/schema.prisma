@@ -477,6 +477,13 @@ model User {
   videoReviewsUploaded        VideoReview[]             @relation("VideoReviewUploadedBy")
   voiceReviewsRecorded        VoiceReview[]             @relation("VoiceReviewCoach")
   notifications               AppNotification[]
+  pushSubscriptions           PushSubscription[]
+  /**
+   * E.164 mobile number for optional SMS alerts. Never shown on public profiles.
+   */
+  phoneE164                   String?
+  smsAlertsEnabled            Boolean                   @default(false)
+  smsOptInAt                  DateTime?
   videoReviewTrainingAssigned VideoReviewTrainingLink[] @relation("VideoReviewTrainingAssignedBy")
   mediaUploads                MediaUpload[]
   consentRecords              ConsentRecord[]           @relation("ConsentGrantedBy")
@@ -778,11 +785,31 @@ model AppNotification {
   entityType  String?
   readAt      DateTime?
   emailSentAt DateTime?
+  pushSentAt  DateTime?
+  smsSentAt   DateTime?
   createdAt   DateTime  @default(now())
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
   @@index([type])
+}
+
+/**
+ * Browser / installed-PWA Web Push subscription. Created only after the user
+ * taps Enable Notifications. Endpoints are unique across users.
+ */
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model ProgressGoal {

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getAppUrl, getProductionWarnings } from "@/lib/env";
 import { prisma } from "@/lib/db";
+import { isPushConfigured } from "@/lib/push";
+import { isSmsConfigured } from "@/lib/sms";
 import {
   isDirectVideoUploadConfigured,
   isObjectStorageConfigured,
@@ -45,6 +47,8 @@ export async function GET() {
     objectStorage: isObjectStorageConfigured(),
     directPrivateVideo: isDirectVideoUploadConfigured(),
     email: Boolean(process.env.RESEND_API_KEY),
+    webPush: isPushConfigured(),
+    sms: isSmsConfigured(),
   };
 
   const ok = checks.database && checks.auth && checks.appUrl;

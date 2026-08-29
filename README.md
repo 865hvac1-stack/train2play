@@ -123,6 +123,7 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 - Pickup players + zip-based matching + email alerts
 - Centralized brand config in `lib/brand.ts`
 - Progressive Web App — install Train2Play to an iPhone or Android Home Screen (`/manifest.webmanifest`, `/sw.js`, Profile / Settings → Install Train2Play)
+- Optional lock-screen Web Push and SMS alerts after the user taps Enable Notifications / opts in to texts (Profile or Settings). Requires VAPID + Twilio env vars. Existing in-app + email alerts still work without those.
 
 ## Tech stack
 
