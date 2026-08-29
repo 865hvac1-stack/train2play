@@ -122,6 +122,7 @@ To load demo data on a staging environment only: set `SEED_DEMO=true` and run `n
 - Platform Admin command center weekly homepage modules (`/admin/community`)
 - Pickup players + zip-based matching + email alerts
 - Centralized brand config in `lib/brand.ts`
+- Progressive Web App — install Train2Play to an iPhone or Android Home Screen (`/manifest.webmanifest`, `/sw.js`, Profile / Settings → Install Train2Play)
 
 ## Tech stack
 

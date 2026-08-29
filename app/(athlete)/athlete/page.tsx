@@ -13,6 +13,7 @@ import {
   getAthleteDashboardData,
   requireAthleteContext,
 } from "@/lib/athlete-dashboard";
+import { InstallTrain2Play } from "@/components/install-train2play";
 import { NotificationFeed } from "@/components/notification-feed";
 import { SuggestedDrillSeenBeacon } from "@/components/suggested-drill-seen-beacon";
 import { formatMetricValue } from "@/lib/progress";
@@ -55,6 +56,8 @@ export default async function AthleteHomePage() {
       </section>
 
       <NotificationFeed userId={ctx.userId} variant="athlete" />
+
+      <InstallTrain2Play variant="prompt" tone="dark" />
 
       {approvedCoachCount === 0 ? (
         <section className="rounded-3xl border border-brand/40 bg-zinc-900 p-5">

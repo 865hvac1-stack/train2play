@@ -183,6 +183,10 @@
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.375rem);
   }
 
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .safe-area-px {
     padding-left: max(env(safe-area-inset-left, 0px), 0px);
     padding-right: max(env(safe-area-inset-right, 0px), 0px);

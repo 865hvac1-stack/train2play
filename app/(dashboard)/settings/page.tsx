@@ -1,3 +1,4 @@
+import { InstallTrain2Play } from "@/components/install-train2play";
 import { CoachConnectionCodePanel } from "@/components/coach-connection-code-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
@@ -68,6 +69,8 @@ export default async function SettingsPage() {
             minThrowingVelo: user.minThrowingVelo?.toString() ?? "",
           }}
         />
+        <InstallTrain2Play variant="settings" tone="light" />
+
         <PasswordSettingsForm />
 
         <Card>

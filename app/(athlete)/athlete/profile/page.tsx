@@ -8,6 +8,7 @@ import {
   TrainingStatsGrid,
 } from "@/components/player-profile-view";
 import { ShareProfileControls } from "@/components/share-profile-controls";
+import { InstallTrain2Play } from "@/components/install-train2play";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SocialLinkIcons } from "@/components/social-link-icons";
 import { ProfileVideoWorkspace } from "@/components/profile-video-workspace";
@@ -399,6 +400,7 @@ export default async function AthleteProfilePage({
       <p className="text-xs text-zinc-500">
         {brand.name} · {brand.subtagline}
       </p>
+      <InstallTrain2Play variant="settings" tone="dark" />
       <SignOutButton />
     </div>
   );

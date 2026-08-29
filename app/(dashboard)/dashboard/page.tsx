@@ -12,6 +12,7 @@ import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { AthleteCard } from "@/components/athlete-card";
 import { CoachConnectionRequests } from "@/components/coach-connection-requests";
+import { InstallTrain2Play } from "@/components/install-train2play";
 import { NotificationFeed } from "@/components/notification-feed";
 import { SuggestedDrills } from "@/components/suggested-drills";
 import { TrainingPlanCard } from "@/components/training-plan-card";
@@ -258,6 +259,8 @@ export default async function DashboardPage() {
         <OnboardingChecklist steps={onboardingSteps} />
 
         <NotificationFeed userId={user.id} variant="coach" />
+
+        <InstallTrain2Play variant="prompt" tone="light" />
 
         <CoachConnectionRequests
           requests={pendingConnections.map((c) => ({
